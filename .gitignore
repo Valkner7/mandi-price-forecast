@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+venv/
+.venv/
+*.mp3
+test_output.txt
+subscriptions.json
+
+# Local raw scratch data
+*_raw.csv

@@ -1,0 +1,84 @@
+name: Update mandi prices daily
+
+# Agmarknet mandi prices are reported once per trading day, typically
+# posted by early evening IST. Running this more than once a day won't
+# find new data — it'll just re-fetch the same day's numbers. 18:00 UTC
+# = 11:30 PM IST, comfortably after the day's prices are usually posted;
+# adjust if you find the source updates earlier or later.
+#
+# You can also trigger this manually any time from the Actions tab
+# (workflow_dispatch below) — useful right before a demo to force a
+# fresh pull instead of waiting for the schedule.
+on:
+  schedule:
+    # Runs twice: once in the evening after prices typically post, and
+    # once again a few hours later as a safety net. The shared public
+    # data.gov.in demo key can be unreliable/congested at times (shared
+    # across every anonymous user of that key) — a second attempt later
+    # the same night meaningfully increases the odds one of the two gets
+    # through, without needing a dedicated API key. If a dedicated key is
+    # added later (see fetch_daily_mandi_data.py docstring), one run a day
+    # is plenty and the second can be removed.
+    - cron: "0 18 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pandas requests
+
+      - name: Fetch latest Punjab mandi prices
+        env:
+          # Set this in your repo's Settings -> Secrets and variables ->
+          # Actions -> New repository secret. Falls back to the shared
+          # public demo key if unset, which works but is rate-limited —
+          # see fetch_daily_mandi_data.py's docstring for how to get your
+          # own free key.
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+        run: python fetch_daily_mandi_data.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "mandi-price-bot"
+          git config user.email "actions@github.com"
+          # Only clean_mandi_prices.csv is a tracked change we want to keep;
+          # the timestamped backup files are useful locally for one run but
+          # would otherwise pile up in the repo forever.
+          rm -f clean_mandi_prices_backup_*.csv
+          git add clean_mandi_prices.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit — dataset already up to date."
+          else
+            git commit -m "Auto-update mandi prices ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      - name: Trigger Render redeploy
+        if: success()
+        env:
+          # Optional. Render dashboard -> your service -> Settings ->
+          # Deploy Hook -> copy the URL, add it as a repo secret named
+          # RENDER_DEPLOY_HOOK_URL. Without this secret set, this step is
+          # skipped (Render will still pick up the change on its own next
+          # deploy, just not automatically triggered).
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$DEPLOY_HOOK" ]; then
+            curl -fsS -X POST "$DEPLOY_HOOK"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not set — skipping auto-redeploy. Render will use this data on its next deploy anyway."
+          fi

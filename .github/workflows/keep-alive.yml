@@ -1,0 +1,24 @@
+name: Keep Render service awake
+
+# Render's free tier spins the service down after ~15 min of no traffic,
+# which then costs the *next* real request a slow cold start. This job
+# just hits the health-check endpoint every 10 minutes so the service
+# never goes idle long enough to sleep.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:          # allows a manual "Run workflow" trigger too
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health check endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+            https://mandi-price-forecast-1.onrender.com/)
+          echo "Health check responded with HTTP $STATUS"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "::warning::Keep-alive ping did not get a 200 (got $STATUS) — service may be cold-starting or down."
+          fi
