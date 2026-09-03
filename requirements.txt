@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pandas
+requests
+numpy
+matplotlib
+scikit-learn
+statsmodels
+jupyter
+google-genai
+gtts
+rapidfuzz
+twilio
+python-multipart
+lightgbm
+joblib
