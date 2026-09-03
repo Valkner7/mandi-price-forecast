@@ -12,3 +12,4 @@ gtts
 rapidfuzz
 twilio
 python-multipart
+tensorflow
