@@ -2424,23 +2424,51 @@ async def whatsapp_webhook(request: Request):
     return _twiml_response(build_reply_text(body, sender=sender))
 
 
+def _latest_price_for(crop: str, mandi: str):
+    """Best-effort latest reported price for crop+mandi, or None if that
+    pair has no rows. Doesn't require the 30-point minimum load_series()
+    enforces for forecasting — a single most-recent price is still useful
+    to show on the nearby-mandis map even for a thin series."""
+    df = _load_full_dataframe()
+    mask = (
+        df["crop"].astype(str).str.casefold().eq(crop.casefold())
+        & df["mandi"].astype(str).str.casefold().eq(mandi.casefold())
+    )
+    rows = df.loc[mask, ["date", "price"]].dropna().sort_values("date")
+    if rows.empty:
+        return None
+    last = rows.iloc[-1]
+    return {"date": last["date"].date().isoformat(), "price": round(float(last["price"]), 2)}
+
+
 @app.get("/api/nearby-mandis")
-async def get_nearby_mandis(lat: float, lon: float, limit: int = 10):
+async def get_nearby_mandis(
+    lat: float,
+    lon: float,
+    limit: int = 10,
+    crop: str | None = Query(
+        None, description="Optional crop name, e.g. Potato — if given, each mandi includes its latest reported price for this crop.",
+    ),
+):
     nearby_list = []
     for mandi_name, info in PUNJAB_MANDI_COORDINATES.items():
         dist_km = calculate_haversine_distance(lat, lon, info["lat"], info["lon"])
-        nearby_list.append({
+        entry = {
             "mandi": mandi_name,
             "district": info["district"],
             "latitude": info["lat"],
             "longitude": info["lon"],
-            "distance_km": dist_km
-        })
+            "distance_km": dist_km,
+        }
+        if crop:
+            entry["latest_price"] = _latest_price_for(crop, mandi_name)
+        nearby_list.append(entry)
 
     nearby_list.sort(key=lambda x: x["distance_km"])
 
     return {
         "user_location": {"lat": lat, "lon": lon},
+        "unit": "INR per quintal" if crop else None,
         "total_mandis": len(nearby_list),
         "mandis": nearby_list[:limit]
     }

@@ -1,0 +1,77 @@
+/* Nearby Mandis page — extends style.css's dark theme with map + list
+   specific styles. Loaded after style.css so :root vars are available. */
+
+.locate-btn {
+  background: var(--mustard);
+  color: #14160f;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.locate-btn:hover { opacity: 0.88; }
+.locate-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.map-panel { padding: 0; overflow: hidden; }
+.map-panel .panel-header { padding: 20px 22px 12px; margin-bottom: 0; }
+
+#map {
+  height: 420px;
+  width: 100%;
+  background: var(--panel-raised);
+}
+
+/* Leaflet's default popup/control chrome is light-themed; keep it legible
+   against this page's dark background without fighting Leaflet's own CSS
+   too hard. */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--panel-raised);
+  color: var(--text);
+}
+.leaflet-popup-content { font-family: var(--font-body); font-size: 13px; margin: 10px 12px; }
+.leaflet-popup-content b { font-family: var(--font-display); font-weight: 600; }
+
+.mandi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.mandi-row:last-child { border-bottom: none; }
+
+.mandi-row-rank {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.mandi-row-main { flex: 1; min-width: 0; }
+.mandi-row-name { font-size: 14px; font-weight: 500; }
+.mandi-row-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+
+.mandi-row-distance {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mandi-row-price {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+.mandi-row-price .unit { display: block; font-family: var(--font-body); font-size: 10.5px; color: var(--text-faint); font-weight: 400; }

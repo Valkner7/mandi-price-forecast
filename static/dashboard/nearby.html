@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nearby Mandis — Mandi Setu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="nearby.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">Mandi Setu</span>
+        <span class="brand-sub">Price forecast desk</span>
+      </div>
+      <nav>
+        <ul class="nav-list">
+          <li class="nav-item" id="nav-dashboard">Dashboard</li>
+          <li class="nav-item" id="nav-voice">Voice advisory</li>
+          <li class="nav-item" id="nav-trends">Trend board</li>
+          <li class="nav-item active">Nearby mandis</li>
+          <li class="nav-item" id="nav-docs">API docs</li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        Uses your browser's GPS location and this app's own
+        <code>/api/nearby-mandis</code> endpoint. Your location is sent to
+        this server only to compute distance — it isn't stored.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Mandis near you</h1>
+          <div class="page-meta" id="status-label">Location not shared yet</div>
+        </div>
+        <div class="selector-row">
+          <select class="selector" id="crop-select"></select>
+          <button class="locate-btn" id="locate-btn">Use my location</button>
+        </div>
+      </div>
+
+      <div id="status-banner" class="status-banner" hidden></div>
+
+      <div class="panel map-panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Map</div>
+            <div class="panel-sub" id="map-sub">All 22 tracked mandis — tap "Use my location" to centre on you and sort by distance</div>
+          </div>
+        </div>
+        <div id="map"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Closest markets</div>
+            <div class="panel-sub" id="list-sub">Share your location to see distances and today's price</div>
+          </div>
+        </div>
+        <div id="nearby-list"></div>
+        <div id="list-empty" class="empty-state" hidden>No mandi data to show yet.</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="nearby.js"></script>
+</body>
+</html>
