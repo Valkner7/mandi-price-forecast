@@ -2425,7 +2425,9 @@ async def whatsapp_webhook(request: Request):
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
-    @app.get("/api/nearby-mandis")
+
+
+@app.get("/api/nearby-mandis")
 async def get_nearby_mandis(lat: float, lon: float, limit: int = 10):
     nearby_list = []
     for mandi_name, info in PUNJAB_MANDI_COORDINATES.items():
