@@ -1,3 +1,4 @@
+from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 from pathlib import Path
 import os
 import time
@@ -2414,3 +2415,23 @@ async def whatsapp_webhook(request: Request):
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
+    @app.get("/api/nearby-mandis")
+async def get_nearby_mandis(lat: float, lon: float, limit: int = 10):
+    nearby_list = []
+    for mandi_name, info in PUNJAB_MANDI_COORDINATES.items():
+        dist_km = calculate_haversine_distance(lat, lon, info["lat"], info["lon"])
+        nearby_list.append({
+            "mandi": mandi_name,
+            "district": info["district"],
+            "latitude": info["lat"],
+            "longitude": info["lon"],
+            "distance_km": dist_km
+        })
+
+    nearby_list.sort(key=lambda x: x["distance_km"])
+
+    return {
+        "user_location": {"lat": lat, "lon": lon},
+        "total_mandis": len(nearby_list),
+        "mandis": nearby_list[:limit]
+    }
