@@ -1,149 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mandi Setu — Price Forecast Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandi Price Forecast & Location Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard/style.css">
+    
+    <!-- Leaflet CSS for Map Rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-mark">Mandi Setu</span>
-        <span class="brand-sub">Price forecast desk</span>
-      </div>
-      <nav>
-        <ul class="nav-list">
-          <li class="nav-item active">Dashboard</li>
-          <li class="nav-item" id="nav-voice">Voice advisory</li>
-          <li class="nav-item" id="nav-trends">Trend board</li>
-          <li class="nav-item" id="nav-docs">API docs</li>
-        </ul>
-      </nav>
-      <div class="sidebar-footer">
-        Live data from this app's own <code>/predict</code>, <code>/history</code>
-        and <code>/trends</code> endpoints. Reliable forecasts currently cover
-        <strong id="reliable-crops-note">Potato, Onion, Tomato</strong> — other
-        crops may return "not enough history."
-      </div>
-    </aside>
+    <header class="navbar">
+        <h1>🌾 Mandi Price Forecast & GPS Dashboard</h1>
+    </header>
 
-    <main class="main">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Price forecast dashboard</h1>
-          <div class="page-meta" id="today-label"></div>
-        </div>
-        <div class="selector-row">
-          <select class="selector" id="crop-select"></select>
-          <select class="selector" id="mandi-select"></select>
-        </div>
-      </div>
-
-      <div id="hero-status" class="status-banner" hidden></div>
-
-      <div class="hero" id="hero" hidden>
-        <div class="hero-cell">
-          <div class="hero-label" id="hero-price-label">Current price</div>
-          <div class="hero-value" id="hero-price">
-            <span class="unit" id="hero-unit"></span>
-          </div>
-          <div class="hero-note" id="hero-date"></div>
-        </div>
-        <div class="hero-cell">
-          <div class="hero-label">Trend</div>
-          <div class="hero-value" id="hero-trend"></div>
-          <div class="hero-note" id="hero-model"></div>
-        </div>
-        <div class="hero-cell">
-          <div class="hero-label">7-day forecast</div>
-          <div class="hero-value" id="hero-forecast"></div>
-          <div class="hero-delta" id="hero-forecast-delta"></div>
-          <div class="hero-note" id="hero-confidence"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">Price trend &amp; forecast</div>
-            <div class="panel-sub" id="chart-sub">Recent actual price, joined to the 7-day forecast</div>
-          </div>
-          <div class="legend-row">
-            <span class="legend-dot"><span class="legend-swatch" style="background:#a6a290"></span>Actual</span>
-            <span class="legend-dot"><span class="legend-swatch" style="background:#d4a017"></span>Forecast</span>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="price-chart" height="90"></canvas>
-        </div>
-        <div id="chart-empty" class="empty-state" hidden></div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Top gainers</div>
-              <div class="panel-sub">Largest projected 7-day increases</div>
+    <main class="container">
+        <!-- GPS Location & Map Section -->
+        <section class="card gps-section">
+            <h2>📍 Nearby Punjab Mandis</h2>
+            <p>Locate your nearest mandis and check straight-line distance using live GPS.</p>
+            
+            <div class="gps-controls">
+                <button id="detect-location-btn" class="btn-primary">📡 Find My Nearby Mandis</button>
+                <span id="location-status">Click to detect your location</span>
             </div>
-          </div>
-          <div id="gainers-list"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Top losers</div>
-              <div class="panel-sub">Largest projected 7-day declines</div>
+
+            <div id="map" class="map-container" style="height: 400px; width: 100%;"></div>
+
+            <div class="nearby-results">
+                <h3>Nearest Mandis List</h3>
+                <ul id="nearby-mandis-list">
+                    <li>No location detected yet. Click "Find My Nearby Mandis".</li>
+                </ul>
             </div>
-          </div>
-          <div id="losers-list"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">Alerts</div>
-            <div class="panel-sub">Biggest projected moves across tracked markets</div>
-          </div>
-        </div>
-        <div id="alerts-list"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title" id="table-title">Across mandis</div>
-            <div class="panel-sub">Today's price and forecast direction by market</div>
-          </div>
-        </div>
-        <div id="table-wrap">
-          <table class="price-table" id="price-table">
-            <thead>
-              <tr>
-                <th>Mandi</th>
-                <th>Price</th>
-                <th>7-day forecast</th>
-                <th>Change</th>
-              </tr>
-            </thead>
-            <tbody id="price-table-body"></tbody>
-          </table>
-        </div>
-        <div id="table-empty" class="empty-state" hidden></div>
-      </div>
+        </section>
     </main>
-  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="app.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/dashboard/app.js"></script>
 </body>
 </html>
