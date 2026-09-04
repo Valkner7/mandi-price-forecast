@@ -63,6 +63,18 @@ async function fetchNearbyMandis(lat, lon) {
 
 // Update Map Markers & List UI
 function updateMapAndList(userLoc, mandis) {
+    // Populate the list regardless of whether the map loaded
+    const listContainer = document.getElementById('nearby-mandis-list');
+    if (listContainer) {
+        listContainer.innerHTML = '';
+        mandis.forEach((mandi, index) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `<strong>#${index + 1} ${mandi.mandi}</strong> (${mandi.district} Dist.) — <span>${mandi.distance_km} km away</span>`;
+            listContainer.appendChild(listItem);
+        });
+    }
+
+    // Map is optional — skip marker drawing if it failed to initialize
     if (!map || !mandiMarkersGroup) return;
 
     // Clear old markers
@@ -86,27 +98,21 @@ function updateMapAndList(userLoc, mandis) {
 
     map.setView([userLoc.lat, userLoc.lon], 9);
 
-    const listContainer = document.getElementById('nearby-mandis-list');
-    if (listContainer) listContainer.innerHTML = '';
-
-    // Add Mandi Markers & Populate List
-    mandis.forEach((mandi, index) => {
+    // Add Mandi Markers
+    mandis.forEach((mandi) => {
         const marker = L.marker([mandi.latitude, mandi.longitude])
             .bindPopup(`<b>${mandi.mandi} Mandi</b><br>District: ${mandi.district}<br>Distance: ${mandi.distance_km} km`);
-        
         mandiMarkersGroup.addLayer(marker);
-
-        if (listContainer) {
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `<strong>#${index + 1} ${mandi.mandi}</strong> (${mandi.district} Dist.) — <span>${mandi.distance_km} km away</span>`;
-            listContainer.appendChild(listItem);
-        }
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initMap();
-    
+    try {
+        initMap();
+    } catch (err) {
+        console.error("Map failed to initialize:", err);
+    }
+
     const detectBtn = document.getElementById('detect-location-btn');
     if (detectBtn) {
         detectBtn.addEventListener('click', getUserLocation);
