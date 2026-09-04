@@ -12,19 +12,6 @@ from fastapi.responses import FileResponse
 
 from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 
-# Initialize FastAPI App
-app = FastAPI()
-
-# Mount Static Folder (for Leaflet CSS, JS, and Images)
-_BASE_DIR = Path(__file__).resolve().parent
-app.mount("/static", StaticFiles(directory=str(_BASE_DIR / "static")), name="static")
-
-# Root Route to serve dashboard UI
-@app.get("/")
-async def read_index():
-    index_path = Path(__file__).resolve().parent / "static" / "dashboard" / "index.html"
-    return FileResponse(str(index_path))
-
 from datetime import datetime, timezone
 import concurrent.futures
 import numpy as np
@@ -51,6 +38,15 @@ FORECAST_MODEL_PATH = BASE_DIR / "models" / "lgbm_price_model.joblib"
 FORECAST_MODEL_META_PATH = BASE_DIR / "models" / "lgbm_price_model_meta.json"
 
 app = FastAPI(title="Mandi Price Forecast API", version="1.0.0")
+
+# Mount Static Folder (for Leaflet CSS, JS, and Images)
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# Root Route to serve dashboard UI
+@app.get("/")
+async def read_index():
+    index_path = BASE_DIR / "static" / "dashboard" / "index.html"
+    return FileResponse(str(index_path))
 
 # The dashboard (static/dashboard) is served from the same origin as the
 # API, so CORS is only needed if you ever point a separately-hosted
@@ -2448,3 +2444,4 @@ async def get_nearby_mandis(lat: float, lon: float, limit: int = 10):
         "total_mandis": len(nearby_list),
         "mandis": nearby_list[:limit]
     }
+
