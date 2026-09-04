@@ -1,11 +1,29 @@
-from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
-from pathlib import Path
 import os
 import time
 import json
 import re
 import threading
 import uuid
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
+
+# Initialize FastAPI App
+app = FastAPI()
+
+# Mount Static Folder (for Leaflet CSS, JS, and Images)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Root Route to serve dashboard UI
+@app.get("/")
+async def read_index():
+    index_path = os.path.join("static", "dashboard", "index.html")
+    return FileResponse(index_path)
+
 from datetime import datetime, timezone
 import concurrent.futures
 import numpy as np
@@ -465,14 +483,6 @@ def detect_price_anomalies(series: pd.Series, z_threshold: float = 2.5) -> list[
                 "direction": "spike" if z > 0 else "drop",
             })
     return anomalies
-
-
-@app.get("/")
-def hello_world():
-    return {"message": "Hello World - Mandi Price Forecast API is running"}
-
-
-
 
 @app.get("/sw.js")
 def service_worker():
