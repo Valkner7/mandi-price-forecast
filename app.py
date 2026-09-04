@@ -16,13 +16,14 @@ from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 app = FastAPI()
 
 # Mount Static Folder (for Leaflet CSS, JS, and Images)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+_BASE_DIR = Path(__file__).resolve().parent
+app.mount("/static", StaticFiles(directory=str(_BASE_DIR / "static")), name="static")
 
 # Root Route to serve dashboard UI
 @app.get("/")
 async def read_index():
-    index_path = os.path.join("static", "dashboard", "index.html")
-    return FileResponse(index_path)
+    index_path = Path(__file__).resolve().parent / "static" / "dashboard" / "index.html"
+    return FileResponse(str(index_path))
 
 from datetime import datetime, timezone
 import concurrent.futures
