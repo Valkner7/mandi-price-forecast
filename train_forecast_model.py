@@ -133,9 +133,16 @@ def self_check_serving_matches_training(features: pd.DataFrame, panel: pd.DataFr
     crop_categories = sorted(panel["crop"].unique().tolist())
     mandi_categories = sorted(panel["mandi"].unique().tolist())
 
-    # Only sample rows with a full feature set (no NaNs from insufficient
-    # history) so the comparison is meaningful.
-    checkable = features.dropna(subset=feature_cols).reset_index(drop=True)
+    # Eligibility (which rows to sample) is judged on the PRICE-derived
+    # feature columns only, not the arrival_* columns. Whenever the
+    # underlying data has no arrival history, arrival_* is 100% NaN across
+    # every row — requiring it non-NaN here would zero out every row and
+    # crash training with "no fully-populated feature rows to sample from."
+    # The comparison below still checks the FULL feature set (arrival
+    # included) for each sampled row, so a NaN-vs-NaN match on arrival_*
+    # genuinely exercises that code path rather than silently skipping it.
+    price_feature_cols = [c for c in feature_cols if not c.startswith("arrival_")]
+    checkable = features.dropna(subset=price_feature_cols).reset_index(drop=True)
     if len(checkable) == 0:
         raise AssertionError("Self-check found no fully-populated feature rows to sample from.")
 
