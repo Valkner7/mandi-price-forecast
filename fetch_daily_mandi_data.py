@@ -67,6 +67,7 @@ import re
 import sys
 import time
 
+import numpy as np
 import pandas as pd
 import requests
 
@@ -159,7 +160,7 @@ def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
         time.sleep(0.3)  # be polite to a free public government API
 
     if not all_frames:
-        return pd.DataFrame(columns=["date", "crop", "mandi", "price"])
+        return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty"])
 
     raw = pd.concat(all_frames, ignore_index=True)
 
@@ -184,6 +185,17 @@ def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
                 pick_column(raw, "Modal_x0020_Price", "Modal_Price", "modal_price"),
                 errors="coerce",
             ),
+            # This resource (9ef84268-d588-465a-a308-a864a43d0070) does not
+            # publish an arrival-volume field at all — checked directly
+            # against the resource's own field list, not assumed. Writing
+            # an explicit NaN column here (rather than omitting arrival_qty
+            # entirely) keeps this script's output schema-consistent with
+            # update_mandi_prices.py's (which DOES have real arrival data
+            # from the manual Agmarknet export path), so clean_mandi_prices.csv
+            # always has a 5th arrival_qty column once both sources are
+            # concatenated — it just isn't populated by this path, and this
+            # script doesn't fabricate a mapping to pretend otherwise.
+            "arrival_qty": np.nan,
         }
     )
 
@@ -240,7 +252,7 @@ def main():
         frames.append(day_df)
 
     new_data = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
-        columns=["date", "crop", "mandi", "price"]
+        columns=["date", "crop", "mandi", "price", "arrival_qty"]
     )
     print()
 
