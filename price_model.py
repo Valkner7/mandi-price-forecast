@@ -43,30 +43,55 @@ def build_panel(df: pd.DataFrame) -> pd.DataFrame:
     load_series() gap-handling (same resample("D").last().ffill() logic)
     so training sees the same kind of series serving will see.
 
-    Expects df with columns: date, crop, mandi, price.
-    Returns a long-format panel: date, crop, mandi, price (daily, ffilled).
+    Expects df with columns: date, crop, mandi, price, and optionally
+    arrival_qty. If arrival_qty is absent, the returned panel still gets
+    an arrival_qty column (all-NaN) so downstream code never has to
+    special-case its absence.
+
+    Price is a "level": forward-filling a gap day with the last known
+    price is a reasonable assumption. Arrival is a "flow" (volume traded
+    on that specific day): forward-filling would fabricate a repeat
+    trading day that didn't happen, so gap days are left NaN instead.
+    On days with multiple records, arrival is summed (total volume that
+    day), not averaged like price.
+
+    Returns a long-format panel: date, crop, mandi, price, arrival_qty
+    (daily; price ffilled, arrival_qty not).
     """
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"])
     df["crop"] = df["crop"].astype(str).str.strip()
     df["mandi"] = df["mandi"].astype(str).str.strip()
+    has_arrival = "arrival_qty" in df.columns
+    if has_arrival:
+        df["arrival_qty"] = pd.to_numeric(df["arrival_qty"], errors="coerce")
     df = df.dropna(subset=["price"])
 
     panels = []
     for (crop, mandi), group in df.groupby(["crop", "mandi"]):
         # Multiple records on the same date -> mean, same as load_series().
-        series = group.groupby("date")["price"].mean().sort_index()
-        if len(series) < MIN_HISTORY_FOR_FEATURES:
+        price_series = group.groupby("date")["price"].mean().sort_index()
+        if len(price_series) < MIN_HISTORY_FOR_FEATURES:
             continue
-        series = series.resample("D").last().ffill()
-        panel = series.reset_index()
+        price_series = price_series.resample("D").last().ffill()
+
+        if has_arrival:
+            # sum(min_count=1): a day with only NaN arrival values stays
+            # NaN rather than becoming a fabricated 0.
+            arrival_series = group.groupby("date")["arrival_qty"].sum(min_count=1).sort_index()
+            arrival_series = arrival_series.reindex(price_series.index)  # NOT ffilled
+        else:
+            arrival_series = pd.Series(np.nan, index=price_series.index)
+
+        panel = price_series.reset_index()
         panel.columns = ["date", "price"]
         panel["crop"] = crop
         panel["mandi"] = mandi
+        panel["arrival_qty"] = arrival_series.values
         panels.append(panel)
 
     if not panels:
-        return pd.DataFrame(columns=["date", "crop", "mandi", "price"])
+        return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty"])
 
     return pd.concat(panels, ignore_index=True)
 
@@ -85,10 +110,34 @@ def _calendar_features(dates: pd.Series) -> pd.DataFrame:
     })
 
 
+def _add_lag_rolling_features(feat: pd.DataFrame, series: pd.Series, prefix: str) -> None:
+    """Add lag_{k} and roll_{stat}_{window} columns for one numeric series
+    onto `feat` in place, named f"{prefix}lag_{k}" / f"{prefix}roll_{stat}_{window}".
+    Shared by price and arrival_qty so the two feature families can't
+    drift apart from each other (e.g. one getting a rolling-window fix the
+    other doesn't)."""
+    for lag in LAGS:
+        feat[f"{prefix}lag_{lag}"] = series.shift(lag)
+
+    for window in ROLLING_WINDOWS:
+        shifted = series.shift(1)  # never include the current day itself
+        feat[f"{prefix}roll_mean_{window}"] = shifted.rolling(window).mean()
+        feat[f"{prefix}roll_std_{window}"] = shifted.rolling(window).std()
+        feat[f"{prefix}roll_min_{window}"] = shifted.rolling(window).min()
+        feat[f"{prefix}roll_max_{window}"] = shifted.rolling(window).max()
+
+
 def add_features(panel: pd.DataFrame) -> pd.DataFrame:
     """Add lag/rolling/calendar features plus targets to a daily panel
     built by build_panel(). One row per (crop, mandi, date); features are
     computed independently per crop-mandi group (no cross-series leakage).
+
+    Adds the same lag/rolling feature family for arrival_qty as for price
+    (arrival_lag_{k}, arrival_roll_{stat}_{window}). If the panel's
+    arrival_qty column is all-NaN (true whenever the underlying data has
+    no arrival history), these columns are simply all-NaN too — harmless,
+    since LightGBM treats NaN as "missing" and never splits on a feature
+    that's always missing.
 
     Targets:
       - target_next_price:      raw price at t+1 (kept for reference/debug)
@@ -104,6 +153,7 @@ def add_features(panel: pd.DataFrame) -> pd.DataFrame:
     for (crop, mandi), group in panel.groupby(["crop", "mandi"], sort=False):
         group = group.sort_values("date").reset_index(drop=True)
         price = group["price"]
+        arrival = group["arrival_qty"] if "arrival_qty" in group.columns else pd.Series(np.nan, index=group.index)
 
         feat = pd.DataFrame(index=group.index)
         feat["date"] = group["date"]
@@ -111,15 +161,8 @@ def add_features(panel: pd.DataFrame) -> pd.DataFrame:
         feat["mandi"] = mandi
         feat["price"] = price
 
-        for lag in LAGS:
-            feat[f"lag_{lag}"] = price.shift(lag)
-
-        for window in ROLLING_WINDOWS:
-            shifted = price.shift(1)  # never include the current day itself
-            feat[f"roll_mean_{window}"] = shifted.rolling(window).mean()
-            feat[f"roll_std_{window}"] = shifted.rolling(window).std()
-            feat[f"roll_min_{window}"] = shifted.rolling(window).min()
-            feat[f"roll_max_{window}"] = shifted.rolling(window).max()
+        _add_lag_rolling_features(feat, price, prefix="")
+        _add_lag_rolling_features(feat, arrival, prefix="arrival_")
 
         cal = _calendar_features(group["date"])
         feat = pd.concat([feat, cal], axis=1)
@@ -150,8 +193,57 @@ def get_feature_columns() -> list[str]:
             f"roll_min_{window}",
             f"roll_max_{window}",
         ]
+    cols += [f"arrival_lag_{lag}" for lag in LAGS]
+    for window in ROLLING_WINDOWS:
+        cols += [
+            f"arrival_roll_mean_{window}",
+            f"arrival_roll_std_{window}",
+            f"arrival_roll_min_{window}",
+            f"arrival_roll_max_{window}",
+        ]
     cols += ["day_of_week", "day_of_month", "month", "days_since_start"]
     return cols
+
+
+def _serving_lag_rolling_row(history: pd.Series, prefix: str) -> dict:
+    """Compute lag_{k}/roll_{stat}_{window} values for ONE series at
+    serving time (history's LAST element is "today"). Shared by price and
+    arrival_qty so serving can't drift between the two the way training's
+    _add_lag_rolling_features() can't. See _build_serving_row's docstring
+    for the off-by-one reasoning this mirrors.
+
+    Rolling stats use a strict NaN check (window_slice.isna().any()) rather
+    than pandas Series.mean()/.std()'s default skipna=True. Training's
+    shifted.rolling(window).mean() uses pandas' default min_periods=window,
+    which returns NaN if ANY value in the window is NaN. Series.mean()
+    defaults to skipna=True and would silently average over only the
+    non-NaN values instead — invisible for price (no internal NaNs) but a
+    real train/serve skew for arrival_qty, which has NaN gap days by
+    design (see build_panel's docstring). Matching training's strict
+    behavior here is what keeps the self-check passing once arrival
+    history has real gaps.
+    """
+    row = {}
+    for lag in LAGS:
+        row[f"{prefix}lag_{lag}"] = (
+            float(history.iloc[-(lag + 1)]) if len(history) >= lag + 1 else np.nan
+        )
+
+    history_before_today = history.iloc[:-1]
+    for window in ROLLING_WINDOWS:
+        window_slice = history_before_today.iloc[-window:]
+        if len(window_slice) >= window and not window_slice.isna().any():
+            row[f"{prefix}roll_mean_{window}"] = float(window_slice.mean())
+            row[f"{prefix}roll_std_{window}"] = float(window_slice.std())
+            row[f"{prefix}roll_min_{window}"] = float(window_slice.min())
+            row[f"{prefix}roll_max_{window}"] = float(window_slice.max())
+        else:
+            row[f"{prefix}roll_mean_{window}"] = np.nan
+            row[f"{prefix}roll_std_{window}"] = np.nan
+            row[f"{prefix}roll_min_{window}"] = np.nan
+            row[f"{prefix}roll_max_{window}"] = np.nan
+
+    return row
 
 
 def _build_serving_row(
@@ -162,6 +254,7 @@ def _build_serving_row(
     crop_categories: list[str],
     mandi_categories: list[str],
     series_start_date: pd.Timestamp,
+    arrival_history: np.ndarray | pd.Series | None = None,
 ) -> pd.DataFrame:
     """Build ONE feature row at serving time from a plain price history
     array (most-recent price last) and its matching dates. Must stay
@@ -176,40 +269,26 @@ def _build_serving_row(
     §5.1. Calendar features must describe the day whose lag/rolling
     features we're building, i.e. "today", matching add_features()'s
     per-row semantics exactly.
+
+    `arrival_history` is optional and defaults to None, in which case it's
+    treated as all-NaN (same length as price_history) — every existing
+    caller that doesn't yet have arrival data needs zero changes.
     """
     price_history = pd.Series(np.asarray(price_history, dtype=float))
     current_date = pd.Timestamp(dates[-1])
 
-    # price_history's LAST element is "today" (the current known day, i.e.
-    # the same row add_features() would be building this feature set for).
-    # lag_k in add_features() is price.shift(k), so for "today"'s row it's
-    # the price k days BEFORE today — price_history.iloc[-(k+1)], not
-    # iloc[-k] (which would be today itself for k=1). Getting this backward
-    # was the original off-by-one bug caught by the self-check (handoff
-    # notes §5.1's sibling bug, same root cause in the lag/rolling logic).
-    row = {}
-    for lag in LAGS:
-        row[f"lag_{lag}"] = (
-            float(price_history.iloc[-(lag + 1)]) if len(price_history) >= lag + 1 else np.nan
-        )
+    if arrival_history is None:
+        arrival_history = pd.Series(np.nan, index=range(len(price_history)))
+    else:
+        arrival_history = pd.Series(np.asarray(arrival_history, dtype=float))
+        if len(arrival_history) != len(price_history):
+            raise ValueError(
+                f"arrival_history length ({len(arrival_history)}) must match "
+                f"price_history length ({len(price_history)})"
+            )
 
-    for window in ROLLING_WINDOWS:
-        # add_features() computes rolling stats on shifted = price.shift(1),
-        # so "today"'s rolling window covers the `window` days strictly
-        # BEFORE today, excluding today itself. Slice off the last element
-        # (today) before taking the trailing window.
-        history_before_today = price_history.iloc[:-1]
-        window_slice = history_before_today.iloc[-window:]
-        if len(window_slice) >= window:
-            row[f"roll_mean_{window}"] = float(window_slice.mean())
-            row[f"roll_std_{window}"] = float(window_slice.std())
-            row[f"roll_min_{window}"] = float(window_slice.min())
-            row[f"roll_max_{window}"] = float(window_slice.max())
-        else:
-            row[f"roll_mean_{window}"] = np.nan
-            row[f"roll_std_{window}"] = np.nan
-            row[f"roll_min_{window}"] = np.nan
-            row[f"roll_max_{window}"] = np.nan
+    row = _serving_lag_rolling_row(price_history, prefix="")
+    row.update(_serving_lag_rolling_row(arrival_history, prefix="arrival_"))
 
     row["day_of_week"] = int(current_date.dayofweek)
     row["day_of_month"] = int(current_date.day)
@@ -235,6 +314,7 @@ def forecast_recursive(
     crop: str,
     mandi: str,
     horizon: int = 7,
+    arrival_series: pd.Series | None = None,
 ) -> list[float]:
     """Recursive multi-day forecast: predict day+1's pct change, apply it
     to get day+1's price, append it to the working history, repeat for
@@ -243,6 +323,15 @@ def forecast_recursive(
 
     price_series: a pandas Series of daily prices, DatetimeIndex, most
     recent last (same shape as app.py's load_series() output).
+
+    arrival_series: optional, same shape/index convention as price_series.
+    Honest limitation: a real arrival figure only ever informs step 1 of
+    the recursive forecast. There's no model here for what arrival will be
+    on the synthetic future days being predicted (that would be a second,
+    separate forecasting model — out of scope), so from step 2 onward the
+    working arrival history is padded with NaN, same as if no arrival data
+    existed at all. If arrival_series is None entirely, every step behaves
+    exactly as before this feature was added.
     """
     crop = crop.strip()
     mandi = mandi.strip()
@@ -252,6 +341,7 @@ def forecast_recursive(
 
     history = list(price_series.values)
     dates = list(price_series.index)
+    arrival_history = list(arrival_series.values) if arrival_series is not None else None
     forecasts = []
 
     for _ in range(horizon):
@@ -263,6 +353,7 @@ def forecast_recursive(
             crop_categories=crop_categories,
             mandi_categories=mandi_categories,
             series_start_date=series_start_date,
+            arrival_history=np.array(arrival_history) if arrival_history is not None else None,
         )
         pct_change = float(model.predict(row)[0])
         next_price = history[-1] * (1.0 + pct_change)
@@ -271,6 +362,9 @@ def forecast_recursive(
         forecasts.append(next_price)
         history.append(next_price)
         dates.append(next_date)
+        if arrival_history is not None:
+            # No model for future arrival: pad with NaN from step 2 onward.
+            arrival_history.append(np.nan)
 
     return forecasts
 
