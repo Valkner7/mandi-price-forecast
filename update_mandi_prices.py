@@ -92,6 +92,14 @@ def load_raw_export(path: Path) -> pd.DataFrame:
                 pick_column(raw, "Modal Price").astype(str).str.replace(",", "", regex=False),
                 errors="coerce",
             ),
+            # Same comma-stripping treatment as Modal Price. A missing or
+            # unparseable arrival figure does NOT drop the row (unlike
+            # date/crop/mandi/price below) — a row with a valid price but
+            # no arrival value is still a perfectly usable price row.
+            "arrival_qty": pd.to_numeric(
+                pick_column(raw, "Arrival Quantity").astype(str).str.replace(",", "", regex=False),
+                errors="coerce",
+            ),
         }
     )
 
@@ -157,7 +165,7 @@ def main():
         frames.append(df)
 
     new_data = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
-        columns=["date", "crop", "mandi", "price"]
+        columns=["date", "crop", "mandi", "price", "arrival_qty"]
     )
     print()
 
