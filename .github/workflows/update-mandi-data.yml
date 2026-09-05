@@ -39,7 +39,11 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install pandas requests lightgbm joblib
+        # numpy is listed explicitly even though pandas currently pulls it
+        # in transitively — train_forecast_model.py and price_model.py both
+        # import it directly, so it shouldn't depend on pandas' dependency
+        # graph staying the same.
+        run: pip install pandas numpy requests lightgbm joblib
 
       - name: Fetch latest Punjab mandi prices
         env:
