@@ -159,6 +159,7 @@ def self_check_serving_matches_training(features: pd.DataFrame, panel: pd.DataFr
             (panel["crop"] == crop) & (panel["mandi"] == mandi) & (panel["date"] <= as_of_date)
         ].sort_values("date")
         price_history = series["price"].values
+        arrival_history = series["arrival_qty"].values
         dates = pd.DatetimeIndex(series["date"].values)
         series_start = panel[(panel["crop"] == crop) & (panel["mandi"] == mandi)]["date"].min()
 
@@ -170,6 +171,7 @@ def self_check_serving_matches_training(features: pd.DataFrame, panel: pd.DataFr
             crop_categories=crop_categories,
             mandi_categories=mandi_categories,
             series_start_date=series_start,
+            arrival_history=arrival_history,
         ).iloc[0]
 
         for col in feature_cols:
