@@ -4,6 +4,7 @@ import json
 import re
 import threading
 import uuid
+import hmac
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -2273,7 +2274,7 @@ def check_alerts_endpoint(secret: str = Query(None, description="Must match ALER
     demo responsive. Protect it with ALERTS_CRON_SECRET once deployed —
     it sends real outbound messages and shouldn't be publicly triggerable.
     """
-    if ALERTS_CRON_SECRET and secret != ALERTS_CRON_SECRET:
+    if ALERTS_CRON_SECRET and not hmac.compare_digest(secret or "", ALERTS_CRON_SECRET):
         raise HTTPException(status_code=403, detail="Missing or incorrect secret.")
     result = check_all_alerts()
     return {"status": "ok", **result}
