@@ -429,6 +429,32 @@ def load_series(crop: str, mandi: str) -> pd.Series:
     return series
 
 
+def load_arrival_series(crop: str, mandi: str, price_index: pd.DatetimeIndex) -> pd.Series:
+    """Mirrors price_model.build_panel's arrival handling: summed per day
+    (not averaged, since arrival is a volume), reindexed onto the same
+    daily index as the price series, and NOT forward-filled (a gap day
+    with no reported arrival stays NaN rather than fabricating a repeat
+    trading day). Returns an all-NaN series if this crop/mandi has no
+    arrival_qty column or no arrival data at all, so callers never need
+    to special-case its absence — matches build_panel()'s contract.
+    """
+    df = _load_full_dataframe()
+    if "arrival_qty" not in df.columns:
+        return pd.Series(np.nan, index=price_index)
+
+    crop = crop.strip()
+    mandi = mandi.strip()
+    mask = (
+        df["crop"].astype(str).str.casefold().eq(crop.casefold())
+        & df["mandi"].astype(str).str.casefold().eq(mandi.casefold())
+    )
+    data = df.loc[mask, ["date", "arrival_qty"]].copy()
+    data["arrival_qty"] = pd.to_numeric(data["arrival_qty"], errors="coerce")
+
+    arrival = data.groupby("date")["arrival_qty"].sum(min_count=1).sort_index()
+    return arrival.reindex(price_index)
+
+
 def fit_ets(series: pd.Series):
     """Fit a robust Exponential Smoothing model and return fitted model + name."""
     candidates = [
@@ -1213,8 +1239,10 @@ def predict(
 
     if lgbm_model is not None:
         try:
+            arrival_series = load_arrival_series(crop, mandi, series.index)
             forecast_values = pm.forecast_recursive(
-                lgbm_model, lgbm_meta, series, crop, mandi, horizon=horizon
+                lgbm_model, lgbm_meta, series, crop, mandi, horizon=horizon,
+                arrival_series=arrival_series,
             )
             model_name = "LightGBM_global"
         except Exception as error:
