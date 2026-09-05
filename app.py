@@ -75,7 +75,27 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # don't leave the farmer staring at a spinner for 30-60s while the SDK
 # retries in the background. Give up after this many seconds and fall back
 # to a plain, template-built advisory using the same trusted forecast data.
-ADVISORY_TIMEOUT_SECONDS = float(os.getenv("ADVISORY_TIMEOUT_SECONDS", "10"))
+# Kept below 10s (rather than exactly 10) so the plain-text endpoints
+# (/advisory, /compare-advisory, SMS/WhatsApp replies) that use this value
+# directly still return well within a 10s frontend budget once predict(),
+# JSON serialization, and network round-trip are added on top.
+ADVISORY_TIMEOUT_SECONDS = float(os.getenv("ADVISORY_TIMEOUT_SECONDS", "8"))
+
+# /voice-advisory is the one endpoint where Gemini generation is followed by
+# a second slow step (text-to-speech), so it can't just reuse
+# ADVISORY_TIMEOUT_SECONDS for Gemini alone — that would leave TTS free to
+# run unbounded on top, and the two stages could sum to well over 10s. This
+# is the hard ceiling for that *entire* round trip as experienced by the
+# frontend; Gemini and TTS dynamically split it (see voice_advisory()) so
+# together they can't blow past it by more than a small, bounded margin.
+VOICE_ADVISORY_BUDGET_SECONDS = float(os.getenv("VOICE_ADVISORY_BUDGET_SECONDS", "10"))
+
+# Always keep at least this many seconds of the shared budget free for TTS,
+# regardless of how long Gemini is allowed to run — a 2-3 sentence advisory
+# typically synthesizes in well under this, but it needs *some* floor so a
+# near-exhausted budget doesn't get handed to gTTS as an unreasonably short
+# (or zero) timeout.
+MIN_TTS_RESERVE_SECONDS = 2.5
 
 # --- Price alerts (Tier 1 #4) --------------------------------------------
 # Twilio credentials for sending PROACTIVE outbound WhatsApp messages (as
@@ -212,12 +232,18 @@ def generate_advisory(
     forecast_data: dict,
     farmer_question: str,
     language_code: str,
+    timeout_seconds: float | None = None,
 ) -> tuple[str, bool]:
     """Turn trusted forecast data into a short advisory in one chosen language.
 
     Returns (advisory_text, used_fallback). used_fallback is True when Gemini
     was too slow or unavailable and we fell back to a plain, template-built
-    advisory instead of raising and leaving the caller with nothing."""
+    advisory instead of raising and leaving the caller with nothing.
+
+    timeout_seconds overrides the module-level ADVISORY_TIMEOUT_SECONDS for
+    this call. voice_advisory() uses this to hand Gemini a shorter deadline
+    than the default, reserving the rest of its shared request budget for
+    the text-to-speech step that follows (see VOICE_ADVISORY_BUDGET_SECONDS)."""
 
     if language_code not in LANGUAGES:
         raise HTTPException(
@@ -294,13 +320,14 @@ Confidence note: {forecast_data.get("confidence", {}).get("note", FORECAST_CONFI
     # background and its result is simply discarded.
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     future = executor.submit(call_gemini)
+    effective_timeout = ADVISORY_TIMEOUT_SECONDS if timeout_seconds is None else timeout_seconds
     try:
-        response = future.result(timeout=ADVISORY_TIMEOUT_SECONDS)
+        response = future.result(timeout=effective_timeout)
         executor.shutdown(wait=False)
         return response.text.strip(), False
     except concurrent.futures.TimeoutError:
         executor.shutdown(wait=False)
-        print(f"GEMINI TIMEOUT: no response within {ADVISORY_TIMEOUT_SECONDS}s")
+        print(f"GEMINI TIMEOUT: no response within {effective_timeout}s")
         return build_fallback_advisory(forecast_data, language_code), True
     except Exception as error:
         executor.shutdown(wait=False)
@@ -1932,6 +1959,16 @@ def voice_advisory(
         description="en = English, hi = Hindi, pa = Punjabi",
     ),
 ):
+    # This is the one endpoint where Gemini generation is followed by a
+    # second slow, network-bound step (TTS), so the two need to share a
+    # single wall-clock budget (VOICE_ADVISORY_BUDGET_SECONDS) rather than
+    # each independently getting up to ADVISORY_TIMEOUT_SECONDS — that could
+    # otherwise sum to well over the 10s a farmer will wait for a spoken
+    # answer. extract_crop_and_mandi() and predict() are both local,
+    # in-memory operations (no network calls), so they're not separately
+    # budgeted here — they're expected to take milliseconds either way.
+    budget_start = time.monotonic()
+
     extracted = extract_crop_and_mandi(question)
 
     crop = extracted["crop"]
@@ -1951,10 +1988,18 @@ def voice_advisory(
 
     forecast_data = predict(crop=crop, mandi=mandi)
 
+    # Give Gemini whatever's left of the shared budget, minus a guaranteed
+    # reserve for TTS afterward — so however long Gemini actually takes (up
+    # to its timeout), TTS is never left with zero time.
+    elapsed = time.monotonic() - budget_start
+    gemini_timeout = max(
+        2.0, VOICE_ADVISORY_BUDGET_SECONDS - MIN_TTS_RESERVE_SECONDS - elapsed
+    )
     advisory_text, used_fallback = generate_advisory(
         forecast_data=forecast_data,
         farmer_question=question,
         language_code=language,
+        timeout_seconds=gemini_timeout,
     )
     audio = BytesIO()
 
@@ -1968,16 +2013,28 @@ def voice_advisory(
     # observed to fail intermittently (especially right after a slow/timed-out
     # Gemini call) even though isolated calls with the same text succeed.
     # Retry once after a short pause before giving up, so a transient network
-    # blip doesn't take down the whole advisory response.
+    # blip doesn't take down the whole advisory response — but only within
+    # whatever's left of the shared request budget. gTTS's own `timeout=`
+    # bounds each attempt's network call so a hung connection here can't by
+    # itself blow past VOICE_ADVISORY_BUDGET_SECONDS the way an unbounded
+    # call (the previous behavior) could.
     TTS_MAX_ATTEMPTS = 2
-    TTS_RETRY_DELAY_SECONDS = 1.5
     last_tts_error = None
     for attempt in range(1, TTS_MAX_ATTEMPTS + 1):
+        remaining = VOICE_ADVISORY_BUDGET_SECONDS - (time.monotonic() - budget_start)
+        if attempt > 1 and remaining < 1.0:
+            # Not enough budget left for a meaningful retry — stop rather
+            # than spend what little remains on a near-certain repeat
+            # failure and blow the 10s ceiling anyway.
+            print("TTS RETRY SKIPPED: insufficient remaining budget")
+            break
+        tts_timeout = max(1.5, remaining)
         try:
             audio = BytesIO()
             tts = gTTS(
                 text=advisory_text,
                 lang=tts_language,
+                timeout=tts_timeout,
             )
             tts.write_to_fp(audio)
             audio.seek(0)
@@ -1987,7 +2044,10 @@ def voice_advisory(
             last_tts_error = exc
             print(f"TTS ATTEMPT {attempt}/{TTS_MAX_ATTEMPTS} FAILED: {exc}")
             if attempt < TTS_MAX_ATTEMPTS:
-                time.sleep(TTS_RETRY_DELAY_SECONDS)
+                remaining_after = VOICE_ADVISORY_BUDGET_SECONDS - (time.monotonic() - budget_start)
+                # Short, budget-aware pause — never sleeps away time that a
+                # retry attempt would actually need.
+                time.sleep(min(0.5, max(0.0, remaining_after - 1.0)))
 
     if last_tts_error is not None:
         raise HTTPException(
