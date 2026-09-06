@@ -73,7 +73,15 @@ def build_panel(df: pd.DataFrame) -> pd.DataFrame:
         price_series = group.groupby("date")["price"].mean().sort_index()
         if len(price_series) < MIN_HISTORY_FOR_FEATURES:
             continue
-        price_series = price_series.resample("D").last().ffill()
+        # Resample to a daily grid BEFORE ffilling, so we can record which
+        # days are real Agmarknet reports vs fabricated repeats of the last
+        # known price. Mandis here report roughly every other day, not
+        # daily, so most of the "daily" grid is otherwise indistinguishable
+        # from genuine flat pricing — is_observed is what lets downstream
+        # code (train_forecast_model.py) tell the two apart.
+        resampled = price_series.resample("D").last()
+        is_observed = resampled.notna()
+        price_series = resampled.ffill()
 
         if has_arrival:
             # sum(min_count=1): a day with only NaN arrival values stays
@@ -88,10 +96,11 @@ def build_panel(df: pd.DataFrame) -> pd.DataFrame:
         panel["crop"] = crop
         panel["mandi"] = mandi
         panel["arrival_qty"] = arrival_series.values
+        panel["is_observed"] = is_observed.values
         panels.append(panel)
 
     if not panels:
-        return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty"])
+        return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty", "is_observed"])
 
     return pd.concat(panels, ignore_index=True)
 
@@ -154,6 +163,10 @@ def add_features(panel: pd.DataFrame) -> pd.DataFrame:
         group = group.sort_values("date").reset_index(drop=True)
         price = group["price"]
         arrival = group["arrival_qty"] if "arrival_qty" in group.columns else pd.Series(np.nan, index=group.index)
+        is_observed = (
+            group["is_observed"] if "is_observed" in group.columns
+            else pd.Series(True, index=group.index)
+        )
 
         feat = pd.DataFrame(index=group.index)
         feat["date"] = group["date"]
@@ -171,6 +184,13 @@ def add_features(panel: pd.DataFrame) -> pd.DataFrame:
         next_price = price.shift(-1)
         feat["target_next_price"] = next_price
         feat["target_pct_change"] = (next_price - price) / price.replace(0, np.nan)
+        # Whether tomorrow's price is a REAL Agmarknet report or a
+        # forward-filled repeat of today's price. Not a model input feature
+        # (kept out of get_feature_columns()) — it exists purely so the
+        # trainer can drop fabricated-zero targets before training/backtest,
+        # since those trivially match naive persistence and drown out real
+        # signal. See build_panel()'s docstring for why this exists.
+        feat["target_is_observed"] = is_observed.shift(-1)
 
         out_frames.append(feat)
 
