@@ -389,6 +389,115 @@ def forecast_recursive(
     return forecasts
 
 
+def forecast_recursive_batch(
+    model,
+    meta: dict,
+    series_map: dict,
+    horizon: int = 7,
+    arrival_map: dict | None = None,
+) -> dict:
+    """Batched sibling of forecast_recursive() for forecasting MANY
+    crop-mandi pairs at once (built for /trends, which forecasts every
+    viable pair in the dataset on every call — 239 of them at last count).
+
+    forecast_recursive() issues one single-row model.predict() call per
+    forecast day, per pair. Called 239 times in a loop (once per pair),
+    that's horizon * 239 = ~1,673 single-row LightGBM.predict() calls,
+    where per-call data-conversion overhead dominates actual inference
+    time (profiled: ~6s inference + ~4.4s in _data_from_pandas row
+    conversion, on top of ~7.6s in full-dataframe series loading done
+    239x — see PROJECT_STATUS.md / repo review for the original profile).
+
+    This function keeps the same recursive, day-by-day forecast logic
+    (each day's forecast still depends on the previous day's, exactly like
+    forecast_recursive()) but batches ACROSS PAIRS at each horizon step:
+    for a given day, it builds one feature row per pair, stacks them into
+    a single DataFrame, and calls model.predict() ONCE for that day across
+    every pair. That cuts the call count from horizon * len(series_map) to
+    just `horizon` total predict() calls, independent of how many pairs
+    are being forecast — the single biggest lever on /trends latency,
+    since it directly removes the ~1,600 redundant per-call conversions.
+
+    series_map: {(crop, mandi): price_series}, each price_series shaped
+    exactly like forecast_recursive()'s price_series argument (a Series,
+    DatetimeIndex, most recent last).
+
+    arrival_map: optional {(crop, mandi): arrival_series}, same shape as
+    forecast_recursive()'s arrival_series argument. A pair missing from
+    this map (or arrival_map=None entirely) is treated exactly like
+    forecast_recursive(arrival_series=None) — i.e. as if arrival data
+    doesn't exist for that pair, not as an error.
+
+    Returns {(crop, mandi): [forecast_day_1, ..., forecast_day_horizon]},
+    one entry per key present in series_map. /predict's single-pair path
+    is untouched — it still calls forecast_recursive() directly, so this
+    function only changes how /trends computes its (much larger) batch.
+    """
+    crop_categories = meta["crops_seen"]
+    mandi_categories = meta["mandis_seen"]
+    series_start_date = pd.Timestamp(meta["series_start_date"])
+    feature_columns = get_feature_columns()
+
+    keys = list(series_map.keys())
+    if not keys:
+        return {}
+
+    histories = {k: list(series_map[k].values) for k in keys}
+    dates = {k: list(series_map[k].index) for k in keys}
+    arrival_histories = {}
+    for k in keys:
+        if arrival_map is not None and k in arrival_map:
+            arrival_histories[k] = list(arrival_map[k].values)
+        else:
+            arrival_histories[k] = None
+
+    forecasts = {k: [] for k in keys}
+
+    for _ in range(horizon):
+        rows = []
+        for k in keys:
+            crop, mandi = k
+            row = _build_serving_row(
+                price_history=np.array(histories[k]),
+                dates=pd.DatetimeIndex(dates[k]),
+                crop=crop,
+                mandi=mandi,
+                crop_categories=crop_categories,
+                mandi_categories=mandi_categories,
+                series_start_date=series_start_date,
+                arrival_history=(
+                    np.array(arrival_histories[k])
+                    if arrival_histories[k] is not None
+                    else None
+                ),
+            )
+            rows.append(row)
+
+        # The one batched predict() call this whole function exists for:
+        # every pair's row for this horizon day, stacked and predicted in
+        # a single LightGBM call instead of len(keys) separate ones.
+        batch = pd.concat(rows, ignore_index=True)
+        # Re-apply categorical dtype explicitly after concat: each row's
+        # crop/mandi Categorical was built against the same `categories`
+        # list, so this should already be preserved by concat, but
+        # reasserting it here removes any dependence on pandas' concat
+        # dtype-preservation behavior across versions.
+        batch["crop"] = pd.Categorical(batch["crop"], categories=crop_categories)
+        batch["mandi"] = pd.Categorical(batch["mandi"], categories=mandi_categories)
+        pct_changes = model.predict(batch[feature_columns])
+
+        for k, pct_change in zip(keys, pct_changes):
+            next_price = histories[k][-1] * (1.0 + float(pct_change))
+            next_date = dates[k][-1] + pd.Timedelta(days=1)
+            forecasts[k].append(next_price)
+            histories[k].append(next_price)
+            dates[k].append(next_date)
+            if arrival_histories[k] is not None:
+                arrival_histories[k].append(np.nan)
+
+    return forecasts
+
+
 # --- Artifact I/O ------------------------------------------------------------
 
 def save_artifact(model, meta: dict, model_path: Path, meta_path: Path) -> None:
