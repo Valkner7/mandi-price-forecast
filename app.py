@@ -2312,6 +2312,22 @@ _ALERT_AMBIGUOUS_PHRASES = ["tell me when", "let me know when"]
 _ALERT_STOP_PHRASES = ["stop alert", "cancel alert", "stop alerts", "cancel alerts"]
 _ALERT_LIST_PHRASES = ["my alerts", "list alerts", "show alerts"]
 
+# Guards the _ALERT_AMBIGUOUS_PHRASES gate below. A genuine alert-setting
+# message is forward-looking ("tell me when it crosses 850" — notify me
+# later, about the future). An ordinary informational question can use the
+# exact same phrase about the past ("tell me when onion was 850 last
+# week"), and a bare "is there a number in this message" check can't tell
+# the two apart — both contain "850". These markers catch the common
+# past-tense/historical phrasings so that case falls through to the normal
+# price-query flow instead of being misrouted into alert-creation (or,
+# worse, silently creating an unwanted alert subscription if a crop/mandi
+# happen to be extractable from the same message).
+_ALERT_HISTORICAL_MARKERS = [
+    "was", "were", "used to be", "last week", "last month", "last year",
+    "yesterday", "ago", "previously", "in the past", "historically",
+    "on average", "used to cost",
+]
+
 
 def _looks_like_alert_command(lowered_text: str) -> bool:
     if any(phrase in lowered_text for phrase in _ALERT_ACTION_PHRASES):
@@ -2319,7 +2335,15 @@ def _looks_like_alert_command(lowered_text: str) -> bool:
     if any(phrase in lowered_text for phrase in _ALERT_AMBIGUOUS_PHRASES):
         # Require an actual number too, so "tell me when potato prices
         # usually rise" (an ordinary question, no threshold) doesn't get
-        # misrouted into alert-creation.
+        # misrouted into alert-creation. Also bail out on an obvious
+        # historical marker — "tell me when onion was 850 last week" has
+        # a number, but it's a question about the past, not a request to
+        # be notified about the future — see _ALERT_HISTORICAL_MARKERS.
+        if any(
+            re.search(rf"\b{re.escape(marker)}\b", lowered_text)
+            for marker in _ALERT_HISTORICAL_MARKERS
+        ):
+            return False
         return _parse_price_threshold(lowered_text) is not None
     return False
 
