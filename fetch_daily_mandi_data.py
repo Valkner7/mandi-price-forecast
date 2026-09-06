@@ -58,7 +58,6 @@ USAGE
     python fetch_daily_mandi_data.py --days-back 3   # backfill a short gap
 """
 
-import csv
 import io
 from pathlib import Path
 from datetime import datetime, timedelta
