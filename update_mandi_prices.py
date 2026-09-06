@@ -12,7 +12,6 @@ runs daily. This script is for the other case: you (or a teammate) went to
 the Agmarknet website, manually filtered/exported a date range or a crop
 you don't have yet, and downloaded a CSV like:
 
-    raw_agmarknet/potato_raw.csv
     Daily_Price_Arrival_Report-07-11-2025_to_29-08-2026_for_Punjab.csv
 
 This script takes files in that raw export shape and folds them into the
@@ -31,12 +30,15 @@ than the API's DD/MM/YYYY (slashes) that fetch_daily_mandi_data.py parses;
 each script's own parsing matches its own source, that's expected.
 
 USAGE
-    # Import every raw export sitting in raw_agmarknet/ (default):
+    # Import every *.csv sitting in a raw_agmarknet/ folder next to this
+    # script, if you create one (default when no path is given — this
+    # folder isn't checked into the repo, it's just a convenient place to
+    # drop your own downloaded exports):
     python update_mandi_prices.py
 
-    # Import specific file(s):
-    python update_mandi_prices.py raw_agmarknet/potato_raw.csv
-    python update_mandi_prices.py raw_agmarknet/*.csv path/to/other_export.csv
+    # Import specific file(s), from anywhere:
+    python update_mandi_prices.py path/to/potato_raw.csv
+    python update_mandi_prices.py path/to/*.csv path/to/other_export.csv
 """
 
 import argparse
