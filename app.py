@@ -17,9 +17,8 @@ from datetime import datetime, timezone
 import concurrent.futures
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from google import genai
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from voice_extraction import extract_crop_and_mandi
@@ -1757,7 +1756,6 @@ def compare_mandis(
         key=lambda r: (-r["latest_price"], trend_rank.get(r["trend"], 1)),
     )
 
-    prices = [r["latest_price"] for r in ranked]
     best, worst = ranked[0], ranked[-1]
     spread = round(best["latest_price"] - worst["latest_price"], 2)
     spread_pct = round((spread / worst["latest_price"]) * 100, 1) if worst["latest_price"] else 0.0
