@@ -11,9 +11,8 @@ Multilingual voice + WhatsApp price advisory, market-wide trend dashboard, and 7
 - `static/dashboard/` — standalone web dashboard (plain HTML/CSS/JS, no build step) at `/dashboard`
 - `voice_extraction.py` — multilingual (EN/HI/PA) crop & mandi extraction from free-text/voice questions
 - `clean_mandi_prices.csv` — `date, crop, mandi, price` (21,017 rows, 42 crops, 22 mandis, Jun 2023–present)
-- `raw_agmarknet/` — raw source data pulled from Agmarknet, feeding the cleaned CSV
 - `fetch_daily_mandi_data.py` — pulls from the data.gov.in API automatically (daily, via GitHub Actions)
-- `update_mandi_prices.py` — merges a manually-downloaded raw Agmarknet export CSV (see `raw_agmarknet/`) into `clean_mandi_prices.csv`; run this by hand after a manual download, not on a schedule
+- `update_mandi_prices.py` — merges a manually-downloaded raw Agmarknet export CSV into `clean_mandi_prices.csv`; run this by hand after a manual download, not on a schedule. (The `raw_agmarknet/` folder that used to hold example exports isn't checked into the repo — point the script at wherever you save your own downloaded export instead.)
 - `.github/workflows/update-mandi-data.yml` — runs the daily data fetch, retrains the forecasting model on the updated data, and commits both if either changed
 - `.github/workflows/keep-alive.yml` — pings the deployed service every 10 min so Render's free tier doesn't sleep
 - `train_forecast_model.py` — trains the global LightGBM model and backtests it against a naive baseline; writes results to `models/lgbm_price_model_meta.json`, which `/predict` reads live for its confidence claim
