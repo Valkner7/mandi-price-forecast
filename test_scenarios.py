@@ -108,7 +108,6 @@ def main():
         if r.get("stage_failed") and r.get("detail"):
             print(f"      -> {r['detail']}")
 
-    measured_totals = [r["total_ms"] for r in results if "stage_failed" not in r or r["stage_failed"] == "tts"]
     complete = [r for r in results if "advisory_ms" in r and "stage_failed" not in r]
     print()
     if complete:
