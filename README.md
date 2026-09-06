@@ -10,7 +10,7 @@ Multilingual voice + WhatsApp price advisory, market-wide trend dashboard, and 7
 - `forecast_models.py` — exploratory/superseded (Naive Bayes + LSTM); kept for reference, not used in production — see its module docstring for why
 - `static/dashboard/` — standalone web dashboard (plain HTML/CSS/JS, no build step) at `/dashboard`
 - `voice_extraction.py` — multilingual (EN/HI/PA) crop & mandi extraction from free-text/voice questions
-- `clean_mandi_prices.csv` — `date, crop, mandi, price` (21,017 rows, 42 crops, 22 mandis, Jun 2023–present)
+- `clean_mandi_prices.csv` — `date, crop, mandi, price` (50,514 rows, 42 crops, 110 mandis, Jun 2023–present)
 - `fetch_daily_mandi_data.py` — pulls from the data.gov.in API automatically (daily, via GitHub Actions)
 - `update_mandi_prices.py` — merges a manually-downloaded raw Agmarknet export CSV into `clean_mandi_prices.csv`; run this by hand after a manual download, not on a schedule. (The `raw_agmarknet/` folder that used to hold example exports isn't checked into the repo — point the script at wherever you save your own downloaded export instead.)
 - `.github/workflows/update-mandi-data.yml` — runs the daily data fetch, retrains the forecasting model on the updated data, and commits both if either changed
@@ -19,7 +19,7 @@ Multilingual voice + WhatsApp price advisory, market-wide trend dashboard, and 7
 - `PROJECT_STATUS.md`, `problem_statement_and_task_breakdown.md`, `execution_checklist_with_schedule.md` — planning docs
 - `test_scenarios.py`, `diagnose_gemini.py`, `diagnose_tts.py` — test/debug scripts
 
-**Data note:** only **Potato** (9,233 rows), **Onion** (8,443 rows), and **Tomato** (3,200 rows) currently have enough history to forecast reliably. Every other crop has too few records and will return a `422` from `/predict`. Demo with Potato/Onion/Tomato.
+**Data note:** only **Potato** (19,584 rows), **Onion** (18,257 rows), and **Tomato** (12,532 rows) currently have enough history to forecast reliably. Every other crop has too few records and will return a `422` from `/predict`. Demo with Potato/Onion/Tomato.
 
 ## Forecasting engine
 `/predict` tries a single **global LightGBM model** first: one model trained offline across every crop-mandi combination at once (crop/mandi as categorical features, predicting next-day *percentage* price change), served from a cached, pretrained artifact — no per-request model fitting. If no trained artifact exists yet, the crop/mandi has too little history, or prediction fails for any other reason, `/predict` transparently falls back to the original **per-series ETS model** (best of 3 Exponential Smoothing variants by AIC, fit fresh per request) and adds a `model_note` field to the response explaining the fallback. Multi-day forecasts are produced recursively — predict day+1, feed it back in as the newest known price, predict day+2, and so on — for both models.
