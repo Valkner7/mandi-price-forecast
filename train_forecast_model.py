@@ -49,6 +49,20 @@ def _time_based_split(features: pd.DataFrame):
     methodology the project's existing ETS evaluation notebook already
     uses (see PROJECT_STATUS.md)."""
     features = features.dropna(subset=["target_pct_change"])
+
+    # Drop rows whose target is a forward-filled repeat of today's price
+    # rather than a genuine next-day Agmarknet report. Mandis here report
+    # roughly every other day, so ~53% of the naive daily grid is fabricated
+    # flat days — training/evaluating on those trivially rewards predicting
+    # 0% change (both model and naive "win" it for free) and drowns out the
+    # real price-movement signal. See price_model.build_panel()/add_features()
+    # for where target_is_observed comes from.
+    n_before = len(features)
+    features = features[features["target_is_observed"] == True]  # noqa: E712
+    n_after = len(features)
+    print(f"  dropped {n_before - n_after} rows with a forward-filled (non-real) target "
+          f"({(n_before - n_after) / n_before:.1%}); {n_after} rows remain for split/train/eval")
+
     max_date = features["date"].max()
 
     backtest_cutoff = max_date - pd.Timedelta(days=BACKTEST_DAYS)
