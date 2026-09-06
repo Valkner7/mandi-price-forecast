@@ -43,7 +43,8 @@ jobs:
         # in transitively — train_forecast_model.py and price_model.py both
         # import it directly, so it shouldn't depend on pandas' dependency
         # graph staying the same.
-           run: pip install pandas numpy requests lightgbm joblib scikit-learn
+        run: pip install pandas numpy requests lightgbm joblib scikit-learn
+          
 
       - name: Fetch latest Punjab mandi prices
         env:
