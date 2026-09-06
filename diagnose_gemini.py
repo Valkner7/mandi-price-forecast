@@ -58,7 +58,7 @@ print()
 print("=" * 70)
 print("STEP 3 — Raw Gemini call, NO timeout wrapper, generous 90s limit")
 print("=" * 70)
-model_name = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
+model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 print(f"Using model: {model_name}")
 print("Sending a trivial one-word prompt and timing it for real...")
 
@@ -92,7 +92,7 @@ except Exception as e:
     print()
     if "404" in str(e) or "not found" in str(e).lower():
         print("-> Looks like an invalid/unsupported MODEL NAME, not a network or key issue.")
-        print(f"   Check the current valid model name in Google AI Studio and update GEMINI_MODEL")
+        print("   Check the current valid model name in Google AI Studio and update GEMINI_MODEL")
         print(f"   (currently set to: {model_name})")
     elif "401" in str(e) or "403" in str(e) or "permission" in str(e).lower() or "api key" in str(e).lower():
         print("-> Looks like an API KEY problem (invalid, restricted, or wrong project).")
