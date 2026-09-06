@@ -165,12 +165,16 @@ _FALLBACK_DATA_NOTE = {
     "pa": " ਧਿਆਨ ਦਿਓ: ਇਹ ਕੀਮਤ ਡਾਟਾ ਅੱਜ ਦਾ ਨਹੀਂ ਹੈ।",
 }
 
-# Honest confidence framing, from the project's own validation notebook:
-# on this dataset, the forecasting model beats a simple "no change" baseline
-# in only ~28% of tested crop-mandi combinations on a held-out window. Short
-# horizon mandi prices behave close to a random walk — this is surfaced
-# directly in the product (not just the pitch deck) so the app never
-# overstates its own precision.
+# Honest confidence framing: on this dataset, the forecasting model beats a
+# simple "no change" (naive persistence) baseline on only a minority of
+# tested crop-mandi combinations on a held-out window — short-horizon mandi
+# prices behave close to a random walk. This is surfaced directly in the
+# product (not just the pitch deck) so the app never overstates its own
+# precision. The actual figures (combinations tested, win rate vs. naive)
+# live in models/lgbm_price_model_meta.json, written by
+# train_forecast_model.py's backtest_vs_naive() on every retrain — see
+# _forecast_validation_summary() below, which reads that artifact directly
+# rather than hardcoding a number that would go stale after the next retrain.
 FORECAST_CONFIDENCE_NOTE = {
     "en": "This is a directional estimate, not a precise prediction — on this "
           "kind of data, forecasts improve on simply expecting no price change "
@@ -180,6 +184,39 @@ FORECAST_CONFIDENCE_NOTE = {
     "pa": "ਇਹ ਇੱਕ ਦਿਸ਼ਾਤਮਕ ਅਨੁਮਾਨ ਹੈ, ਸਟੀਕ ਭਵਿੱਖਬਾਣੀ ਨਹੀਂ — ਇਸ ਤਰ੍ਹਾਂ ਦੇ ਡਾਟੇ ਵਿੱਚ, "
           "ਅਨੁਮਾਨ ਹਮੇਸ਼ਾ ਕੀਮਤ ਵਿੱਚ ਕੋਈ ਬਦਲਾਅ ਨਾ ਮੰਨਣ ਨਾਲੋਂ ਬਿਹਤਰ ਨਹੀਂ ਹੁੰਦੇ।",
 }
+
+
+def _forecast_validation_summary(meta: dict | None) -> str:
+    """Human-readable validation claim for /predict's confidence block,
+    built from the real backtest numbers baked into the trained model
+    artifact (models/lgbm_price_model_meta.json) rather than a hardcoded
+    string that references a notebook nobody committed. Falls back to an
+    honest "not available" note if no artifact is loaded (e.g. the ETS
+    fallback path, where no LightGBM meta exists at all).
+    """
+    if not meta:
+        return (
+            "No trained global model artifact is loaded for this response "
+            "(ETS fallback in use) — no backtest numbers apply here."
+        )
+
+    combos = meta.get("crop_mandi_combinations_tested")
+    win_rate = meta.get("crop_mandi_win_rate_vs_naive")
+    backtest_days = meta.get("backtest_days")
+
+    if combos is None or win_rate is None:
+        return (
+            "Trained model artifact loaded, but it doesn't include backtest "
+            "metadata (older artifact format) — see train_forecast_model.py "
+            "for how validation is computed."
+        )
+
+    return (
+        f"{combos} crop-mandi combinations, {backtest_days}-day held-out "
+        f"test window (see train_forecast_model.py's backtest_vs_naive; "
+        f"beat naive persistence in {win_rate:.1%} of combinations — "
+        f"models/lgbm_price_model_meta.json has the full numbers)."
+    )
 
 
 def build_fallback_advisory(forecast_data: dict, language_code: str) -> str:
@@ -426,6 +463,73 @@ def load_series(crop: str, mandi: str) -> pd.Series:
     series = series.resample("D").last().ffill()
     series.attrs["raw"] = raw_series
     return series
+
+
+def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> dict:
+    """Bulk equivalent of load_series() for /trends: scans the full
+    dataframe ONCE for all requested crops and builds a price series for
+    every (crop, mandi) pair found, instead of load_series()'s pattern of
+    re-masking the entire dataframe from scratch for every single pair
+    (239 separate full-table scans in /trends' case — the other major
+    cost identified in profiling, alongside the per-call LightGBM
+    overhead that forecast_recursive_batch() addresses).
+
+    Applies the same per-pair logic as load_series(): mean price per
+    date (for same-date duplicates), resampled onto a daily frequency and
+    forward-filled, with pairs below `min_points` daily records excluded
+    (matching load_series()'s MIN_POINTS=30 threshold) rather than raising
+    — callers just won't see that pair, mirroring /trends' existing
+    "skip pairs that can't forecast" behavior.
+
+    Returns {(crop, mandi): price_series}, one entry per pair with enough
+    history. Crop/mandi names are stripped, matching load_series().
+    """
+    df = _load_full_dataframe()
+    crop_set = {c.strip().casefold() for c in crop_names}
+    sub = df[df["crop"].astype(str).str.casefold().isin(crop_set)]
+    sub = sub.dropna(subset=["price"])
+
+    series_map: dict = {}
+    for (crop_val, mandi_val), group in sub.groupby(["crop", "mandi"], sort=False):
+        series = group.groupby("date")["price"].mean().sort_index()
+        if len(series) < min_points:
+            continue
+        series = series.resample("D").last().ffill()
+        key = (str(crop_val).strip(), str(mandi_val).strip())
+        series_map[key] = series
+    return series_map
+
+
+def _load_arrival_bulk(crop_names: list[str], price_index_by_pair: dict) -> dict:
+    """Bulk equivalent of load_arrival_series() for /trends — one full-
+    dataframe scan for all requested crops instead of one scan per pair.
+    Mirrors load_arrival_series()'s contract: summed (not averaged) per
+    day, reindexed onto each pair's own price index, not forward-filled.
+    Pairs with no arrival data (or no arrival_qty column at all) get an
+    all-NaN series, exactly like load_arrival_series() would return.
+    """
+    df = _load_full_dataframe()
+    if "arrival_qty" not in df.columns:
+        return {key: pd.Series(np.nan, index=idx) for key, idx in price_index_by_pair.items()}
+
+    crop_set = {c.strip().casefold() for c in crop_names}
+    sub = df[df["crop"].astype(str).str.casefold().isin(crop_set)].copy()
+    sub["arrival_qty"] = pd.to_numeric(sub["arrival_qty"], errors="coerce")
+
+    arrival_map: dict = {}
+    for (crop_val, mandi_val), group in sub.groupby(["crop", "mandi"], sort=False):
+        key = (str(crop_val).strip(), str(mandi_val).strip())
+        if key not in price_index_by_pair:
+            continue
+        arrival = group.groupby("date")["arrival_qty"].sum(min_count=1).sort_index()
+        arrival_map[key] = arrival.reindex(price_index_by_pair[key])
+
+    # Any pair with no arrival rows at all (e.g. filtered out above) still
+    # needs an all-NaN entry so callers never need to special-case absence.
+    for key, idx in price_index_by_pair.items():
+        if key not in arrival_map:
+            arrival_map[key] = pd.Series(np.nan, index=idx)
+    return arrival_map
 
 
 def load_arrival_series(crop: str, mandi: str, price_index: pd.DatetimeIndex) -> pd.Series:
@@ -1305,7 +1409,7 @@ def predict(
         "unit": "INR per quintal",
         "confidence": {
             "note": FORECAST_CONFIDENCE_NOTE["en"],
-            "validated_on": "39 crop-mandi combinations, held-out test window (see mandi_price_forecasting notebook)",
+            "validated_on": _forecast_validation_summary(lgbm_meta),
         },
         "anomaly_flag": {
             "latest_price_is_anomaly": latest_is_anomaly,
@@ -1423,6 +1527,17 @@ def _viable_mandis_for_crop(crop: str, min_points: int = 30) -> list[str]:
     return seen
 
 
+# Short-TTL cache for /trends: the underlying data only changes once a day
+# (via the daily fetch + retrain GitHub Action), so re-computing 239
+# forecasts on every dashboard load/refresh within the same few minutes is
+# pure waste. Keyed on the `crops` query string so different callers of
+# this endpoint don't collide. This is a defensive extra layer on top of
+# the real fix below (batching); even a fully-optimized /trends benefits
+# from not recomputing identical results for a dashboard that polls it.
+_TRENDS_CACHE_TTL_SECONDS = 600  # 10 minutes
+_trends_cache: dict = {}
+
+
 @app.get("/trends")
 def trends(
     crops: str = Query(
@@ -1435,10 +1550,50 @@ def trends(
     whole dataset — not one farmer's one question. Built for a mandi board
     or policymaker scanning the market at a glance, so it's grouped by crop
     and sorted by size of move (biggest gainers/losers first) rather than
-    alphabetically."""
+    alphabetically.
+
+    Performance note: this used to call predict() once per crop-mandi pair
+    (239 of them at last count), each of which (a) re-scanned the full
+    dataframe from scratch via load_series()/load_arrival_series(), and
+    (b) issued 7 separate single-row LightGBM.predict() calls for its
+    7-day recursive forecast — ~1,673 single-row predict() calls and 239
+    full-table scans per /trends request, measured at 13-23s wall clock.
+    This version bulk-loads the dataframe once for all requested crops
+    (_load_series_bulk/_load_arrival_bulk) and forecasts every pair in a
+    single batched pass (forecast_recursive_batch — one predict() call per
+    horizon day, across ALL pairs at once, instead of one per pair per
+    day). Falls back to the original per-pair ETS path only for pairs the
+    batched LightGBM path can't cover (no trained artifact at all), same
+    honesty contract as /predict.
+    """
     crop_names = [c.strip() for c in crops.split(",") if c.strip()]
     if not crop_names:
         raise HTTPException(status_code=400, detail="Provide at least one crop name.")
+
+    cache_key = ",".join(sorted(c.casefold() for c in crop_names))
+    cached = _trends_cache.get(cache_key)
+    if cached is not None:
+        cached_at, cached_response = cached
+        if time.time() - cached_at < _TRENDS_CACHE_TTL_SECONDS:
+            return cached_response
+
+    horizon = 7
+    lgbm_model, lgbm_meta = _load_forecast_model()
+
+    series_map = _load_series_bulk(crop_names)
+
+    batch_forecasts: dict = {}
+    if lgbm_model is not None and series_map:
+        try:
+            price_index_by_pair = {key: series.index for key, series in series_map.items()}
+            arrival_map = _load_arrival_bulk(crop_names, price_index_by_pair)
+            batch_forecasts = pm.forecast_recursive_batch(
+                lgbm_model, lgbm_meta, series_map, horizon=horizon,
+                arrival_map=arrival_map,
+            )
+        except Exception as error:
+            print("LIGHTGBM BATCH PREDICT ERROR, falling back to per-pair ETS:", error)
+            batch_forecasts = {}
 
     results_by_crop = {}
     rising = falling = stable = 0
@@ -1447,24 +1602,43 @@ def trends(
         mandi_names = _viable_mandis_for_crop(crop)
         rows = []
         for mandi_name in mandi_names:
-            try:
-                forecast_data = predict(crop=crop, mandi=mandi_name)
-            except HTTPException:
+            key = (crop.strip(), mandi_name.strip())
+            series = series_map.get(key)
+            if series is None:
                 continue  # shouldn't happen given the min-points filter, but don't let one bad pair fail the whole dashboard
-            latest = forecast_data["latest_price"]
-            forecast_last = forecast_data["forecast"][-1]["price"]
-            pct_change = round(((forecast_last - latest) / latest) * 100, 1) if latest else 0.0
+
+            latest_price = float(series.iloc[-1])
+            forecast_values = batch_forecasts.get(key)
+            if forecast_values is None:
+                # No trained LightGBM artifact at all, or the batch call
+                # failed outright — fall back to the original per-series
+                # ETS path for this pair only, same as /predict would.
+                model, _ = fit_ets(series)
+                forecast = model.forecast(horizon)
+                forecast_values = [float(x) for x in forecast.values]
+
+            forecast_last = forecast_values[-1]
+            delta = forecast_last - latest_price
+            threshold = max(1.0, abs(latest_price) * 0.01)
+            if delta > threshold:
+                trend = "rising"
+            elif delta < -threshold:
+                trend = "falling"
+            else:
+                trend = "stable"
+
+            pct_change = round((delta / latest_price) * 100, 1) if latest_price else 0.0
             rows.append({
                 "mandi": mandi_name,
-                "latest_price": latest,
-                "trend": forecast_data["trend"],
-                "forecast_price": forecast_last,
+                "latest_price": round(latest_price, 2),
+                "trend": trend,
+                "forecast_price": round(forecast_last, 2),
                 "pct_change": pct_change,
-                "forecast_horizon_days": forecast_data["forecast_horizon_days"],
+                "forecast_horizon_days": horizon,
             })
-            if forecast_data["trend"] == "rising":
+            if trend == "rising":
                 rising += 1
-            elif forecast_data["trend"] == "falling":
+            elif trend == "falling":
                 falling += 1
             else:
                 stable += 1
@@ -1481,13 +1655,15 @@ def trends(
             detail=f"No crop-mandi pairs with enough history to forecast for: {', '.join(crop_names)}.",
         )
 
-    return {
+    response = {
         "crops": results_by_crop,
         "summary": {"rising": rising, "falling": falling, "stable": stable},
         "unit": "INR per quintal",
         "note": "Grouped by crop, sorted by size of forecast move (biggest movers first). "
-        "Same 7-day ETS forecast and honesty caveats as /predict — see its 'confidence' field.",
+        "Same 7-day forecast and honesty caveats as /predict — see its 'confidence' field.",
     }
+    _trends_cache[cache_key] = (time.time(), response)
+    return response
 
 
 @app.get("/trends-dashboard", response_class=HTMLResponse)
