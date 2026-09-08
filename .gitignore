@@ -8,3 +8,5 @@ subscriptions.json
 
 # Local raw scratch data
 *_raw.csv
+
+frontend-old-monolithic/

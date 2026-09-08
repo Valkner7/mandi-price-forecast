@@ -93,6 +93,7 @@ code {
   color: var(--text-muted);
   cursor: pointer;
   border-left: 2px solid transparent;
+  text-decoration: none;
 }
 
 .nav-item:hover { color: var(--text); background: var(--panel-raised); }

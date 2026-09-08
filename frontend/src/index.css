@@ -1,0 +1,3 @@
+/* Global styling now lives in ./styles/dashboard.css (ported from the
+   original static/dashboard/style.css design system). This file is kept
+   only because main.jsx imports it. */
