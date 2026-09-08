@@ -154,7 +154,7 @@
     "days_since_start"
   ],
   "series_start_date": "2023-06-06",
-  "trained_at": "2026-09-07T23:30:12.932328+00:00",
+  "trained_at": "2026-09-08T21:03:36.129563+00:00",
   "backtest_mae": 123.528,
   "naive_backtest_mae": 123.509,
   "backtest_rmse": 257.906,
