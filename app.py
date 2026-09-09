@@ -1727,7 +1727,7 @@ def trends_dashboard():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mandi Rate Board — Punjab Crop Price Trends</title>
+<title>Mandi Rujhan — Trend Board — Punjab Crop Prices</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1775,6 +1775,12 @@ def trends_dashboard():
     font-size: clamp(30px, 5vw, 46px);
     color: var(--ink);
     margin: 0 0 6px;
+  }
+  .title-sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
   }
   .sub { color: var(--ink-soft); font-size: 15px; line-height: 1.55; margin: 0 0 20px; max-width: 60ch; }
   .summary-strip {
@@ -1854,7 +1860,8 @@ def trends_dashboard():
 <div class="wrap">
   <header>
     <p class="eyebrow">Punjab &middot; Live from clean_mandi_prices.csv</p>
-    <h1>Mandi Rate Board</h1>
+    <h1>Mandi Rujhan</h1>
+    <p class="title-sub">Trend Board</p>
     <p class="sub">Which crops are moving, and where — a market-wide view for mandi boards and policymakers, built from the same 7-day forecasts as the farmer advisory.</p>
     <div class="summary-strip" id="summary-strip">
       <div class="stat"><span class="n">—</span><span class="label">loading</span></div>

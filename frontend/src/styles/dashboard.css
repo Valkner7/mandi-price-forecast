@@ -101,6 +101,9 @@ code {
   text-decoration: none;
 }
 
+.nav-label { display: flex; flex-direction: column; gap: 1px; line-height: 1.25; }
+.nav-sub { font-size: 11px; color: var(--text-faint); letter-spacing: 0.02em; }
+
 .nav-item:hover { color: var(--text); background: var(--panel-raised); }
 .nav-item.active { color: var(--text); border-left: 2px solid var(--mustard); background: var(--panel-raised); }
 
@@ -131,6 +134,7 @@ code {
 }
 
 .page-title { font-family: var(--font-display); font-size: 27px; font-weight: 600; color: var(--leaf); margin: 0 0 4px; }
+.page-subtitle { font-size: 13px; color: var(--text-muted); letter-spacing: 0.02em; margin: 0 0 4px; }
 .page-meta { font-size: 13px; color: var(--text-faint); }
 
 .selector-row { display: flex; gap: 10px; }
