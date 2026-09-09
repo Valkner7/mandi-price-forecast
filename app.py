@@ -54,7 +54,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # (removed dead /static mount - unused by current React/Vite frontend)
 
 # Root Route to serve dashboard UI
-@app.get("/")
+# methods=["GET", "HEAD"]: this Starlette version does not auto-add HEAD
+# support to GET routes, so health-check/uptime monitors that send HEAD
+# requests (e.g. Render's own readiness probe) were getting a 405 here
+# even though the service was healthy and GET worked fine.
+@app.api_route("/", methods=["GET", "HEAD"])
 async def read_index():
     index_path = BASE_DIR / "static" / "dashboard" / "index.html"
     if not index_path.exists():
@@ -99,10 +103,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serves the price-forecast dashboard (plain HTML/CSS/JS, no build step) at
-# /dashboard — index.html calls /meta, /predict, /history and /trends on
-# this same app. If static/dashboard doesn't exist yet (e.g. a fresh clone
-# before it's been added), skip the mount instead of failing to start.
+# Serves the built React/Vite dashboard (source in frontend/, compiled
+# output committed to static/dashboard/) at /dashboard — it calls /meta,
+# /predict, /history and /trends on this same app. If static/dashboard
+# doesn't exist yet (e.g. a fresh clone before a build has been added),
+# skip the mount instead of failing to start.
 if STATIC_DASHBOARD_DIR.exists():
     app.mount("/dashboard", StaticFiles(directory=str(STATIC_DASHBOARD_DIR), html=True), name="dashboard")
     _dashboard_assets_dir = STATIC_DASHBOARD_DIR / "assets"
