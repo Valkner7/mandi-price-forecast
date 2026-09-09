@@ -10,3 +10,11 @@ subscriptions.json
 *_raw.csv
 
 frontend-old-monolithic/
+.env
+node_modules/
+frontend/dist/
+static/dashboard/
+*.log
+.pytest_cache/
+.vscode/
+.idea/
