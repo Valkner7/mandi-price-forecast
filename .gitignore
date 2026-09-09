@@ -16,3 +16,5 @@ frontend/dist/
 *.log
 .vscode/
 .idea/
+
+dashboard.diff.txt
