@@ -837,7 +837,7 @@ def fuzzy_find_keyword(
             # the alias's length keeps the comparison meaningful,
             # without weakening genuine speech-to-text variations
             # (which are usually close to the alias in length).
-            if len(chunk) < 0.5 * len(alias):
+            if len(chunk) <= 0.5 * len(alias):
                 continue
 
             # WRatio works well for short phrases
