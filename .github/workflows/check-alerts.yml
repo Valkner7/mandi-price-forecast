@@ -1,0 +1,32 @@
+﻿name: Check price alerts
+
+# Farmers set price alerts over WhatsApp, but nothing was actually
+# triggering /check-alerts on the deployed Render service — alerts were
+# being created but never checked, so no outbound WhatsApp message was
+# ever sent. This job hits /check-alerts on a schedule to actually fire
+# them. Runs at :05 past every 10 minutes (offset from keep-alive.yml's
+# :00 schedule) so the two jobs don't collide on the same minute.
+
+on:
+  schedule:
+    - cron: "5-59/10 * * * *"   # every 10 minutes, offset by 5
+  workflow_dispatch:             # allows a manual "Run workflow" trigger too
+
+jobs:
+  check-alerts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /check-alerts endpoint
+        env:
+          # Set this in your repo's Settings -> Secrets and variables ->
+          # Actions -> New repository secret. Must match ALERTS_CRON_SECRET
+          # in Render's environment variables, or the endpoint returns 403.
+          ALERTS_CRON_SECRET: ${{ secrets.ALERTS_CRON_SECRET }}
+        run: |
+          STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" --max-time 60 \
+            "https://mandi-price-forecast-1.onrender.com/check-alerts?secret=${ALERTS_CRON_SECRET}" || echo "000")
+          echo "check-alerts responded with HTTP $STATUS"
+          cat /tmp/response.json 2>/dev/null || true
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::check-alerts did not get a 200 (got $STATUS) — service may be cold-starting, down, or ALERTS_CRON_SECRET may not match between GitHub and Render."
+          fi
