@@ -3,7 +3,7 @@
 
 .locate-btn {
   background: var(--mustard);
-  color: #14160f;
+  color: var(--text);
   border: none;
   border-radius: var(--radius-sm);
   padding: 0 16px;

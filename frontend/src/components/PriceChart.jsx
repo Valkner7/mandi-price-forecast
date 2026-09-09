@@ -34,7 +34,7 @@ export default function PriceChart({ history, predict }) {
         {
           label: 'Actual',
           data: actualData,
-          borderColor: '#a6a290',
+          borderColor: '#5B5140',
           backgroundColor: 'transparent',
           borderWidth: 2,
           pointRadius: 0,
@@ -44,7 +44,7 @@ export default function PriceChart({ history, predict }) {
         {
           label: 'Forecast',
           data: forecastData,
-          borderColor: '#d4a017',
+          borderColor: '#D9A431',
           backgroundColor: 'transparent',
           borderWidth: 2,
           borderDash: [5, 4],
@@ -62,9 +62,9 @@ export default function PriceChart({ history, predict }) {
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
-          grid: { color: '#292b20' },
+          grid: { color: 'rgba(36, 28, 18, 0.08)' },
           ticks: {
-            color: '#6f6c5e',
+            color: '#8A7F6A',
             font: { family: 'IBM Plex Mono', size: 11 },
             callback: (value) => shortDate(labels[value]),
             maxTicksLimit: 8,
@@ -72,9 +72,9 @@ export default function PriceChart({ history, predict }) {
           },
         },
         y: {
-          grid: { color: '#292b20' },
+          grid: { color: 'rgba(36, 28, 18, 0.08)' },
           ticks: {
-            color: '#6f6c5e',
+            color: '#8A7F6A',
             font: { family: 'IBM Plex Mono', size: 11 },
             callback: (v) => `₹${Math.round(v / 100) / 10}k`,
           },
@@ -83,10 +83,10 @@ export default function PriceChart({ history, predict }) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#21231a',
-          borderColor: '#34362a',
+          backgroundColor: '#241C12',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
           borderWidth: 1,
-          titleFont: { family: 'IBM Plex Sans', size: 11.5 },
+          titleFont: { family: 'Work Sans', size: 11.5 },
           bodyFont: { family: 'IBM Plex Mono', size: 12.5 },
           callbacks: {
             title: (items) => shortDate(labels[items[0].dataIndex]),

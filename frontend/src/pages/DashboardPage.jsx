@@ -176,10 +176,10 @@ export default function DashboardPage() {
             </div>
             <div className="legend-row">
               <span className="legend-dot">
-                <span className="legend-swatch" style={{ background: '#a6a290' }}></span>Actual
+                <span className="legend-swatch" style={{ background: '#5B5140' }}></span>Actual
               </span>
               <span className="legend-dot">
-                <span className="legend-swatch" style={{ background: '#d4a017' }}></span>Forecast
+                <span className="legend-swatch" style={{ background: '#D9A431' }}></span>Forecast
               </span>
             </div>
           </div>
