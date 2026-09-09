@@ -146,7 +146,8 @@ export default function NearbyPage() {
       <main className="main">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Mandis near you</h1>
+            <h1 className="page-title">Mandi Sameep</h1>
+            <div className="page-subtitle">Nearby mandis</div>
             <div className="page-meta">{statusLabel}</div>
           </div>
           <div className="selector-row">

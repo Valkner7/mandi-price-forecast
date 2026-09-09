@@ -34,7 +34,7 @@ export default function PriceChart({ history, predict }) {
         {
           label: 'Actual',
           data: actualData,
-          borderColor: '#5B5140',
+          borderColor: '#173A27',
           backgroundColor: 'transparent',
           borderWidth: 2,
           pointRadius: 0,
@@ -44,7 +44,7 @@ export default function PriceChart({ history, predict }) {
         {
           label: 'Forecast',
           data: forecastData,
-          borderColor: '#D9A431',
+          borderColor: '#C89635',
           backgroundColor: 'transparent',
           borderWidth: 2,
           borderDash: [5, 4],
@@ -62,9 +62,9 @@ export default function PriceChart({ history, predict }) {
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
-          grid: { color: 'rgba(36, 28, 18, 0.08)' },
+          grid: { color: '#E7E2D3' },
           ticks: {
-            color: '#8A7F6A',
+            color: '#8A8F86',
             font: { family: 'IBM Plex Mono', size: 11 },
             callback: (value) => shortDate(labels[value]),
             maxTicksLimit: 8,
@@ -72,9 +72,9 @@ export default function PriceChart({ history, predict }) {
           },
         },
         y: {
-          grid: { color: 'rgba(36, 28, 18, 0.08)' },
+          grid: { color: '#E7E2D3' },
           ticks: {
-            color: '#8A7F6A',
+            color: '#8A8F86',
             font: { family: 'IBM Plex Mono', size: 11 },
             callback: (v) => `₹${Math.round(v / 100) / 10}k`,
           },
@@ -83,8 +83,8 @@ export default function PriceChart({ history, predict }) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#241C12',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: '#173A27',
+          borderColor: 'rgba(251, 248, 238, 0.16)',
           borderWidth: 1,
           titleFont: { family: 'Work Sans', size: 11.5 },
           bodyFont: { family: 'IBM Plex Mono', size: 12.5 },

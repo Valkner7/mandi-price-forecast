@@ -20,10 +20,18 @@ export default function Sidebar({ footer }) {
             Voice advisory
           </li>
           <li className="nav-item" onClick={() => { window.location.href = '/trends-dashboard'; }}>
-            Trend board
+            <span className="nav-label">
+              Mandi Rujhan
+              <span className="nav-sub">Trend board</span>
+            </span>
           </li>
           <li>
-            <NavLink to="/nearby" className={navItemClass}>Nearby mandis</NavLink>
+            <NavLink to="/nearby" className={navItemClass}>
+              <span className="nav-label">
+                Mandi Sameep
+                <span className="nav-sub">Nearby mandis</span>
+              </span>
+            </NavLink>
           </li>
           <li className="nav-item" onClick={() => { window.location.href = '/docs'; }}>
             API docs
