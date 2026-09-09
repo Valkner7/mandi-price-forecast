@@ -28,7 +28,7 @@ export default function PageHeader({
   return (
     <div className="page-header">
       <div>
-        <h1 className="page-title">Price forecast dashboard</h1>
+        <h1 className="page-title">MandiDarpan</h1>
         <div className="page-meta">{todayLabel}</div>
       </div>
       <div className="selector-row">
