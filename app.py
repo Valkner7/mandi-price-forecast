@@ -33,6 +33,7 @@ from fastapi.responses import StreamingResponse, HTMLResponse, Response
 from gtts import gTTS
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client as TwilioRestClient
+from twilio.request_validator import RequestValidator
 import price_model as pm
 
 
@@ -2697,6 +2698,27 @@ def _twiml_response(message: str) -> Response:
     return Response(content=str(reply), media_type="application/xml; charset=utf-8")
 
 
+def _verify_twilio_request(request: Request, form: dict) -> bool:
+    """
+    Confirms an incoming /sms or /whatsapp POST genuinely came from Twilio,
+    using Twilio's request signature scheme (X-Twilio-Signature header).
+    Fails CLOSED: if TWILIO_AUTH_TOKEN isn't configured, or the signature
+    doesn't match, the request is rejected rather than allowed through.
+
+    CAVEAT: signature validation depends on Twilio and this server agreeing
+    on the exact public URL (scheme + host) of the request. If Render sits
+    behind a proxy that rewrites the Host header, this may need adjustment
+    (e.g. explicitly reconstructing the URL from X-Forwarded-* headers)
+    after a live test against the real Twilio webhook.
+    """
+    if not TWILIO_AUTH_TOKEN:
+        return False
+    signature = request.headers.get("X-Twilio-Signature", "")
+    validator = RequestValidator(TWILIO_AUTH_TOKEN)
+    url = str(request.url)
+    return validator.validate(url, form, signature)
+
+
 @app.post("/sms")
 @limiter.limit("20/minute")
 async def sms_webhook(request: Request):
@@ -2710,6 +2732,8 @@ async def sms_webhook(request: Request):
     requirement and is the recommended channel for a live demo.
     """
     form = await request.form()
+    if not _verify_twilio_request(request, dict(form)):
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
@@ -2737,6 +2761,8 @@ async def whatsapp_webhook(request: Request):
     later.
     """
     form = await request.form()
+    if not _verify_twilio_request(request, dict(form)):
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
