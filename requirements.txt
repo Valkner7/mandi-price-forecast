@@ -9,7 +9,6 @@ statsmodels
 jupyter
 google-genai
 gtts==2.5.4
-click>=8.3.3
 rapidfuzz
 twilio
 python-multipart
