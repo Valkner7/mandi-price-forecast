@@ -2149,11 +2149,22 @@ def compare_advisory(
     language: str = Query("en", description="en = English, hi = Hindi, pa = Punjabi"),
 ):
     comparison_data = compare_mandis(crop=crop, mandis=mandis)
-    advisory_text, used_fallback = generate_compare_advisory(
-        comparison_data=comparison_data,
-        farmer_question=question,
-        language_code=language,
-    )
+    # generate_compare_advisory() already falls back to comparison_data["summary"]
+    # on a Gemini timeout or API error. It still raises HTTPException for a
+    # real config problem (missing API key) — catch that here too, same as
+    # /advisory and /voice-advisory, and reuse its own fallback summary text
+    # instead of a bare 500. A bad `language` value (400) still propagates.
+    try:
+        advisory_text, used_fallback = generate_compare_advisory(
+            comparison_data=comparison_data,
+            farmer_question=question,
+            language_code=language,
+        )
+    except HTTPException as exc:
+        if exc.status_code != 500:
+            raise
+        advisory_text = comparison_data["summary"]
+        used_fallback = True
     return {
         "crop": crop,
         "compared_mandis": comparison_data["compared_mandis"],
