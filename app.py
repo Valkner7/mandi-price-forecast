@@ -64,6 +64,29 @@ async def read_index():
         )
     return FileResponse(str(index_path))
 
+
+# The built dashboard's index.html references its JS/CSS bundle and icons
+# with root-relative paths (e.g. /assets/index-XXXX.js, /favicon.svg), since
+# that's what Vite emits by default. Serving index.html at "/" above without
+# also serving these exact paths at root left the page loading successfully
+# but blank, with every asset request 404ing (the /dashboard mount below
+# only covers /dashboard/assets/..., not /assets/...). This makes / actually
+# render, not just the /dashboard mount.
+@app.get("/favicon.svg")
+async def read_favicon():
+    favicon_path = BASE_DIR / "static" / "dashboard" / "favicon.svg"
+    if not favicon_path.exists():
+        raise HTTPException(status_code=404, detail="favicon.svg not found")
+    return FileResponse(str(favicon_path))
+
+
+@app.get("/icons.svg")
+async def read_icons():
+    icons_path = BASE_DIR / "static" / "dashboard" / "icons.svg"
+    if not icons_path.exists():
+        raise HTTPException(status_code=404, detail="icons.svg not found")
+    return FileResponse(str(icons_path))
+
 # The dashboard (static/dashboard) is served from the same origin as the
 # API, so CORS is only needed if you ever point a separately-hosted
 # frontend at this API. Left permissive since every endpoint here is
@@ -82,6 +105,9 @@ app.add_middleware(
 # before it's been added), skip the mount instead of failing to start.
 if STATIC_DASHBOARD_DIR.exists():
     app.mount("/dashboard", StaticFiles(directory=str(STATIC_DASHBOARD_DIR), html=True), name="dashboard")
+    _dashboard_assets_dir = STATIC_DASHBOARD_DIR / "assets"
+    if _dashboard_assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(_dashboard_assets_dir)), name="dashboard-assets-root")
 # Override with `export GEMINI_MODEL=...` if this model name ever 404s —
 # verify the current valid model name in Google AI Studio before your demo.
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
