@@ -1,17 +1,30 @@
-from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 import time
 import json
 import re
 import threading
 import uuid
+import hmac
+from pathlib import Path
+
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+
+from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
+
 from datetime import datetime, timezone
 import concurrent.futures
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from google import genai
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from voice_extraction import extract_crop_and_mandi
@@ -20,6 +33,7 @@ from fastapi.responses import StreamingResponse, HTMLResponse, Response
 from gtts import gTTS
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client as TwilioRestClient
+from twilio.request_validator import RequestValidator
 import price_model as pm
 
 
@@ -31,6 +45,24 @@ FORECAST_MODEL_PATH = BASE_DIR / "models" / "lgbm_price_model.joblib"
 FORECAST_MODEL_META_PATH = BASE_DIR / "models" / "lgbm_price_model_meta.json"
 
 app = FastAPI(title="Mandi Price Forecast API", version="1.0.0")
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Mount Static Folder (for Leaflet CSS, JS, and Images)
+# (removed dead /static mount - unused by current React/Vite frontend)
+
+# Root Route to serve dashboard UI
+@app.get("/")
+async def read_index():
+    index_path = BASE_DIR / "static" / "dashboard" / "index.html"
+    if not index_path.exists():
+        return JSONResponse(
+            {"error": "Dashboard build not found. Run `npm run build` in frontend/ and copy the output to static/dashboard."},
+            status_code=503,
+        )
+    return FileResponse(str(index_path))
 
 # The dashboard (static/dashboard) is served from the same origin as the
 # API, so CORS is only needed if you ever point a separately-hosted
@@ -58,7 +90,27 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # don't leave the farmer staring at a spinner for 30-60s while the SDK
 # retries in the background. Give up after this many seconds and fall back
 # to a plain, template-built advisory using the same trusted forecast data.
-ADVISORY_TIMEOUT_SECONDS = float(os.getenv("ADVISORY_TIMEOUT_SECONDS", "10"))
+# Kept below 10s (rather than exactly 10) so the plain-text endpoints
+# (/advisory, /compare-advisory, SMS/WhatsApp replies) that use this value
+# directly still return well within a 10s frontend budget once predict(),
+# JSON serialization, and network round-trip are added on top.
+ADVISORY_TIMEOUT_SECONDS = float(os.getenv("ADVISORY_TIMEOUT_SECONDS", "8"))
+
+# /voice-advisory is the one endpoint where Gemini generation is followed by
+# a second slow step (text-to-speech), so it can't just reuse
+# ADVISORY_TIMEOUT_SECONDS for Gemini alone — that would leave TTS free to
+# run unbounded on top, and the two stages could sum to well over 10s. This
+# is the hard ceiling for that *entire* round trip as experienced by the
+# frontend; Gemini and TTS dynamically split it (see voice_advisory()) so
+# together they can't blow past it by more than a small, bounded margin.
+VOICE_ADVISORY_BUDGET_SECONDS = float(os.getenv("VOICE_ADVISORY_BUDGET_SECONDS", "10"))
+
+# Always keep at least this many seconds of the shared budget free for TTS,
+# regardless of how long Gemini is allowed to run — a 2-3 sentence advisory
+# typically synthesizes in well under this, but it needs *some* floor so a
+# near-exhausted budget doesn't get handed to gTTS as an unreasonably short
+# (or zero) timeout.
+MIN_TTS_RESERVE_SECONDS = 2.5
 
 # --- Price alerts (Tier 1 #4) --------------------------------------------
 # Twilio credentials for sending PROACTIVE outbound WhatsApp messages (as
@@ -129,12 +181,16 @@ _FALLBACK_DATA_NOTE = {
     "pa": " ਧਿਆਨ ਦਿਓ: ਇਹ ਕੀਮਤ ਡਾਟਾ ਅੱਜ ਦਾ ਨਹੀਂ ਹੈ।",
 }
 
-# Honest confidence framing, from the project's own validation notebook:
-# on this dataset, the forecasting model beats a simple "no change" baseline
-# in only ~28% of tested crop-mandi combinations on a held-out window. Short
-# horizon mandi prices behave close to a random walk — this is surfaced
-# directly in the product (not just the pitch deck) so the app never
-# overstates its own precision.
+# Honest confidence framing: on this dataset, the forecasting model beats a
+# simple "no change" (naive persistence) baseline on only a minority of
+# tested crop-mandi combinations on a held-out window — short-horizon mandi
+# prices behave close to a random walk. This is surfaced directly in the
+# product (not just the pitch deck) so the app never overstates its own
+# precision. The actual figures (combinations tested, win rate vs. naive)
+# live in models/lgbm_price_model_meta.json, written by
+# train_forecast_model.py's backtest_vs_naive() on every retrain — see
+# _forecast_validation_summary() below, which reads that artifact directly
+# rather than hardcoding a number that would go stale after the next retrain.
 FORECAST_CONFIDENCE_NOTE = {
     "en": "This is a directional estimate, not a precise prediction — on this "
           "kind of data, forecasts improve on simply expecting no price change "
@@ -144,6 +200,39 @@ FORECAST_CONFIDENCE_NOTE = {
     "pa": "ਇਹ ਇੱਕ ਦਿਸ਼ਾਤਮਕ ਅਨੁਮਾਨ ਹੈ, ਸਟੀਕ ਭਵਿੱਖਬਾਣੀ ਨਹੀਂ — ਇਸ ਤਰ੍ਹਾਂ ਦੇ ਡਾਟੇ ਵਿੱਚ, "
           "ਅਨੁਮਾਨ ਹਮੇਸ਼ਾ ਕੀਮਤ ਵਿੱਚ ਕੋਈ ਬਦਲਾਅ ਨਾ ਮੰਨਣ ਨਾਲੋਂ ਬਿਹਤਰ ਨਹੀਂ ਹੁੰਦੇ।",
 }
+
+
+def _forecast_validation_summary(meta: dict | None) -> str:
+    """Human-readable validation claim for /predict's confidence block,
+    built from the real backtest numbers baked into the trained model
+    artifact (models/lgbm_price_model_meta.json) rather than a hardcoded
+    string that references a notebook nobody committed. Falls back to an
+    honest "not available" note if no artifact is loaded (e.g. the ETS
+    fallback path, where no LightGBM meta exists at all).
+    """
+    if not meta:
+        return (
+            "No trained global model artifact is loaded for this response "
+            "(ETS fallback in use) — no backtest numbers apply here."
+        )
+
+    combos = meta.get("crop_mandi_combinations_tested")
+    win_rate = meta.get("crop_mandi_win_rate_vs_naive")
+    backtest_days = meta.get("backtest_days")
+
+    if combos is None or win_rate is None:
+        return (
+            "Trained model artifact loaded, but it doesn't include backtest "
+            "metadata (older artifact format) — see train_forecast_model.py "
+            "for how validation is computed."
+        )
+
+    return (
+        f"{combos} crop-mandi combinations, {backtest_days}-day held-out "
+        f"test window (see train_forecast_model.py's backtest_vs_naive; "
+        f"beat naive persistence in {win_rate:.1%} of combinations — "
+        f"models/lgbm_price_model_meta.json has the full numbers)."
+    )
 
 
 def build_fallback_advisory(forecast_data: dict, language_code: str) -> str:
@@ -195,12 +284,18 @@ def generate_advisory(
     forecast_data: dict,
     farmer_question: str,
     language_code: str,
+    timeout_seconds: float | None = None,
 ) -> tuple[str, bool]:
     """Turn trusted forecast data into a short advisory in one chosen language.
 
     Returns (advisory_text, used_fallback). used_fallback is True when Gemini
     was too slow or unavailable and we fell back to a plain, template-built
-    advisory instead of raising and leaving the caller with nothing."""
+    advisory instead of raising and leaving the caller with nothing.
+
+    timeout_seconds overrides the module-level ADVISORY_TIMEOUT_SECONDS for
+    this call. voice_advisory() uses this to hand Gemini a shorter deadline
+    than the default, reserving the rest of its shared request budget for
+    the text-to-speech step that follows (see VOICE_ADVISORY_BUDGET_SECONDS)."""
 
     if language_code not in LANGUAGES:
         raise HTTPException(
@@ -277,13 +372,14 @@ Confidence note: {forecast_data.get("confidence", {}).get("note", FORECAST_CONFI
     # background and its result is simply discarded.
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     future = executor.submit(call_gemini)
+    effective_timeout = ADVISORY_TIMEOUT_SECONDS if timeout_seconds is None else timeout_seconds
     try:
-        response = future.result(timeout=ADVISORY_TIMEOUT_SECONDS)
+        response = future.result(timeout=effective_timeout)
         executor.shutdown(wait=False)
         return response.text.strip(), False
     except concurrent.futures.TimeoutError:
         executor.shutdown(wait=False)
-        print(f"GEMINI TIMEOUT: no response within {ADVISORY_TIMEOUT_SECONDS}s")
+        print(f"GEMINI TIMEOUT: no response within {effective_timeout}s")
         return build_fallback_advisory(forecast_data, language_code), True
     except Exception as error:
         executor.shutdown(wait=False)
@@ -385,6 +481,99 @@ def load_series(crop: str, mandi: str) -> pd.Series:
     return series
 
 
+def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> dict:
+    """Bulk equivalent of load_series() for /trends: scans the full
+    dataframe ONCE for all requested crops and builds a price series for
+    every (crop, mandi) pair found, instead of load_series()'s pattern of
+    re-masking the entire dataframe from scratch for every single pair
+    (239 separate full-table scans in /trends' case — the other major
+    cost identified in profiling, alongside the per-call LightGBM
+    overhead that forecast_recursive_batch() addresses).
+
+    Applies the same per-pair logic as load_series(): mean price per
+    date (for same-date duplicates), resampled onto a daily frequency and
+    forward-filled, with pairs below `min_points` daily records excluded
+    (matching load_series()'s MIN_POINTS=30 threshold) rather than raising
+    — callers just won't see that pair, mirroring /trends' existing
+    "skip pairs that can't forecast" behavior.
+
+    Returns {(crop, mandi): price_series}, one entry per pair with enough
+    history. Crop/mandi names are stripped, matching load_series().
+    """
+    df = _load_full_dataframe()
+    crop_set = {c.strip().casefold() for c in crop_names}
+    sub = df[df["crop"].astype(str).str.casefold().isin(crop_set)]
+    sub = sub.dropna(subset=["price"])
+
+    series_map: dict = {}
+    for (crop_val, mandi_val), group in sub.groupby(["crop", "mandi"], sort=False):
+        series = group.groupby("date")["price"].mean().sort_index()
+        if len(series) < min_points:
+            continue
+        series = series.resample("D").last().ffill()
+        key = (str(crop_val).strip(), str(mandi_val).strip())
+        series_map[key] = series
+    return series_map
+
+
+def _load_arrival_bulk(crop_names: list[str], price_index_by_pair: dict) -> dict:
+    """Bulk equivalent of load_arrival_series() for /trends — one full-
+    dataframe scan for all requested crops instead of one scan per pair.
+    Mirrors load_arrival_series()'s contract: summed (not averaged) per
+    day, reindexed onto each pair's own price index, not forward-filled.
+    Pairs with no arrival data (or no arrival_qty column at all) get an
+    all-NaN series, exactly like load_arrival_series() would return.
+    """
+    df = _load_full_dataframe()
+    if "arrival_qty" not in df.columns:
+        return {key: pd.Series(np.nan, index=idx) for key, idx in price_index_by_pair.items()}
+
+    crop_set = {c.strip().casefold() for c in crop_names}
+    sub = df[df["crop"].astype(str).str.casefold().isin(crop_set)].copy()
+    sub["arrival_qty"] = pd.to_numeric(sub["arrival_qty"], errors="coerce")
+
+    arrival_map: dict = {}
+    for (crop_val, mandi_val), group in sub.groupby(["crop", "mandi"], sort=False):
+        key = (str(crop_val).strip(), str(mandi_val).strip())
+        if key not in price_index_by_pair:
+            continue
+        arrival = group.groupby("date")["arrival_qty"].sum(min_count=1).sort_index()
+        arrival_map[key] = arrival.reindex(price_index_by_pair[key])
+
+    # Any pair with no arrival rows at all (e.g. filtered out above) still
+    # needs an all-NaN entry so callers never need to special-case absence.
+    for key, idx in price_index_by_pair.items():
+        if key not in arrival_map:
+            arrival_map[key] = pd.Series(np.nan, index=idx)
+    return arrival_map
+
+
+def load_arrival_series(crop: str, mandi: str, price_index: pd.DatetimeIndex) -> pd.Series:
+    """Mirrors price_model.build_panel's arrival handling: summed per day
+    (not averaged, since arrival is a volume), reindexed onto the same
+    daily index as the price series, and NOT forward-filled (a gap day
+    with no reported arrival stays NaN rather than fabricating a repeat
+    trading day). Returns an all-NaN series if this crop/mandi has no
+    arrival_qty column or no arrival data at all, so callers never need
+    to special-case its absence — matches build_panel()'s contract.
+    """
+    df = _load_full_dataframe()
+    if "arrival_qty" not in df.columns:
+        return pd.Series(np.nan, index=price_index)
+
+    crop = crop.strip()
+    mandi = mandi.strip()
+    mask = (
+        df["crop"].astype(str).str.casefold().eq(crop.casefold())
+        & df["mandi"].astype(str).str.casefold().eq(mandi.casefold())
+    )
+    data = df.loc[mask, ["date", "arrival_qty"]].copy()
+    data["arrival_qty"] = pd.to_numeric(data["arrival_qty"], errors="coerce")
+
+    arrival = data.groupby("date")["arrival_qty"].sum(min_count=1).sort_index()
+    return arrival.reindex(price_index)
+
+
 def fit_ets(series: pd.Series):
     """Fit a robust Exponential Smoothing model and return fitted model + name."""
     candidates = [
@@ -464,14 +653,6 @@ def detect_price_anomalies(series: pd.Series, z_threshold: float = 2.5) -> list[
                 "direction": "spike" if z > 0 else "drop",
             })
     return anomalies
-
-
-@app.get("/")
-def hello_world():
-    return {"message": "Hello World - Mandi Price Forecast API is running"}
-
-
-
 
 @app.get("/sw.js")
 def service_worker():
@@ -1177,8 +1358,10 @@ def predict(
 
     if lgbm_model is not None:
         try:
+            arrival_series = load_arrival_series(crop, mandi, series.index)
             forecast_values = pm.forecast_recursive(
-                lgbm_model, lgbm_meta, series, crop, mandi, horizon=horizon
+                lgbm_model, lgbm_meta, series, crop, mandi, horizon=horizon,
+                arrival_series=arrival_series,
             )
             model_name = "LightGBM_global"
         except Exception as error:
@@ -1242,7 +1425,7 @@ def predict(
         "unit": "INR per quintal",
         "confidence": {
             "note": FORECAST_CONFIDENCE_NOTE["en"],
-            "validated_on": "39 crop-mandi combinations, held-out test window (see mandi_price_forecasting notebook)",
+            "validated_on": _forecast_validation_summary(lgbm_meta),
         },
         "anomaly_flag": {
             "latest_price_is_anomaly": latest_is_anomaly,
@@ -1360,6 +1543,29 @@ def _viable_mandis_for_crop(crop: str, min_points: int = 30) -> list[str]:
     return seen
 
 
+# Short-TTL cache for /trends: the underlying data only changes once a day
+# (via the daily fetch + retrain GitHub Action), so re-computing 239
+# forecasts on every dashboard load/refresh within the same few minutes is
+# pure waste. Keyed on the `crops` query string so different callers of
+# this endpoint don't collide. This is a defensive extra layer on top of
+# the real fix below (batching); even a fully-optimized /trends benefits
+# from not recomputing identical results for a dashboard that polls it.
+_TRENDS_CACHE_TTL_SECONDS = 600  # 10 minutes
+_trends_cache: dict = {}
+
+@app.on_event("startup")
+def _warm_trends_cache():
+    """Pre-compute /trends for the default crop set on startup, so the
+    first real dashboard visitor doesn't pay the cold-cache cost (see
+    _TRENDS_CACHE_TTL_SECONDS above). Uses the same default crops the
+    route itself defaults to, so it fills the exact cache key a fresh
+    page load will hit."""
+    try:
+        trends(crops=",".join(_RELIABLE_TREND_CROPS))
+    except Exception as exc:
+        print(f"[TRENDS] cache warm-up failed: {exc}")
+
+
 @app.get("/trends")
 def trends(
     crops: str = Query(
@@ -1372,10 +1578,50 @@ def trends(
     whole dataset — not one farmer's one question. Built for a mandi board
     or policymaker scanning the market at a glance, so it's grouped by crop
     and sorted by size of move (biggest gainers/losers first) rather than
-    alphabetically."""
+    alphabetically.
+
+    Performance note: this used to call predict() once per crop-mandi pair
+    (239 of them at last count), each of which (a) re-scanned the full
+    dataframe from scratch via load_series()/load_arrival_series(), and
+    (b) issued 7 separate single-row LightGBM.predict() calls for its
+    7-day recursive forecast — ~1,673 single-row predict() calls and 239
+    full-table scans per /trends request, measured at 13-23s wall clock.
+    This version bulk-loads the dataframe once for all requested crops
+    (_load_series_bulk/_load_arrival_bulk) and forecasts every pair in a
+    single batched pass (forecast_recursive_batch — one predict() call per
+    horizon day, across ALL pairs at once, instead of one per pair per
+    day). Falls back to the original per-pair ETS path only for pairs the
+    batched LightGBM path can't cover (no trained artifact at all), same
+    honesty contract as /predict.
+    """
     crop_names = [c.strip() for c in crops.split(",") if c.strip()]
     if not crop_names:
         raise HTTPException(status_code=400, detail="Provide at least one crop name.")
+
+    cache_key = ",".join(sorted(c.casefold() for c in crop_names))
+    cached = _trends_cache.get(cache_key)
+    if cached is not None:
+        cached_at, cached_response = cached
+        if time.time() - cached_at < _TRENDS_CACHE_TTL_SECONDS:
+            return cached_response
+
+    horizon = 7
+    lgbm_model, lgbm_meta = _load_forecast_model()
+
+    series_map = _load_series_bulk(crop_names)
+
+    batch_forecasts: dict = {}
+    if lgbm_model is not None and series_map:
+        try:
+            price_index_by_pair = {key: series.index for key, series in series_map.items()}
+            arrival_map = _load_arrival_bulk(crop_names, price_index_by_pair)
+            batch_forecasts = pm.forecast_recursive_batch(
+                lgbm_model, lgbm_meta, series_map, horizon=horizon,
+                arrival_map=arrival_map,
+            )
+        except Exception as error:
+            print("LIGHTGBM BATCH PREDICT ERROR, falling back to per-pair ETS:", error)
+            batch_forecasts = {}
 
     results_by_crop = {}
     rising = falling = stable = 0
@@ -1384,24 +1630,43 @@ def trends(
         mandi_names = _viable_mandis_for_crop(crop)
         rows = []
         for mandi_name in mandi_names:
-            try:
-                forecast_data = predict(crop=crop, mandi=mandi_name)
-            except HTTPException:
+            key = (crop.strip(), mandi_name.strip())
+            series = series_map.get(key)
+            if series is None:
                 continue  # shouldn't happen given the min-points filter, but don't let one bad pair fail the whole dashboard
-            latest = forecast_data["latest_price"]
-            forecast_last = forecast_data["forecast"][-1]["price"]
-            pct_change = round(((forecast_last - latest) / latest) * 100, 1) if latest else 0.0
+
+            latest_price = float(series.iloc[-1])
+            forecast_values = batch_forecasts.get(key)
+            if forecast_values is None:
+                # No trained LightGBM artifact at all, or the batch call
+                # failed outright — fall back to the original per-series
+                # ETS path for this pair only, same as /predict would.
+                model, _ = fit_ets(series)
+                forecast = model.forecast(horizon)
+                forecast_values = [float(x) for x in forecast.values]
+
+            forecast_last = forecast_values[-1]
+            delta = forecast_last - latest_price
+            threshold = max(1.0, abs(latest_price) * 0.01)
+            if delta > threshold:
+                trend = "rising"
+            elif delta < -threshold:
+                trend = "falling"
+            else:
+                trend = "stable"
+
+            pct_change = round((delta / latest_price) * 100, 1) if latest_price else 0.0
             rows.append({
                 "mandi": mandi_name,
-                "latest_price": latest,
-                "trend": forecast_data["trend"],
-                "forecast_price": forecast_last,
+                "latest_price": round(latest_price, 2),
+                "trend": trend,
+                "forecast_price": round(forecast_last, 2),
                 "pct_change": pct_change,
-                "forecast_horizon_days": forecast_data["forecast_horizon_days"],
+                "forecast_horizon_days": horizon,
             })
-            if forecast_data["trend"] == "rising":
+            if trend == "rising":
                 rising += 1
-            elif forecast_data["trend"] == "falling":
+            elif trend == "falling":
                 falling += 1
             else:
                 stable += 1
@@ -1418,13 +1683,15 @@ def trends(
             detail=f"No crop-mandi pairs with enough history to forecast for: {', '.join(crop_names)}.",
         )
 
-    return {
+    response = {
         "crops": results_by_crop,
         "summary": {"rising": rising, "falling": falling, "stable": stable},
         "unit": "INR per quintal",
         "note": "Grouped by crop, sorted by size of forecast move (biggest movers first). "
-        "Same 7-day ETS forecast and honesty caveats as /predict — see its 'confidence' field.",
+        "Same 7-day forecast and honesty caveats as /predict — see its 'confidence' field.",
     }
+    _trends_cache[cache_key] = (time.time(), response)
+    return response
 
 
 @app.get("/trends-dashboard", response_class=HTMLResponse)
@@ -1693,7 +1960,6 @@ def compare_mandis(
         key=lambda r: (-r["latest_price"], trend_rank.get(r["trend"], 1)),
     )
 
-    prices = [r["latest_price"] for r in ranked]
     best, worst = ranked[0], ranked[-1]
     spread = round(best["latest_price"] - worst["latest_price"], 2)
     spread_pct = round((spread / worst["latest_price"]) * 100, 1) if worst["latest_price"] else 0.0
@@ -1916,13 +2182,25 @@ def _ascii_safe_header_value(value: str, fallback: str = "unknown") -> str:
 
 
 @app.post("/voice-advisory")
+@limiter.limit("10/minute")
 def voice_advisory(
+    request: Request,
     question: str = Query(..., description="Farmer's spoken or typed question"),
     language: str = Query(
         "en",
         description="en = English, hi = Hindi, pa = Punjabi",
     ),
 ):
+    # This is the one endpoint where Gemini generation is followed by a
+    # second slow, network-bound step (TTS), so the two need to share a
+    # single wall-clock budget (VOICE_ADVISORY_BUDGET_SECONDS) rather than
+    # each independently getting up to ADVISORY_TIMEOUT_SECONDS — that could
+    # otherwise sum to well over the 10s a farmer will wait for a spoken
+    # answer. extract_crop_and_mandi() and predict() are both local,
+    # in-memory operations (no network calls), so they're not separately
+    # budgeted here — they're expected to take milliseconds either way.
+    budget_start = time.monotonic()
+
     extracted = extract_crop_and_mandi(question)
 
     crop = extracted["crop"]
@@ -1942,10 +2220,18 @@ def voice_advisory(
 
     forecast_data = predict(crop=crop, mandi=mandi)
 
+    # Give Gemini whatever's left of the shared budget, minus a guaranteed
+    # reserve for TTS afterward — so however long Gemini actually takes (up
+    # to its timeout), TTS is never left with zero time.
+    elapsed = time.monotonic() - budget_start
+    gemini_timeout = max(
+        2.0, VOICE_ADVISORY_BUDGET_SECONDS - MIN_TTS_RESERVE_SECONDS - elapsed
+    )
     advisory_text, used_fallback = generate_advisory(
         forecast_data=forecast_data,
         farmer_question=question,
         language_code=language,
+        timeout_seconds=gemini_timeout,
     )
     audio = BytesIO()
 
@@ -1959,16 +2245,28 @@ def voice_advisory(
     # observed to fail intermittently (especially right after a slow/timed-out
     # Gemini call) even though isolated calls with the same text succeed.
     # Retry once after a short pause before giving up, so a transient network
-    # blip doesn't take down the whole advisory response.
+    # blip doesn't take down the whole advisory response — but only within
+    # whatever's left of the shared request budget. gTTS's own `timeout=`
+    # bounds each attempt's network call so a hung connection here can't by
+    # itself blow past VOICE_ADVISORY_BUDGET_SECONDS the way an unbounded
+    # call (the previous behavior) could.
     TTS_MAX_ATTEMPTS = 2
-    TTS_RETRY_DELAY_SECONDS = 1.5
     last_tts_error = None
     for attempt in range(1, TTS_MAX_ATTEMPTS + 1):
+        remaining = VOICE_ADVISORY_BUDGET_SECONDS - (time.monotonic() - budget_start)
+        if attempt > 1 and remaining < 1.0:
+            # Not enough budget left for a meaningful retry — stop rather
+            # than spend what little remains on a near-certain repeat
+            # failure and blow the 10s ceiling anyway.
+            print("TTS RETRY SKIPPED: insufficient remaining budget")
+            break
+        tts_timeout = max(1.5, remaining)
         try:
             audio = BytesIO()
             tts = gTTS(
                 text=advisory_text,
                 lang=tts_language,
+                timeout=tts_timeout,
             )
             tts.write_to_fp(audio)
             audio.seek(0)
@@ -1978,7 +2276,10 @@ def voice_advisory(
             last_tts_error = exc
             print(f"TTS ATTEMPT {attempt}/{TTS_MAX_ATTEMPTS} FAILED: {exc}")
             if attempt < TTS_MAX_ATTEMPTS:
-                time.sleep(TTS_RETRY_DELAY_SECONDS)
+                remaining_after = VOICE_ADVISORY_BUDGET_SECONDS - (time.monotonic() - budget_start)
+                # Short, budget-aware pause — never sleeps away time that a
+                # retry attempt would actually need.
+                time.sleep(min(0.5, max(0.0, remaining_after - 1.0)))
 
     if last_tts_error is not None:
         raise HTTPException(
@@ -2041,6 +2342,22 @@ _ALERT_AMBIGUOUS_PHRASES = ["tell me when", "let me know when"]
 _ALERT_STOP_PHRASES = ["stop alert", "cancel alert", "stop alerts", "cancel alerts"]
 _ALERT_LIST_PHRASES = ["my alerts", "list alerts", "show alerts"]
 
+# Guards the _ALERT_AMBIGUOUS_PHRASES gate below. A genuine alert-setting
+# message is forward-looking ("tell me when it crosses 850" — notify me
+# later, about the future). An ordinary informational question can use the
+# exact same phrase about the past ("tell me when onion was 850 last
+# week"), and a bare "is there a number in this message" check can't tell
+# the two apart — both contain "850". These markers catch the common
+# past-tense/historical phrasings so that case falls through to the normal
+# price-query flow instead of being misrouted into alert-creation (or,
+# worse, silently creating an unwanted alert subscription if a crop/mandi
+# happen to be extractable from the same message).
+_ALERT_HISTORICAL_MARKERS = [
+    "was", "were", "used to be", "last week", "last month", "last year",
+    "yesterday", "ago", "previously", "in the past", "historically",
+    "on average", "used to cost",
+]
+
 
 def _looks_like_alert_command(lowered_text: str) -> bool:
     if any(phrase in lowered_text for phrase in _ALERT_ACTION_PHRASES):
@@ -2048,7 +2365,15 @@ def _looks_like_alert_command(lowered_text: str) -> bool:
     if any(phrase in lowered_text for phrase in _ALERT_AMBIGUOUS_PHRASES):
         # Require an actual number too, so "tell me when potato prices
         # usually rise" (an ordinary question, no threshold) doesn't get
-        # misrouted into alert-creation.
+        # misrouted into alert-creation. Also bail out on an obvious
+        # historical marker — "tell me when onion was 850 last week" has
+        # a number, but it's a question about the past, not a request to
+        # be notified about the future — see _ALERT_HISTORICAL_MARKERS.
+        if any(
+            re.search(rf"\b{re.escape(marker)}\b", lowered_text)
+            for marker in _ALERT_HISTORICAL_MARKERS
+        ):
+            return False
         return _parse_price_threshold(lowered_text) is not None
     return False
 
@@ -2265,7 +2590,7 @@ def check_alerts_endpoint(secret: str = Query(None, description="Must match ALER
     demo responsive. Protect it with ALERTS_CRON_SECRET once deployed —
     it sends real outbound messages and shouldn't be publicly triggerable.
     """
-    if ALERTS_CRON_SECRET and secret != ALERTS_CRON_SECRET:
+    if ALERTS_CRON_SECRET and not hmac.compare_digest(secret or "", ALERTS_CRON_SECRET):
         raise HTTPException(status_code=403, detail="Missing or incorrect secret.")
     result = check_all_alerts()
     return {"status": "ok", **result}
@@ -2373,7 +2698,29 @@ def _twiml_response(message: str) -> Response:
     return Response(content=str(reply), media_type="application/xml; charset=utf-8")
 
 
+def _verify_twilio_request(request: Request, form: dict) -> bool:
+    """
+    Confirms an incoming /sms or /whatsapp POST genuinely came from Twilio,
+    using Twilio's request signature scheme (X-Twilio-Signature header).
+    Fails CLOSED: if TWILIO_AUTH_TOKEN isn't configured, or the signature
+    doesn't match, the request is rejected rather than allowed through.
+
+    CAVEAT: signature validation depends on Twilio and this server agreeing
+    on the exact public URL (scheme + host) of the request. If Render sits
+    behind a proxy that rewrites the Host header, this may need adjustment
+    (e.g. explicitly reconstructing the URL from X-Forwarded-* headers)
+    after a live test against the real Twilio webhook.
+    """
+    if not TWILIO_AUTH_TOKEN:
+        return False
+    signature = request.headers.get("X-Twilio-Signature", "")
+    validator = RequestValidator(TWILIO_AUTH_TOKEN)
+    url = str(request.url)
+    return validator.validate(url, form, signature)
+
+
 @app.post("/sms")
+@limiter.limit("20/minute")
 async def sms_webhook(request: Request):
     """Twilio SMS webhook: a farmer texts a crop + mandi (any of the three
     languages), gets a price + short advisory back — no app, no internet
@@ -2385,12 +2732,15 @@ async def sms_webhook(request: Request):
     requirement and is the recommended channel for a live demo.
     """
     form = await request.form()
+    if not _verify_twilio_request(request, dict(form)):
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
 
 
 @app.post("/whatsapp")
+@limiter.limit("20/minute")
 async def whatsapp_webhook(request: Request):
     """Twilio WhatsApp webhook — identical behavior to /sms, just a
     different transport. WhatsApp Sandbox has no DLT requirement, works
@@ -2411,6 +2761,59 @@ async def whatsapp_webhook(request: Request):
     later.
     """
     form = await request.form()
+    if not _verify_twilio_request(request, dict(form)):
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     body = (form.get("Body") or "").strip()
     sender = (form.get("From") or "").strip()
     return _twiml_response(build_reply_text(body, sender=sender))
+
+
+def _latest_price_for(crop: str, mandi: str):
+    """Best-effort latest reported price for crop+mandi, or None if that
+    pair has no rows. Doesn't require the 30-point minimum load_series()
+    enforces for forecasting — a single most-recent price is still useful
+    to show on the nearby-mandis map even for a thin series."""
+    df = _load_full_dataframe()
+    mask = (
+        df["crop"].astype(str).str.casefold().eq(crop.casefold())
+        & df["mandi"].astype(str).str.casefold().eq(mandi.casefold())
+    )
+    rows = df.loc[mask, ["date", "price"]].dropna().sort_values("date")
+    if rows.empty:
+        return None
+    last = rows.iloc[-1]
+    return {"date": last["date"].date().isoformat(), "price": round(float(last["price"]), 2)}
+
+
+@app.get("/api/nearby-mandis")
+async def get_nearby_mandis(
+    lat: float,
+    lon: float,
+    limit: int = 10,
+    crop: str | None = Query(
+        None, description="Optional crop name, e.g. Potato — if given, each mandi includes its latest reported price for this crop.",
+    ),
+):
+    nearby_list = []
+    for mandi_name, info in PUNJAB_MANDI_COORDINATES.items():
+        dist_km = calculate_haversine_distance(lat, lon, info["lat"], info["lon"])
+        entry = {
+            "mandi": mandi_name,
+            "district": info["district"],
+            "latitude": info["lat"],
+            "longitude": info["lon"],
+            "distance_km": dist_km,
+        }
+        if crop:
+            entry["latest_price"] = _latest_price_for(crop, mandi_name)
+        nearby_list.append(entry)
+
+    nearby_list.sort(key=lambda x: x["distance_km"])
+
+    return {
+        "user_location": {"lat": lat, "lon": lon},
+        "unit": "INR per quintal" if crop else None,
+        "total_mandis": len(nearby_list),
+        "mandis": nearby_list[:limit]
+    }
+
