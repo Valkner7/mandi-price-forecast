@@ -15,6 +15,5 @@ node_modules/
 frontend/dist/
 static/dashboard/
 *.log
-.pytest_cache/
 .vscode/
 .idea/
