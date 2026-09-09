@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 venv/
 .venv/
@@ -13,7 +13,6 @@ frontend-old-monolithic/
 .env
 node_modules/
 frontend/dist/
-static/dashboard/
 *.log
 .vscode/
 .idea/
