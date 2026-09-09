@@ -49,6 +49,8 @@ from datetime import datetime
 
 import pandas as pd
 
+from data_quality import append_to_quarantine, flag_implausible_prices
+
 BASE_DIR = Path(__file__).resolve().parent
 CLEAN_PATH = BASE_DIR / "clean_mandi_prices.csv"
 DEFAULT_RAW_DIR = BASE_DIR / "raw_agmarknet"
@@ -180,6 +182,19 @@ def main():
     print(f"Existing clean_mandi_prices.csv: {len(existing)} rows, "
           f"{existing['date'].min()} to {existing['date'].max()}, "
           f"{existing['mandi'].nunique()} mandis.")
+
+    # Reject prices implausibly far below their crop's usual range (e.g. a
+    # mandi's feed reporting near-zero) before they ever reach
+    # clean_mandi_prices.csv — see data_quality.py for why this exists.
+    new_data, quarantined = flag_implausible_prices(new_data, reference_df=existing)
+    if not quarantined.empty:
+        print(f"Quarantining {len(quarantined)} implausible-price row(s) "
+              f"(see quarantined_rows.csv), not merging into clean_mandi_prices.csv:")
+        print(quarantined[["date", "crop", "mandi", "price"]].to_string(index=False))
+        append_to_quarantine(quarantined, CLEAN_PATH)
+        if new_data.empty:
+            print("Every row in the given file(s) was implausible. Nothing usable to merge.")
+            sys.exit(0)
 
     combined = pd.concat([existing, new_data], ignore_index=True)
     before_dedup = len(combined)

@@ -73,6 +73,16 @@ jobs:
           # would otherwise pile up in the repo forever.
           rm -f clean_mandi_prices_backup_*.csv
           git add clean_mandi_prices.csv models/lgbm_price_model.joblib models/lgbm_price_model_meta.json
+          # quarantined_rows.csv accumulates any rows fetch_daily_mandi_data.py
+          # rejects as implausible (see data_quality.py) — added here too, or
+          # it'd be written during the run and then discarded along with the
+          # rest of the runner's filesystem, silently losing the audit trail.
+          # Guarded with -f since it won't exist at all until the first row
+          # is ever flagged, and `git add` on a missing path would otherwise
+          # fail this step (the workflow runs with bash's -e).
+          if [ -f quarantined_rows.csv ]; then
+            git add quarantined_rows.csv
+          fi
           if git diff --cached --quiet; then
             echo "No changes to commit — dataset and model already up to date."
           else
