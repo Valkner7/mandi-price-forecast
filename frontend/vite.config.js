@@ -4,6 +4,16 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // README says "npm run build outputs to static/dashboard/", but that
+    // wasn't actually configured anywhere -- the default outDir is
+    // frontend/dist/, so a fresh build never reached the folder app.py
+    // actually serves. Pointing outDir here directly makes the README
+    // claim true and removes the manual-copy step that was previously
+    // needed (and easy to forget).
+    outDir: '../static/dashboard',
+    emptyOutDir: true,
+  },
   server: {
     proxy: {
       '/meta': 'http://127.0.0.1:8000',

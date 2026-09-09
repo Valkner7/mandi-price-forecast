@@ -773,7 +773,7 @@ def voice_test():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandi Bol — Voice Price Assistant</title>
+    <title>MandiBol — Voice Price Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@500;600&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@ def voice_test():
     <div id="offlineBanner" class="offline-banner">📡 You're offline — showing saved prices below. Asking a new question needs a connection.</div>
     <header class="hero">
         <span class="eyebrow">Live Mandi Rates</span>
-        <h1>Mandi Bol<span class="gurmukhi">ਮੰਡੀ ਬੋਲ</span></h1>
+        <h1>MandiBol<span class="gurmukhi">ਮੰਡੀ ਬੋਲ</span></h1>
         <p class="tagline">Ask about any crop's price, in your own language. Speak or type — get a spoken answer back.</p>
     </header>
 
@@ -1727,7 +1727,7 @@ def trends_dashboard():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mandi Rujhan — Trend Board — Punjab Crop Prices</title>
+<title>MandiRujhan — Trend Board — Punjab Crop Prices</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1860,7 +1860,7 @@ def trends_dashboard():
 <div class="wrap">
   <header>
     <p class="eyebrow">Punjab &middot; Live from clean_mandi_prices.csv</p>
-    <h1>Mandi Rujhan</h1>
+    <h1>MandiRujhan</h1>
     <p class="title-sub">Trend Board</p>
     <p class="sub">Which crops are moving, and where — a market-wide view for mandi boards and policymakers, built from the same 7-day forecasts as the farmer advisory.</p>
     <div class="summary-strip" id="summary-strip">

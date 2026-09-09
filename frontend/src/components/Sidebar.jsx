@@ -17,18 +17,18 @@ export default function Sidebar({ footer }) {
             <NavLink to="/" end className={navItemClass}>Dashboard</NavLink>
           </li>
           <li className="nav-item" onClick={() => { window.location.href = '/voice-test'; }}>
-            Voice advisory
+            MandiBol
           </li>
           <li className="nav-item" onClick={() => { window.location.href = '/trends-dashboard'; }}>
             <span className="nav-label">
-              Mandi Rujhan
+              MandiRujhan
               <span className="nav-sub">Trend board</span>
             </span>
           </li>
           <li>
             <NavLink to="/nearby" className={navItemClass}>
               <span className="nav-label">
-                Mandi Sameep
+                MandiSameep
                 <span className="nav-sub">Nearby mandis</span>
               </span>
             </NavLink>
