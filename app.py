@@ -2182,12 +2182,24 @@ def advisory(
     # First obtain factual data from your existing forecasting model.
     forecast_data = predict(crop=crop, mandi=mandi)
 
-    # Then ask the LLM only to explain those facts.
-    advisory_text, used_fallback = generate_advisory(
-        forecast_data=forecast_data,
-        farmer_question=question,
-        language_code=language,
-    )
+    # Then ask the LLM only to explain those facts. A missing API key
+    # (status 500 config problem) falls back to a plain data reply instead
+    # of a bare 500, matching /sms, /whatsapp, and /voice-advisory. A bad
+    # `language` value (400) is the caller's mistake and still propagates.
+    try:
+        advisory_text, used_fallback = generate_advisory(
+            forecast_data=forecast_data,
+            farmer_question=question,
+            language_code=language,
+        )
+    except HTTPException as exc:
+        if exc.status_code != 500:
+            raise
+        advisory_text = (
+            f"{crop} at {mandi}: Rs {forecast_data['latest_price']}/quintal, "
+            f"trend {forecast_data['trend']}."
+        )
+        used_fallback = True
 
     return {
         "crop": crop,
@@ -2258,12 +2270,31 @@ def voice_advisory(
     gemini_timeout = max(
         2.0, VOICE_ADVISORY_BUDGET_SECONDS - MIN_TTS_RESERVE_SECONDS - elapsed
     )
-    advisory_text, used_fallback = generate_advisory(
-        forecast_data=forecast_data,
-        farmer_question=question,
-        language_code=language,
-        timeout_seconds=gemini_timeout,
-    )
+    # generate_advisory() already handles Gemini being slow/unavailable on
+    # its own (returning a plain-data fallback with used_fallback=True). It
+    # still raises HTTPException for a real config problem (e.g. no API key
+    # set at all) — catch that here too, same as build_reply_text() does for
+    # /sms and /whatsapp, so a misconfigured server still produces a spoken
+    # reply instead of a bare 500 with no audio.
+    try:
+        advisory_text, used_fallback = generate_advisory(
+            forecast_data=forecast_data,
+            farmer_question=question,
+            language_code=language,
+            timeout_seconds=gemini_timeout,
+        )
+    except HTTPException as exc:
+        # Only treat a genuine config problem (missing API key, status 500)
+        # as fallback-worthy. A bad `language` value (400) is the caller's
+        # mistake, not something to paper over with a fallback reply — let
+        # it propagate so the client sees the real error.
+        if exc.status_code != 500:
+            raise
+        advisory_text = (
+            f"{crop} at {mandi}: Rs {forecast_data['latest_price']}/quintal, "
+            f"trend {forecast_data['trend']}."
+        )
+        used_fallback = True
     audio = BytesIO()
 
     tts_language = {
