@@ -84,10 +84,39 @@ PUBLIC_DEMO_KEY = "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b"
 
 STATE_FILTER = "Punjab"
 PAGE_SIZE = 500          # API returns at most this many records per call
-MAX_PAGES = 40           # safety cap: 40 * 500 = 20,000 records/day, generous
-REQUEST_TIMEOUT_SECONDS = 45  # the shared public demo key can be slow under load
-MAX_RETRIES = 3          # retry transient timeouts/connection errors before giving up
+MAX_PAGES = 200          # safety cap; pages can be far smaller than PAGE_SIZE
+                         # when the API caps page size (see fetch_day)
+REQUEST_TIMEOUT_SECONDS = 90  # the shared public demo key can be slow under load
+MAX_RETRIES = 5          # retry transient timeouts/connection/rate-limit errors
 RETRY_BACKOFF_SECONDS = 5
+# 429 (shared demo key throttling) and 5xx are transient: the same query
+# succeeds moments later, so they must be retried rather than treated as
+# "this date has no data".
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+# data.gov.in's edge stalls requests carrying the default python-requests
+# User-Agent: the identical query returns in ~1s with any explicit UA and
+# times out after 45s without one (reproduced repeatedly). Sending a real
+# UA is what makes this script's requests actually complete.
+REQUEST_HEADERS = {
+    "User-Agent": "mandi-price-forecast/1.0 (+https://github.com/Valkner7/mandi-price-forecast)",
+    "Accept": "*/*",
+}
+
+
+class FetchFailed(RuntimeError):
+    """The API call itself failed, as opposed to the API legitimately
+    reporting no rows for a date. Kept distinct so a failure can never be
+    mistaken for an empty trading day. `partial` carries whatever pages were
+    already retrieved before the failure, so a mid-pagination throttle keeps
+    the rows it did get instead of discarding the day."""
+
+    def __init__(self, message: str, partial: pd.DataFrame | None = None):
+        super().__init__(message)
+        self.partial = partial if partial is not None else empty_frame()
+
+
+def empty_frame() -> pd.DataFrame:
+    return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty"])
 
 
 def normalize_mandi(name: str) -> str:
@@ -119,17 +148,27 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = requests.get(params=params, url=API_URL, timeout=REQUEST_TIMEOUT_SECONDS)
+            response = requests.get(
+                params=params,
+                url=API_URL,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+                headers=REQUEST_HEADERS,
+            )
+            if response.status_code in RETRYABLE_STATUS_CODES:
+                raise requests.HTTPError(
+                    f"HTTP {response.status_code}: {response.text[:120]}",
+                    response=response,
+                )
             response.raise_for_status()
             return response.text
-        except (requests.Timeout, requests.ConnectionError) as error:
+        except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as error:
             last_error = error
             if attempt < MAX_RETRIES:
-                wait = RETRY_BACKOFF_SECONDS * attempt
+                wait = RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
                 print(f"  Attempt {attempt}/{MAX_RETRIES} failed ({error}); "
                       f"retrying in {wait}s...")
                 time.sleep(wait)
-    raise last_error
+    raise FetchFailed(str(last_error)) from last_error
 
 
 def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
@@ -137,12 +176,21 @@ def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
     API's own Arrival_Date format), paginating until exhausted."""
     all_frames = []
     offset = 0
+    # The server decides how many records a page actually holds — the shared
+    # demo key is capped at 10 regardless of the requested limit — so the
+    # end-of-data test compares against the first page's real size instead
+    # of the requested PAGE_SIZE, which would end pagination after one page.
+    page_size_seen = None
     for page_num in range(MAX_PAGES):
         try:
             csv_text = fetch_page(api_key, offset, target_date)
-        except requests.RequestException as error:
-            print(f"  ERROR calling API at offset {offset}: {error}")
-            break
+        except FetchFailed as error:
+            # Surface, don't swallow: returning an empty frame here is what
+            # let a throttled run look like a quiet no-data day.
+            raise FetchFailed(
+                f"offset {offset}: {error}",
+                partial=map_to_schema(all_frames, target_date),
+            ) from error
 
         # An empty/near-empty CSV (just a header row or nothing) means
         # we've exhausted the available pages for this date.
@@ -153,15 +201,24 @@ def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
         if page_df.empty:
             break
 
+        if page_size_seen is None:
+            page_size_seen = len(page_df)
+
         all_frames.append(page_df)
         offset += len(page_df)
-        if len(page_df) < PAGE_SIZE:
+        if len(page_df) < page_size_seen:
             # Short page = last page, no need to request another.
             break
         time.sleep(0.3)  # be polite to a free public government API
 
+    return map_to_schema(all_frames, target_date)
+
+
+def map_to_schema(all_frames: list, target_date: str) -> pd.DataFrame:
+    """Map raw API pages onto this project's (date, crop, mandi, price,
+    arrival_qty) schema."""
     if not all_frames:
-        return pd.DataFrame(columns=["date", "crop", "mandi", "price", "arrival_qty"])
+        return empty_frame()
 
     raw = pd.concat(all_frames, ignore_index=True)
 
@@ -215,13 +272,15 @@ def main():
     parser.add_argument(
         "--days-back",
         type=int,
-        default=3,
+        default=1,
         help="How many days back to fetch, counting today as day 1 "
-             "(default: 3). Fetching a small backward window each run, "
-             "rather than just 'today', means a temporary API outage on "
-             "one day doesn't leave a permanent gap — the next successful "
-             "run picks up whatever was missed, and dedup makes re-fetching "
-             "already-covered days a safe no-op.",
+             "(default: 1). This resource is a CURRENT-DAY snapshot: it "
+             "ignores filters[arrival_date] and serves the latest trading "
+             "day's rows whatever date is asked for (verified against the "
+             "live API). Asking for extra days therefore re-requests the "
+             "same snapshot, which only burns the shared demo key's rate "
+             "limit; the flag is kept for the case where the publisher "
+             "starts honouring the date filter.",
     )
     args = parser.parse_args()
 
@@ -243,21 +302,33 @@ def main():
     print()
 
     frames = []
+    failed_days = []
     for i in range(args.days_back):
         target = (datetime.now() - timedelta(days=i)).strftime("%d/%m/%Y")
         print(f"Fetching Punjab prices for {target}...")
-        day_df = fetch_day(api_key, target)
+        try:
+            day_df = fetch_day(api_key, target)
+        except FetchFailed as error:
+            print(f"  API CALL FAILED for {target}: {error}")
+            failed_days.append(target)
+            if not error.partial.empty:
+                print(f"  Keeping {len(error.partial)} row(s) retrieved before the failure.")
+                frames.append(error.partial)
+            continue
         print(f"  {len(day_df)} usable rows "
               f"({day_df['crop'].nunique() if not day_df.empty else 0} crops, "
               f"{day_df['mandi'].nunique() if not day_df.empty else 0} mandis)")
         frames.append(day_df)
 
-    new_data = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
-        columns=["date", "crop", "mandi", "price", "arrival_qty"]
-    )
+    new_data = pd.concat(frames, ignore_index=True) if frames else empty_frame()
     print()
 
     if new_data.empty:
+        if failed_days:
+            print(f"ERROR: every API call failed ({', '.join(failed_days)}). "
+                  f"The dataset was NOT refreshed — this is a real failure, not "
+                  f"an empty trading day.")
+            sys.exit(1)
         print("No usable new rows found today (this can be a normal non-error "
               "case if the source hasn't posted yet, or all rows were already "
               "in the file). Not treating this as a failure.")
@@ -276,6 +347,10 @@ def main():
             print("Every new row today was implausible. Not treating this as a "
                   "failure, but nothing usable to add.")
             sys.exit(0)
+
+    if failed_days:
+        print(f"WARNING: some days failed ({', '.join(failed_days)}); "
+              f"they will be retried by the next run's backward window.")
 
     combined = pd.concat([existing, new_data], ignore_index=True)
     before_dedup = len(combined)

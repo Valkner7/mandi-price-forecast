@@ -1,113 +1,611 @@
 date,crop,mandi,price,arrival_qty
+2026-09-09,Apple,Abohar,8200.0,
+2026-09-09,Apple,Banur,10600.0,
+2026-09-09,Apple,Bathinda,15000.0,
+2026-09-09,Apple,Bhagta Bhai Ka,4900.0,
+2026-09-09,Apple,Chamkaur Sahib,9000.0,
+2026-09-09,Apple,Dasuya,8000.0,
+2026-09-09,Apple,Dhuri,6000.0,
+2026-09-09,Apple,Dinanagar,9000.0,
+2026-09-09,Apple,Faridkot,10000.0,
+2026-09-09,Apple,Fazilka,13000.0,
+2026-09-09,Apple,Garh Shankar,6500.0,
+2026-09-09,Apple,Garh Shankar(Mahalpur),8800.0,
+2026-09-09,Apple,Jalalabad,7700.0,
+2026-09-09,Apple,Jalandhar City(Jalandhar),4800.0,
+2026-09-09,Apple,Khanna,8000.0,
 2026-08-17,Apple,Ludhiana,6000.0,
+2026-09-09,Apple,Malerkotla,5500.0,
+2026-09-09,Apple,Malout,4000.0,
+2026-09-09,Apple,Maur,10000.0,
+2026-09-09,Apple,Mukerian,12000.0,
+2026-09-09,Apple,Mukerian(Talwara),7000.0,
 2026-08-17,Apple,Nabha,6500.0,
+2026-09-09,Apple,Nawan Shahar(Subzi Mandi),8600.0,
 2026-08-17,Apple,Patiala,6700.0,
+2026-09-09,Apple,Patiala,13000.0,
 2026-08-17,Apple,Patran,8520.0,
+2026-09-09,Apple,Patti,1800.0,
+2026-09-09,Apple,Quadian,3900.0,
 2026-08-17,Apple,Raikot,7470.0,
+2026-09-09,Apple,Raikot,7920.0,
+2026-09-09,Apple,Rajpura,20100.0,
+2026-09-09,Apple,Rampuraphul(Nabha Mandi),8000.0,
+2026-09-09,Apple,Ropar,9200.0,
+2026-09-09,Apple,Sirhind,7500.0,
+2026-09-09,Apple,Tanda Urmur,8500.0,
+2026-09-09,Ashgourd,Dera Baba Nanak,672.0,
+2026-09-09,Ashgourd,Faridkot,3500.0,
 2026-08-17,Ashgourd,Ludhiana,1500.0,
+2026-09-09,Ashgourd,Ludhiana,800.0,
 2026-08-17,Ashgourd,Nabha,900.0,
+2026-09-09,Banana,Abohar,2600.0,
+2026-09-09,Banana,Ahmedgarh,3000.0,
+2026-09-09,Banana,Banur,3600.0,
+2026-09-09,Banana,Bathinda,1600.0,
+2026-09-09,Banana,Bhagta Bhai Ka,2600.0,
+2026-09-09,Banana,Chamkaur Sahib,3000.0,
+2026-09-09,Banana,Dasuya,4000.0,
+2026-09-09,Banana,Dhuri,2100.0,
+2026-09-09,Banana,Dinanagar,4500.0,
 2026-08-17,Banana,Doraha,2500.0,
+2026-09-09,Banana,Doraha,2600.0,
+2026-09-09,Banana,Faridkot,2700.0,
+2026-09-09,Banana,Fazilka,3300.0,
+2026-09-09,Banana,Garh Shankar,3500.0,
+2026-09-09,Banana,GarhShankar (Kotfatuhi),3300.0,
+2026-09-09,Banana,Jalalabad,3300.0,
+2026-09-09,Banana,Khanna,1800.0,
+2026-09-09,Banana,Malerkotla,1800.0,
+2026-09-09,Banana,Malout,2000.0,
+2026-09-09,Banana,Maur,3800.0,
+2026-09-09,Banana,Mukerian,3100.0,
+2026-09-09,Banana,Mukerian(Talwara),3300.0,
 2026-08-17,Banana,Nabha,2300.0,
+2026-09-09,Banana,Nawan Shahar(Subzi Mandi),4200.0,
 2026-08-17,Banana,Patiala,1600.0,
+2026-09-09,Banana,Patiala,2300.0,
 2026-08-17,Banana,Patran,2800.0,
+2026-09-09,Banana,Quadian,2400.0,
+2026-09-09,Banana,Rajpura,3100.0,
+2026-09-09,Banana,Rampuraphul(Nabha Mandi),2500.0,
+2026-09-09,Banana,Sirhind,3400.0,
+2026-09-09,Banana,Zira,3200.0,
+2026-09-09,Banana - Green,Jalandhar City(Jalandhar),1200.0,
 2026-08-17,Beetroot,Ludhiana,1300.0,
+2026-09-09,Beetroot,Ludhiana,1300.0,
+2026-09-09,Beetroot,Malerkotla,1500.0,
+2026-09-09,Bhindi(Ladies Finger),Adampur,2500.0,
 2026-08-17,Bhindi(Ladies Finger),Amritsar(Amritsar Mewa Mandi),1000.0,
+2026-09-09,Bhindi(Ladies Finger),Bhogpur,2500.0,
+2026-09-09,Bhindi(Ladies Finger),Bhulath (Nadala),1400.0,
+2026-09-09,Bhindi(Ladies Finger),Dasuya,3000.0,
+2026-09-09,Bhindi(Ladies Finger),Dharamkot,3000.0,
+2026-09-09,Bhindi(Ladies Finger),Dhariwal,1150.0,
+2026-09-09,Bhindi(Ladies Finger),Doraha,1800.0,
+2026-09-09,Bhindi(Ladies Finger),F.G.Churian,2300.0,
+2026-09-09,Bhindi(Ladies Finger),Fazilka,3500.0,
+2026-09-09,Bhindi(Ladies Finger),Garh Shankar,2200.0,
+2026-09-09,Bhindi(Ladies Finger),Garh Shankar(Mahalpur),2400.0,
+2026-09-09,Bhindi(Ladies Finger),Harike,1150.0,
+2026-09-09,Bhindi(Ladies Finger),Jalandhar City(Jalandhar),1400.0,
+2026-09-09,Bhindi(Ladies Finger),Kalanaur,4100.0,
+2026-09-09,Bhindi(Ladies Finger),Khanna,2000.0,
+2026-09-09,Bhindi(Ladies Finger),Kurali,3300.0,
+2026-09-09,Bhindi(Ladies Finger),Lohian Khas,2200.0,
 2026-08-17,Bhindi(Ladies Finger),Ludhiana,2200.0,
+2026-09-09,Bhindi(Ladies Finger),Ludhiana,1400.0,
+2026-09-09,Bhindi(Ladies Finger),Machhiwara,3000.0,
 2026-08-17,Bhindi(Ladies Finger),Majitha,1200.0,
+2026-09-09,Bhindi(Ladies Finger),Majitha,900.0,
+2026-09-09,Bhindi(Ladies Finger),Malerkotla,1500.0,
+2026-09-09,Bhindi(Ladies Finger),Mehatpur,2700.0,
+2026-09-09,Bhindi(Ladies Finger),Mukerian,1200.0,
 2026-08-17,Bhindi(Ladies Finger),Nabha,2400.0,
+2026-09-09,Bhindi(Ladies Finger),Nawan Shahar(Subzi Mandi),1200.0,
+2026-09-09,Bhindi(Ladies Finger),Nihal Singh Wala,4000.0,
+2026-09-09,Bhindi(Ladies Finger),Pathankot,1300.0,
 2026-08-17,Bhindi(Ladies Finger),Patiala,800.0,
+2026-09-09,Bhindi(Ladies Finger),Patiala,1600.0,
 2026-08-17,Bhindi(Ladies Finger),Patran,2420.0,
+2026-09-09,Bhindi(Ladies Finger),Patran,2580.0,
+2026-09-09,Bhindi(Ladies Finger),Phillaur,2000.0,
+2026-09-09,Bhindi(Ladies Finger),Phillaur(Apra Mandi),1500.0,
+2026-09-09,Bhindi(Ladies Finger),Quadian,3900.0,
+2026-09-09,Bhindi(Ladies Finger),Rajpura,2200.0,
+2026-09-09,Bhindi(Ladies Finger),Rampuraphul(Nabha Mandi),3000.0,
 2026-08-17,Bhindi(Ladies Finger),Rayya,700.0,
+2026-09-09,Bhindi(Ladies Finger),Rayya,688.0,
+2026-09-09,Bhindi(Ladies Finger),Shahkot,2400.0,
+2026-09-09,Bhindi(Ladies Finger),Sirhind,2500.0,
+2026-09-09,Bhindi(Ladies Finger),Tanda Urmur,3500.0,
+2026-09-09,Bitter gourd,Abohar,3600.0,
+2026-09-09,Bitter gourd,Adampur,2200.0,
+2026-09-09,Bitter gourd,Ajnala,1350.0,
 2026-08-17,Bitter gourd,Amritsar(Amritsar Mewa Mandi),1000.0,
+2026-09-09,Bitter gourd,Bhulath (Nadala),1400.0,
+2026-09-09,Bitter gourd,Dasuya,3500.0,
+2026-09-09,Bitter gourd,Dera Baba Nanak,892.0,
+2026-09-09,Bitter gourd,Doraha,2000.0,
+2026-09-09,Bitter gourd,F.G.Churian,2500.0,
+2026-09-09,Bitter gourd,Faridkot,2800.0,
+2026-09-09,Bitter gourd,Fazilka,3000.0,
+2026-09-09,Bitter gourd,Garh Shankar(Mahalpur),2200.0,
 2026-08-17,Bitter gourd,Gehri,1500.0,
+2026-09-09,Bitter gourd,Harike,550.0,
+2026-09-09,Bitter gourd,Khanna,1500.0,
+2026-09-09,Bitter gourd,Kurali,2800.0,
+2026-09-09,Bitter gourd,Lalru,2900.0,
 2026-08-17,Bitter gourd,Ludhiana,1500.0,
+2026-09-09,Bitter gourd,Ludhiana,1500.0,
+2026-09-09,Bitter gourd,Machhiwara,2200.0,
 2026-08-17,Bitter gourd,Majitha,1500.0,
+2026-09-09,Bitter gourd,Malerkotla,2200.0,
+2026-09-09,Bitter gourd,Mukerian,2000.0,
 2026-08-17,Bitter gourd,Nabha,2000.0,
+2026-09-09,Bitter gourd,Nawan Shahar(Subzi Mandi),2400.0,
 2026-08-17,Bitter gourd,Patran,2230.0,
+2026-09-09,Bitter gourd,Quadian,1700.0,
 2026-08-17,Bitter gourd,Rayya,1370.0,
+2026-09-09,Bitter gourd,Rayya,1357.0,
 2026-08-17,Bitter gourd,Sahnewal,2400.0,
+2026-09-09,Bitter gourd,Sirhind,1500.0,
+2026-09-09,Bitter gourd,Tanda Urmur,2800.0,
+2026-09-09,Bottle gourd,Adampur,1500.0,
+2026-09-09,Bottle gourd,Bhogpur,1000.0,
+2026-09-09,Bottle gourd,Bhulath (Nadala),900.0,
+2026-09-09,Bottle gourd,Dasuya,2000.0,
+2026-09-09,Bottle gourd,Dinanagar,2400.0,
 2026-08-17,Bottle gourd,Doraha,1500.0,
+2026-09-09,Bottle gourd,Doraha,1500.0,
+2026-09-09,Bottle gourd,Faridkot,2000.0,
+2026-09-09,Bottle gourd,Harike,550.0,
+2026-09-09,Bottle gourd,Jalandhar City(Jalandhar),900.0,
+2026-09-09,Bottle gourd,Kalanaur,1200.0,
+2026-09-09,Bottle gourd,Khanna,1200.0,
+2026-09-09,Bottle gourd,Kharar,2500.0,
+2026-09-09,Bottle gourd,Kurali,2100.0,
+2026-09-09,Bottle gourd,Lalru,800.0,
 2026-08-17,Bottle gourd,Ludhiana,700.0,
+2026-09-09,Bottle gourd,Ludhiana,400.0,
+2026-09-09,Bottle gourd,Machhiwara,1300.0,
+2026-09-09,Bottle gourd,Malerkotla,1500.0,
+2026-09-09,Bottle gourd,Naushera Pannuan,750.0,
+2026-09-09,Bottle gourd,Nihal Singh Wala,3500.0,
+2026-09-09,Bottle gourd,Noor Mehal,1450.0,
 2026-08-17,Bottle gourd,Patran,1290.0,
+2026-09-09,Bottle gourd,Patran,1450.0,
+2026-09-09,Bottle gourd,Phillaur(Apra Mandi),1500.0,
 2026-08-17,Bottle gourd,Samrala,1500.0,
+2026-09-09,Bottle gourd,Sirhind,1200.0,
+2026-09-09,Bottle gourd,Tanda Urmur,1800.0,
+2026-09-09,Bottle gourd,Zira,2400.0,
+2026-09-09,Brinjal,Adampur,1500.0,
+2026-09-09,Brinjal,Ahmedgarh,2000.0,
 2026-08-17,Brinjal,Ajnala,700.0,
 2026-08-17,Brinjal,Amritsar(Amritsar Mewa Mandi),600.0,
+2026-09-09,Brinjal,Bhogpur,1300.0,
+2026-09-09,Brinjal,Bhulath (Nadala),1000.0,
+2026-09-09,Brinjal,Dasuya,3000.0,
+2026-09-09,Brinjal,Dera Baba Nanak,662.0,
+2026-09-09,Brinjal,Dhariwal,1250.0,
 2026-08-17,Brinjal,Doraha,2000.0,
+2026-09-09,Brinjal,Doraha,1500.0,
+2026-09-09,Brinjal,F.G.Churian,1300.0,
+2026-09-09,Brinjal,Fazilka,2000.0,
+2026-09-09,Brinjal,GarhShankar (Kotfatuhi),1300.0,
 2026-08-17,Brinjal,Gehri,1800.0,
+2026-09-09,Brinjal,Harike,350.0,
+2026-09-09,Brinjal,Jalandhar City(Jalandhar),800.0,
+2026-09-09,Brinjal,Khanna,1500.0,
+2026-09-09,Brinjal,Kurali,2800.0,
+2026-09-09,Brinjal,Lalru,2900.0,
+2026-09-09,Brinjal,Lohian Khas,1100.0,
 2026-08-17,Brinjal,Ludhiana,1500.0,
+2026-09-09,Brinjal,Ludhiana,600.0,
+2026-09-09,Brinjal,Machhiwara,1000.0,
+2026-09-09,Brinjal,Malerkotla,1000.0,
+2026-09-09,Brinjal,Mehatpur,1400.0,
+2026-09-09,Brinjal,Mukerian,2000.0,
+2026-09-09,Brinjal,Mukerian(Talwara),1700.0,
 2026-08-17,Brinjal,Nabha,1600.0,
+2026-09-09,Brinjal,Nakodar,750.0,
+2026-09-09,Brinjal,Nawan Shahar(Subzi Mandi),1700.0,
+2026-09-09,Brinjal,Noor Mehal,1200.0,
 2026-08-17,Brinjal,Patiala,800.0,
+2026-09-09,Brinjal,Patiala,1500.0,
+2026-09-09,Brinjal,Patran,1860.0,
+2026-09-09,Brinjal,Phillaur(Apra Mandi),1500.0,
+2026-09-09,Brinjal,Quadian,1200.0,
+2026-09-09,Brinjal,Rampuraphul(Nabha Mandi),1200.0,
 2026-08-17,Brinjal,Rayya,1600.0,
+2026-09-09,Brinjal,Rayya,500.0,
+2026-09-09,Brinjal,Ropar,2000.0,
 2026-08-17,Brinjal,Samrala,1600.0,
+2026-09-09,Brinjal,Samrala,1300.0,
+2026-09-09,Brinjal,Shahkot,1450.0,
+2026-09-09,Brinjal,Sirhind,1500.0,
+2026-09-09,Brinjal,Tanda Urmur,2800.0,
+2026-09-09,Cabbage,Adampur,2500.0,
+2026-09-09,Cabbage,Dasuya,2000.0,
+2026-09-09,Cabbage,Faridkot,2700.0,
+2026-09-09,Cabbage,Garh Shankar,1500.0,
+2026-09-09,Cabbage,Jalalabad,3400.0,
+2026-09-09,Cabbage,Jalandhar City(Jalandhar),1100.0,
+2026-09-09,Cabbage,Khanna,800.0,
+2026-09-09,Cabbage,Kurali,2200.0,
 2026-08-17,Cabbage,Ludhiana,1000.0,
+2026-09-09,Cabbage,Ludhiana,1500.0,
+2026-09-09,Cabbage,Malerkotla,1800.0,
+2026-09-09,Cabbage,Malout,3200.0,
+2026-09-09,Cabbage,Nawan Shahar(Subzi Mandi),2200.0,
 2026-08-17,Cabbage,Patiala,600.0,
+2026-09-09,Cabbage,Patiala,1500.0,
 2026-08-17,Cabbage,Patran,2120.0,
+2026-09-09,Cabbage,Patran,2000.0,
+2026-09-09,Cabbage,Quadian,1300.0,
+2026-09-09,Cabbage,Rampuraphul(Nabha Mandi),2000.0,
+2026-09-09,Cabbage,Samrala,2000.0,
+2026-09-09,Cabbage,Sirhind,1900.0,
+2026-09-09,Cabbage,Tanda Urmur,2800.0,
+2026-09-09,Capsicum,Adampur,3000.0,
 2026-08-17,Capsicum,Amritsar(Amritsar Mewa Mandi),1000.0,
+2026-09-09,Capsicum,Banur,3800.0,
+2026-09-09,Capsicum,Bhulath (Nadala),700.0,
+2026-09-09,Capsicum,Chamkaur Sahib,5000.0,
+2026-09-09,Capsicum,Dasuya,5000.0,
+2026-09-09,Capsicum,Dinanagar,4800.0,
 2026-08-17,Capsicum,Doraha,4500.0,
+2026-09-09,Capsicum,Doraha,4000.0,
+2026-09-09,Capsicum,Faridkot,3500.0,
+2026-09-09,Capsicum,Garh Shankar,3000.0,
+2026-09-09,Capsicum,Garh Shankar(Mahalpur),4000.0,
+2026-09-09,Capsicum,Harike,1150.0,
+2026-09-09,Capsicum,Jalalabad,3700.0,
+2026-09-09,Capsicum,Jalandhar City(Jalandhar),2500.0,
+2026-09-09,Capsicum,Khamano,4500.0,
+2026-09-09,Capsicum,Khanna,2500.0,
+2026-09-09,Capsicum,Kharar,3500.0,
+2026-09-09,Capsicum,Kurali,5300.0,
+2026-09-09,Capsicum,Lalru,4800.0,
 2026-08-17,Capsicum,Ludhiana,2000.0,
+2026-09-09,Capsicum,Mukerian(Talwara),5500.0,
 2026-08-17,Capsicum,Nabha,2700.0,
+2026-09-09,Capsicum,Nawan Shahar(Subzi Mandi),3900.0,
+2026-09-09,Capsicum,Nihal Singh Wala,5200.0,
 2026-08-17,Capsicum,Patiala,800.0,
+2026-09-09,Capsicum,Patiala,2300.0,
 2026-08-17,Capsicum,Patran,3710.0,
+2026-09-09,Capsicum,Patran,3272.0,
+2026-09-09,Capsicum,Quadian,3900.0,
 2026-08-17,Capsicum,Samrala,2500.0,
+2026-09-09,Capsicum,Samrala,3000.0,
+2026-09-09,Capsicum,Sirhind,3500.0,
+2026-09-09,Capsicum,Tanda Urmur,5500.0,
+2026-09-09,Carrot,Adampur,2000.0,
+2026-09-09,Carrot,Dasuya,3000.0,
+2026-09-09,Carrot,Dinanagar,2900.0,
+2026-09-09,Carrot,Garh Shankar,2500.0,
+2026-09-09,Carrot,Jalandhar City(Jalandhar),1700.0,
 2026-08-17,Carrot,Ludhiana,1300.0,
+2026-09-09,Carrot,Ludhiana,1100.0,
+2026-09-09,Carrot,Machhiwara,1200.0,
+2026-09-09,Carrot,Malerkotla,2000.0,
+2026-09-09,Carrot,Naushera Pannuan,1900.0,
+2026-09-09,Carrot,Nawan Shahar(Subzi Mandi),2700.0,
 2026-08-17,Carrot,Patiala,800.0,
+2026-09-09,Carrot,Patiala,1700.0,
 2026-08-17,Carrot,Patran,2550.0,
+2026-09-09,Carrot,Patran,2080.0,
+2026-09-09,Carrot,Patti,300.0,
+2026-09-09,Carrot,Rampuraphul(Nabha Mandi),2000.0,
+2026-09-09,Carrot,Sirhind,1900.0,
+2026-09-09,Cauliflower,Adampur,4000.0,
 2026-08-17,Cauliflower,Ajnala,3900.0,
+2026-09-09,Cauliflower,Bhagta Bhai Ka,4700.0,
+2026-09-09,Cauliflower,Chamkaur Sahib,5000.0,
+2026-09-09,Cauliflower,Dasuya,5500.0,
+2026-09-09,Cauliflower,Dinanagar,4900.0,
 2026-08-17,Cauliflower,Doraha,2000.0,
+2026-09-09,Cauliflower,Doraha,3500.0,
+2026-09-09,Cauliflower,Fazilka,4000.0,
+2026-09-09,Cauliflower,Garh Shankar,3000.0,
+2026-09-09,Cauliflower,Garh Shankar(Mahalpur),3600.0,
+2026-09-09,Cauliflower,GarhShankar (Kotfatuhi),3500.0,
+2026-09-09,Cauliflower,Jalandhar City(Jalandhar),2000.0,
+2026-09-09,Cauliflower,Khamano,4000.0,
+2026-09-09,Cauliflower,Khanna,2500.0,
+2026-09-09,Cauliflower,Kurali,4700.0,
+2026-09-09,Cauliflower,Lalru,3500.0,
 2026-08-17,Cauliflower,Ludhiana,2800.0,
+2026-09-09,Cauliflower,Ludhiana,2300.0,
+2026-09-09,Cauliflower,Machhiwara,3300.0,
+2026-09-09,Cauliflower,Malerkotla,3200.0,
+2026-09-09,Cauliflower,Malout,4500.0,
+2026-09-09,Cauliflower,Mukerian,5000.0,
+2026-09-09,Cauliflower,Mukerian(Talwara),4500.0,
 2026-08-17,Cauliflower,Nabha,3300.0,
+2026-09-09,Cauliflower,Nawan Shahar(Subzi Mandi),3200.0,
+2026-09-09,Cauliflower,Nihal Singh Wala,4500.0,
 2026-08-17,Cauliflower,Patiala,800.0,
+2026-09-09,Cauliflower,Patiala,3500.0,
 2026-08-17,Cauliflower,Patran,3450.0,
+2026-09-09,Cauliflower,Patran,3220.0,
+2026-09-09,Cauliflower,Patti,350.0,
 2026-08-17,Cauliflower,Raikot,3860.0,
+2026-09-09,Cauliflower,Raikot,4295.0,
+2026-09-09,Cauliflower,Rajpura,2800.0,
+2026-09-09,Cauliflower,Rampuraphul(Nabha Mandi),3500.0,
 2026-08-17,Cauliflower,Rayya,3192.0,
+2026-09-09,Cauliflower,Rayya,2852.0,
+2026-09-09,Cauliflower,Ropar,4000.0,
+2026-09-09,Cauliflower,Sahnewal,4200.0,
+2026-09-09,Cauliflower,Sirhind,3500.0,
+2026-09-09,Cauliflower,Tanda Urmur,5500.0,
 2026-08-17,Chilly Capsicum,Ajnala,3300.0,
+2026-09-09,Chilly Capsicum,Ajnala,3200.0,
+2026-09-09,Chilly Capsicum,Ropar,3200.0,
+2026-09-09,Colacasia,Bhulath (Nadala),1500.0,
+2026-09-09,Colacasia,Dera Baba Nanak,1568.0,
+2026-09-09,Colacasia,Fazilka,2500.0,
+2026-09-09,Colacasia,Jalandhar City(Jalandhar),2000.0,
+2026-09-09,Colacasia,Kurali,3100.0,
 2026-08-17,Colacasia,Ludhiana,2500.0,
+2026-09-09,Colacasia,Ludhiana,1700.0,
+2026-09-09,Colacasia,Nakodar,1150.0,
 2026-08-17,Colacasia,Samrala,2500.0,
+2026-09-09,Colacasia,Sirhind,2300.0,
+2026-09-09,Colacasia,Zira,1700.0,
+2026-09-09,Coriander(Leaves),Bhulath,5550.0,
+2026-09-09,Coriander(Leaves),Doraha,5000.0,
+2026-09-09,Coriander(Leaves),Jalandhar City(Jalandhar),6000.0,
+2026-09-09,Coriander(Leaves),Kurali,3900.0,
 2026-08-17,Coriander(Leaves),Ludhiana,3500.0,
+2026-09-09,Coriander(Leaves),Ludhiana,2500.0,
+2026-09-09,Coriander(Leaves),Malerkotla,7000.0,
+2026-09-09,Coriander(Leaves),Nawan Shahar(Subzi Mandi),7300.0,
 2026-08-17,Coriander(Leaves),Patiala,800.0,
+2026-09-09,Coriander(Leaves),Patiala,3000.0,
+2026-09-09,Coriander(Leaves),Sirhind,7500.0,
+2026-09-09,Cotton,Budalada,8700.0,
+2026-09-09,Cowpea(Veg),Malerkotla,3000.0,
+2026-09-09,Cucumbar(Kheera),Abohar,3000.0,
+2026-09-09,Cucumbar(Kheera),Adampur,4000.0,
 2026-08-17,Cucumbar(Kheera),Amritsar(Amritsar Mewa Mandi),500.0,
+2026-09-09,Cucumbar(Kheera),Banur,2500.0,
+2026-09-09,Cucumbar(Kheera),Bhulath,1000.0,
+2026-09-09,Cucumbar(Kheera),Dasuya,3000.0,
+2026-09-09,Cucumbar(Kheera),Dera Baba Nanak,1252.0,
+2026-09-09,Cucumbar(Kheera),Dinanagar,2800.0,
+2026-09-09,Cucumbar(Kheera),Doraha,2500.0,
+2026-09-09,Cucumbar(Kheera),Fazilka,4000.0,
+2026-09-09,Cucumbar(Kheera),Garh Shankar,2600.0,
+2026-09-09,Cucumbar(Kheera),Garh Shankar(Mahalpur),2100.0,
+2026-09-09,Cucumbar(Kheera),GarhShankar (Kotfatuhi),2800.0,
+2026-09-09,Cucumbar(Kheera),Jalalabad,3300.0,
+2026-09-09,Cucumbar(Kheera),Jalandhar City(Jalandhar),1500.0,
+2026-09-09,Cucumbar(Kheera),Khanna,1500.0,
+2026-09-09,Cucumbar(Kheera),Kharar,3000.0,
+2026-09-09,Cucumbar(Kheera),Kurali,2900.0,
 2026-08-17,Cucumbar(Kheera),Ludhiana,1500.0,
+2026-09-09,Cucumbar(Kheera),Ludhiana,1200.0,
+2026-09-09,Cucumbar(Kheera),Machhiwara,2200.0,
+2026-09-09,Cucumbar(Kheera),Malerkotla,1700.0,
+2026-09-09,Cucumbar(Kheera),Maur,2700.0,
+2026-09-09,Cucumbar(Kheera),Mukerian,2000.0,
+2026-09-09,Cucumbar(Kheera),Mukerian(Talwara),1400.0,
 2026-08-17,Cucumbar(Kheera),Nabha,2900.0,
+2026-09-09,Cucumbar(Kheera),Nakodar,1900.0,
+2026-09-09,Cucumbar(Kheera),Nawan Shahar(Subzi Mandi),4200.0,
+2026-09-09,Cucumbar(Kheera),Nihal Singh Wala,2200.0,
 2026-08-17,Cucumbar(Kheera),Patran,2370.0,
+2026-09-09,Cucumbar(Kheera),Patran,2560.0,
 2026-08-17,Cucumbar(Kheera),Raikot,2590.0,
+2026-09-09,Cucumbar(Kheera),Raikot,2890.0,
+2026-09-09,Cucumbar(Kheera),Rajpura,2600.0,
+2026-09-09,Cucumbar(Kheera),Rampuraphul(Nabha Mandi),3000.0,
 2026-08-17,Cucumbar(Kheera),Rayya,904.0,
+2026-09-09,Cucumbar(Kheera),Rayya,892.0,
+2026-09-09,Cucumbar(Kheera),Sirhind,2500.0,
+2026-09-09,Cucumbar(Kheera),Tanda Urmur,3500.0,
+2026-09-09,Cucumbar(Kheera),Zira,2600.0,
+2026-09-09,Elephant Yam(Suran)/Amorphophallus,Jalandhar City(Jalandhar),3500.0,
+2026-09-09,Field Pea,Dasuya,7000.0,
+2026-09-09,Field Pea,Garh Shankar,7000.0,
+2026-09-09,Field Pea,Garh Shankar(Mahalpur),6000.0,
+2026-09-09,Field Pea,Kurali,9100.0,
+2026-09-09,Field Pea,Machhiwara,9000.0,
+2026-09-09,Field Pea,Mukerian(Talwara),8000.0,
+2026-09-09,Field Pea,Nawan Shahar(Subzi Mandi),8800.0,
+2026-09-09,Field Pea,Tanda Urmur,7500.0,
+2026-09-09,French Beans(Frasbean),Adampur,4000.0,
+2026-09-09,French Beans(Frasbean),Bhulath,2100.0,
+2026-09-09,French Beans(Frasbean),Jalandhar City(Jalandhar),2000.0,
+2026-09-09,French Beans(Frasbean),Kurali,6550.0,
 2026-08-17,French Beans(Frasbean),Ludhiana,2500.0,
+2026-09-09,French Beans(Frasbean),Ludhiana,3000.0,
+2026-09-09,French Beans(Frasbean),Malerkotla,3000.0,
+2026-09-09,French Beans(Frasbean),Mukerian(Talwara),5000.0,
+2026-09-09,French Beans(Frasbean),Nawan Shahar(Subzi Mandi),7300.0,
+2026-09-09,French Beans(Frasbean),Ropar,4000.0,
+2026-09-09,French Beans(Frasbean),Sirhind,4500.0,
+2026-09-09,Garlic,Bathinda,10000.0,
 2026-08-17,Garlic,Doraha,12000.0,
+2026-09-09,Garlic,Doraha,7000.0,
+2026-09-09,Garlic,Fazilka,15000.0,
+2026-09-09,Garlic,Garh Shankar,10000.0,
+2026-09-09,Garlic,Jalandhar City(Jalandhar),7500.0,
+2026-09-09,Garlic,Khanna,10000.0,
+2026-09-09,Garlic,Kurali,12800.0,
+2026-09-09,Garlic,Lalru,11000.0,
 2026-08-17,Garlic,Ludhiana,7000.0,
+2026-09-09,Garlic,Malerkotla,7500.0,
+2026-09-09,Garlic,Mukerian(Talwara),12500.0,
 2026-08-17,Garlic,Nabha,11300.0,
 2026-08-17,Garlic,Patiala,4100.0,
+2026-09-09,Garlic,Patiala,10000.0,
+2026-09-09,Garlic,Phillaur,14600.0,
+2026-09-09,Garlic,Ropar,12500.0,
+2026-09-09,Garlic,Sirhind,14000.0,
+2026-09-09,Garlic,Tanda Urmur,13000.0,
+2026-09-09,Ginger(Dry),Garh Shankar,5000.0,
+2026-09-09,Ginger(Green),Adampur,7000.0,
+2026-09-09,Ginger(Green),Chamkaur Sahib,15000.0,
+2026-09-09,Ginger(Green),Dasuya,8000.0,
+2026-09-09,Ginger(Green),Doraha,7000.0,
+2026-09-09,Ginger(Green),Fazilka,17000.0,
+2026-09-09,Ginger(Green),Garh Shankar(Mahalpur),8200.0,
+2026-09-09,Ginger(Green),Jalalabad,14000.0,
+2026-09-09,Ginger(Green),Jalandhar City(Jalandhar),4500.0,
+2026-09-09,Ginger(Green),Khanna,5000.0,
+2026-09-09,Ginger(Green),Kurali,8700.0,
+2026-09-09,Ginger(Green),Lalru,8500.0,
 2026-08-17,Ginger(Green),Ludhiana,5000.0,
+2026-09-09,Ginger(Green),Ludhiana,4500.0,
+2026-09-09,Ginger(Green),Machhiwara,8000.0,
+2026-09-09,Ginger(Green),Malerkotla,5500.0,
+2026-09-09,Ginger(Green),Malout,6800.0,
 2026-08-17,Ginger(Green),Nabha,7000.0,
+2026-09-09,Ginger(Green),Nawan Shahar(Subzi Mandi),7300.0,
 2026-08-17,Ginger(Green),Patran,8190.0,
+2026-09-09,Ginger(Green),Patti,5800.0,
+2026-09-09,Ginger(Green),Quadian,7900.0,
+2026-09-09,Ginger(Green),Ropar,9200.0,
 2026-08-17,Ginger(Green),Samrala,8000.0,
+2026-09-09,Ginger(Green),Samrala,9000.0,
+2026-09-09,Ginger(Green),Sirhind,6000.0,
+2026-09-09,Ginger(Green),Tanda Urmur,11000.0,
+2026-09-09,Grapes,Jalandhar City(Jalandhar),4300.0,
+2026-09-09,Grapes,Malout,10000.0,
+2026-09-09,Green Chilli,Abohar,2600.0,
+2026-09-09,Green Chilli,Adampur,2000.0,
+2026-09-09,Green Chilli,Ahmedgarh,2000.0,
 2026-08-17,Green Chilli,Ajnala,1200.0,
+2026-09-09,Green Chilli,Ajnala,2550.0,
 2026-08-17,Green Chilli,Amritsar(Amritsar Mewa Mandi),500.0,
+2026-09-09,Green Chilli,Banur,3000.0,
+2026-09-09,Green Chilli,Bhagta Bhai Ka,4200.0,
+2026-09-09,Green Chilli,Bhogpur,1400.0,
+2026-09-09,Green Chilli,Bhucho,2000.0,
+2026-09-09,Green Chilli,Bhulath,1700.0,
+2026-09-09,Green Chilli,Chamkaur Sahib,5000.0,
+2026-09-09,Green Chilli,Dasuya,2200.0,
+2026-09-09,Green Chilli,Dhariwal,2250.0,
+2026-09-09,Green Chilli,Dinanagar,3900.0,
+2026-09-09,Green Chilli,Doraha,2700.0,
+2026-09-09,Green Chilli,F.G.Churian,2200.0,
+2026-09-09,Green Chilli,Fazilka,3000.0,
+2026-09-09,Green Chilli,Garh Shankar,2500.0,
+2026-09-09,Green Chilli,Jalalabad,3100.0,
+2026-09-09,Green Chilli,Jalandhar City(Jalandhar),1800.0,
+2026-09-09,Green Chilli,Khamano,3500.0,
+2026-09-09,Green Chilli,Khanna,1500.0,
+2026-09-09,Green Chilli,Kharar,3000.0,
+2026-09-09,Green Chilli,Kurali,4000.0,
+2026-09-09,Green Chilli,Lalru,1700.0,
+2026-09-09,Green Chilli,Lohian Khas,3200.0,
 2026-08-17,Green Chilli,Ludhiana,2200.0,
+2026-09-09,Green Chilli,Ludhiana,2000.0,
+2026-09-09,Green Chilli,Machhiwara,2200.0,
+2026-09-09,Green Chilli,Malerkotla,2000.0,
+2026-09-09,Green Chilli,Mehatpur,2400.0,
+2026-09-09,Green Chilli,Mukerian(Talwara),3500.0,
 2026-08-17,Green Chilli,Nabha,3600.0,
+2026-09-09,Green Chilli,Nawan Shahar(Subzi Mandi),2200.0,
+2026-09-09,Green Chilli,Nihal Singh Wala,3500.0,
+2026-09-09,Green Chilli,Noor Mehal,1500.0,
+2026-09-09,Green Chilli,Pathankot,2300.0,
 2026-08-17,Green Chilli,Patiala,800.0,
+2026-09-09,Green Chilli,Patiala,2600.0,
 2026-08-17,Green Chilli,Patran,2190.0,
+2026-09-09,Green Chilli,Patran,2140.0,
+2026-09-09,Green Chilli,Phillaur(Apra Mandi),1500.0,
+2026-09-09,Green Chilli,Quadian,2400.0,
+2026-09-09,Green Chilli,Raikot,1438.0,
+2026-09-09,Green Chilli,Rampuraphul(Nabha Mandi),3000.0,
 2026-08-17,Green Chilli,Rayya,1103.0,
+2026-09-09,Green Chilli,Rayya,1070.0,
+2026-09-09,Green Chilli,Ropar,3200.0,
+2026-09-09,Green Chilli,Shahkot,1900.0,
+2026-09-09,Green Chilli,Sirhind,2500.0,
+2026-09-09,Green Chilli,Tanda Urmur,2800.0,
+2026-09-09,Green Peas,Ropar,9200.0,
 2026-08-17,Guava,Amritsar(Amritsar Mewa Mandi),1000.0,
+2026-09-09,Guava,Banur,3500.0,
+2026-09-09,Guava,Dasuya,4000.0,
+2026-09-09,Guava,Fazilka,3000.0,
+2026-09-09,Guava,Garh Shankar,3200.0,
+2026-09-09,Guava,Jalandhar City(Jalandhar),4000.0,
 2026-08-17,Guava,Ludhiana,2000.0,
+2026-09-09,Guava,Ludhiana,2000.0,
+2026-09-09,Guava,Malout,1800.0,
 2026-08-17,Guava,Nabha,2500.0,
 2026-08-17,Guava,Patiala,1600.0,
+2026-09-09,Guava,Patiala,3000.0,
 2026-08-17,Guava,Patran,1600.0,
+2026-09-09,Guava,Patran,2590.0,
+2026-09-09,Guava,Rampuraphul(Nabha Mandi),3000.0,
+2026-09-09,Guava,Sirhind,4500.0,
+2026-09-09,Guava,Tanda Urmur,6500.0,
+2026-09-09,Guava,Zira,3400.0,
+2026-09-09,Karbuja(Musk Melon),Patran,3240.0,
+2026-09-09,Leafy Vegetable,Nawan Shahar(Subzi Mandi),2200.0,
+2026-09-09,Lemon,Adampur,8000.0,
+2026-09-09,Lemon,Bhucho,4500.0,
+2026-09-09,Lemon,Chamkaur Sahib,6000.0,
+2026-09-09,Lemon,Dasuya,5500.0,
 2026-08-17,Lemon,Doraha,5500.0,
+2026-09-09,Lemon,Doraha,10000.0,
+2026-09-09,Lemon,Jalalabad,4000.0,
+2026-09-09,Lemon,Jalandhar City(Jalandhar),6000.0,
+2026-09-09,Lemon,Khanna,5000.0,
+2026-09-09,Lemon,Kurali,7950.0,
 2026-08-17,Lemon,Ludhiana,3000.0,
+2026-09-09,Lemon,Ludhiana,4500.0,
+2026-09-09,Lemon,Malerkotla,7500.0,
+2026-09-09,Lemon,Malout,9200.0,
 2026-08-17,Lemon,Nabha,3400.0,
 2026-08-17,Lemon,Patiala,2100.0,
+2026-09-09,Lemon,Patiala,6600.0,
 2026-08-17,Lemon,Patran,4510.0,
+2026-09-09,Lemon,Patran,5000.0,
+2026-09-09,Lemon,Rampuraphul(Nabha Mandi),6000.0,
+2026-09-09,Lemon,Sirhind,6500.0,
+2026-09-09,Lemon,Zira,8000.0,
+2026-09-09,Maize,Nakodar,2345.0,
+2026-09-09,Maize,Nawanshahar,1821.0,
+2026-09-09,Mango,Chamkaur Sahib,8000.0,
+2026-09-09,Mango,Jalandhar City(Jalandhar),4900.0,
 2026-08-17,Mango,Ludhiana,3000.0,
 2026-08-17,Mango,Nabha,11700.0,
 2026-08-17,Mango,Patiala,2100.0,
 2026-08-17,Mango,Patran,5910.0,
+2026-09-09,Marasebu,Sirhind,5500.0,
+2026-09-09,Mashrooms,Jalandhar City(Jalandhar),8500.0,
 2026-08-17,Mint(Pudina),Patiala,1600.0,
+2026-09-09,Mint(Pudina),Patiala,3600.0,
+2026-09-09,Mousambi(Sweet Lime),Ahmedgarh,3500.0,
+2026-09-09,Mousambi(Sweet Lime),Bathinda,7000.0,
+2026-09-09,Mousambi(Sweet Lime),Dasuya,4000.0,
+2026-09-09,Mousambi(Sweet Lime),Dhuri,3400.0,
+2026-09-09,Mousambi(Sweet Lime),Faridkot,4000.0,
+2026-09-09,Mousambi(Sweet Lime),Garh Shankar,4000.0,
+2026-09-09,Mousambi(Sweet Lime),Jalalabad,4700.0,
+2026-09-09,Mousambi(Sweet Lime),Khanna,3000.0,
 2026-08-17,Mousambi(Sweet Lime),Ludhiana,3500.0,
+2026-09-09,Mousambi(Sweet Lime),Ludhiana,3000.0,
+2026-09-09,Mousambi(Sweet Lime),Malerkotla,2800.0,
 2026-08-17,Mousambi(Sweet Lime),Nabha,3200.0,
+2026-09-09,Mousambi(Sweet Lime),Nawan Shahar(Subzi Mandi),4100.0,
 2026-08-17,Mousambi(Sweet Lime),Patiala,800.0,
+2026-09-09,Mousambi(Sweet Lime),Patiala,2600.0,
 2026-08-17,Mousambi(Sweet Lime),Patran,2930.0,
+2026-09-09,Mousambi(Sweet Lime),Patran,2280.0,
+2026-09-09,Mousambi(Sweet Lime),Rampuraphul(Nabha Mandi),3500.0,
+2026-09-09,Mousambi(Sweet Lime),Sirhind,3500.0,
 2026-06-22,Onion,Abohar,1800.0,22.5
 2026-06-23,Onion,Abohar,1800.0,30.0
+2026-09-09,Onion,Abohar,4100.0,
 2025-11-17,Onion,Adampur,1500.0,1.0
 2025-11-18,Onion,Adampur,1500.0,1.4
 2025-11-19,Onion,Adampur,1400.0,1.5
@@ -325,6 +823,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Adampur,4500.0,1.6
 2026-09-04,Onion,Adampur,4500.0,2.1
 2026-09-05,Onion,Adampur,4500.0,2.4
+2026-09-09,Onion,Adampur,4500.0,
 2026-06-04,Onion,Ahmedgarh,1500.0,0.3
 2026-06-05,Onion,Ahmedgarh,1500.0,0.2
 2026-06-19,Onion,Ahmedgarh,2200.0,0.2
@@ -1315,6 +1814,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-28,Onion,Banur,2600.0,0.3
 2026-08-29,Onion,Banur,3600.0,0.3
 2026-08-30,Onion,Banur,2800.0,0.2
+2026-09-09,Onion,Banur,3000.0,
 2025-12-01,Onion,Bariwala,1500.0,0.05
 2025-12-02,Onion,Bariwala,1500.0,1.0
 2025-12-03,Onion,Bariwala,1600.0,0.1
@@ -1823,6 +2323,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Bathinda,4200.0,270.0
 2026-09-03,Onion,Bathinda,4200.0,280.0
 2026-09-04,Onion,Bathinda,4200.0,280.0
+2026-09-09,Onion,Bathinda,4200.0,
 2025-11-19,Onion,Bhagta Bhai Ka,1000.0,0.2
 2025-11-20,Onion,Bhagta Bhai Ka,1600.0,0.28
 2025-11-21,Onion,Bhagta Bhai Ka,1600.0,0.5
@@ -2066,6 +2567,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Bhagta Bhai Ka,4800.0,0.3
 2026-09-04,Onion,Bhagta Bhai Ka,4700.0,0.4
 2026-09-05,Onion,Bhagta Bhai Ka,4500.0,0.4
+2026-09-09,Onion,Bhagta Bhai Ka,4600.0,
 2025-11-09,Onion,Bhawanigarh,1400.0,3.5
 2025-11-11,Onion,Bhawanigarh,1300.0,5.0
 2025-11-13,Onion,Bhawanigarh,1200.0,5.0
@@ -2372,6 +2874,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Onion,Bhucho,2500.0,0.3
 2026-09-01,Onion,Bhucho,2500.0,0.4
 2026-09-03,Onion,Bhucho,3600.0,0.3
+2026-09-09,Onion,Bhucho,2500.0,
 2026-01-19,Onion,Bilga,2000.0,0.2
 2026-01-29,Onion,Bilga,2000.0,0.1
 2026-01-30,Onion,Bilga,2000.0,0.5
@@ -2641,6 +3144,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-24,Onion,Chamkaur Sahib,4800.0,4.5
 2026-08-26,Onion,Chamkaur Sahib,4700.0,3.0
 2026-08-31,Onion,Chamkaur Sahib,4000.0,4.5
+2026-09-09,Onion,Chamkaur Sahib,5200.0,
 2025-11-11,Onion,Dasuya,1500.0,1.0
 2025-11-17,Onion,Dasuya,1500.0,0.8
 2025-11-18,Onion,Dasuya,1500.0,0.8
@@ -2680,6 +3184,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Dasuya,5000.0,1.5
 2026-09-02,Onion,Dasuya,5000.0,1.5
 2026-09-03,Onion,Dasuya,5000.0,2.0
+2026-09-09,Onion,Dasuya,5000.0,
 2026-07-16,Onion,Dera Baba Nanak,1988.0,0.1
 2026-08-05,Onion,Dera Baba Nanak,1782.0,0.1
 2026-08-12,Onion,Dera Baba Nanak,2228.0,0.09
@@ -2949,6 +3454,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-26,Onion,Dhariwal,1950.0,5.8
 2026-08-27,Onion,Dhariwal,1950.0,7.5
 2026-08-31,Onion,Dhariwal,1750.0,7.8
+2026-09-09,Onion,Dhariwal,1850.0,
 2025-12-17,Onion,Dhuri,2100.0,0.9
 2025-12-18,Onion,Dhuri,2100.0,1.0
 2025-12-19,Onion,Dhuri,2100.0,0.9
@@ -3159,6 +3665,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Dhuri,4300.0,0.8
 2026-09-02,Onion,Dhuri,4300.0,0.9
 2026-09-03,Onion,Dhuri,4300.0,0.9
+2026-09-09,Onion,Dhuri,4500.0,
 2025-11-07,Onion,Dinanagar,1400.0,1.4
 2025-11-08,Onion,Dinanagar,1450.0,1.2
 2025-11-09,Onion,Dinanagar,1400.0,1.4
@@ -3341,6 +3848,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Dinanagar,4800.0,3.15
 2026-09-02,Onion,Dinanagar,4800.0,2.25
 2026-09-03,Onion,Dinanagar,4800.0,1.65
+2026-09-09,Onion,Dinanagar,4700.0,
 2023-06-06,Onion,Doraha,1382.0,
 2023-06-07,Onion,Doraha,1239.0,
 2023-06-08,Onion,Doraha,1236.0,
@@ -3969,6 +4477,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Doraha,3800.0,1.59
 2026-09-04,Onion,Doraha,4000.0,1.06
 2026-09-05,Onion,Doraha,3800.0,1.57
+2026-09-09,Onion,Doraha,3800.0,
 2023-06-08,Onion,Dudhansadhan,1800.0,
 2023-06-09,Onion,Dudhansadhan,1800.0,
 2023-06-10,Onion,Dudhansadhan,2000.0,
@@ -4798,6 +5307,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,F.G.Churian,5200.0,0.35
 2026-09-04,Onion,F.G.Churian,5000.0,0.3
 2026-09-05,Onion,F.G.Churian,5100.0,0.35
+2026-09-09,Onion,F.G.Churian,5200.0,
 2026-08-08,Onion,Faridkot,2000.0,6.1
 2026-08-10,Onion,Faridkot,2000.0,16.8
 2026-08-11,Onion,Faridkot,2000.0,9.62
@@ -4805,6 +5315,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-14,Onion,Faridkot,2000.0,7.38
 2026-08-18,Onion,Faridkot,2000.0,7.65
 2026-08-20,Onion,Faridkot,2800.0,4.58
+2026-09-09,Onion,Faridkot,4600.0,
 2025-11-07,Onion,Fazilka,1500.0,2.96
 2025-11-10,Onion,Fazilka,2000.0,5.48
 2025-11-11,Onion,Fazilka,2000.0,6.19
@@ -5034,6 +5545,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Fazilka,4800.0,2.38
 2026-09-02,Onion,Fazilka,4800.0,3.78
 2026-09-03,Onion,Fazilka,4800.0,6.35
+2026-09-09,Onion,Fazilka,4500.0,
 2025-11-09,Onion,Ferozepur Cantt.,1350.0,0.8
 2025-11-10,Onion,Ferozepur Cantt.,1300.0,0.26
 2025-11-11,Onion,Ferozepur Cantt.,1500.0,0.74
@@ -5375,6 +5887,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Garh Shankar,3700.0,4.3
 2026-09-03,Onion,Garh Shankar,3800.0,4.9
 2026-09-04,Onion,Garh Shankar,3800.0,8.2
+2026-09-09,Onion,Garh Shankar,3800.0,
 2025-11-11,Onion,Garh Shankar(Mahalpur),1300.0,5.5
 2025-11-17,Onion,Garh Shankar(Mahalpur),1300.0,67.0
 2025-11-18,Onion,Garh Shankar(Mahalpur),1000.0,5.4
@@ -5583,6 +6096,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Garh Shankar(Mahalpur),3500.0,7.6
 2026-09-02,Onion,Garh Shankar(Mahalpur),3800.0,6.5
 2026-09-03,Onion,Garh Shankar(Mahalpur),3800.0,7.4
+2026-09-09,Onion,Garh Shankar(Mahalpur),3500.0,
 2025-11-20,Onion,GarhShankar (Kotfatuhi),1200.0,0.5
 2025-11-26,Onion,GarhShankar (Kotfatuhi),1300.0,0.2
 2025-11-27,Onion,GarhShankar (Kotfatuhi),1300.0,0.2
@@ -5783,6 +6297,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,GarhShankar (Kotfatuhi),3800.0,0.4
 2026-09-03,Onion,GarhShankar (Kotfatuhi),4000.0,0.5
 2026-09-04,Onion,GarhShankar (Kotfatuhi),4000.0,0.4
+2026-09-09,Onion,GarhShankar (Kotfatuhi),3800.0,
 2024-09-03,Onion,Gehri,2700.0,
 2024-11-13,Onion,Gehri,2500.0,
 2026-01-08,Onion,Gehri,1500.0,0.7
@@ -6102,6 +6617,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Ghanaur,3500.0,0.2
 2026-09-04,Onion,Ghanaur,3500.0,0.2
 2026-09-05,Onion,Ghanaur,3500.0,0.2
+2026-09-09,Onion,Ghanaur,3250.0,
 2025-11-14,Onion,Giddarbaha,1400.0,1.05
 2025-11-26,Onion,Giddarbaha,1200.0,1.5
 2025-12-05,Onion,Giddarbaha,1500.0,1.5
@@ -6858,6 +7374,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Jalalabad,4600.0,3.5
 2026-09-03,Onion,Jalalabad,4600.0,3.4
 2026-09-04,Onion,Jalalabad,4800.0,3.25
+2026-09-09,Onion,Jalalabad,4600.0,
 2026-08-21,Onion,Jalandhar City,1900.0,119.4
 2025-11-10,Onion,Jalandhar City(Jalandhar),600.0,109.7
 2025-11-11,Onion,Jalandhar City(Jalandhar),400.0,86.6
@@ -7061,6 +7578,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Jalandhar City(Jalandhar),2000.0,57.9
 2026-09-02,Onion,Jalandhar City(Jalandhar),2400.0,53.2
 2026-09-03,Onion,Jalandhar City(Jalandhar),2300.0,80.1
+2026-09-09,Onion,Jalandhar City(Jalandhar),3500.0,
 2025-11-12,Onion,Kapurthala,1300.0,5.0
 2025-11-13,Onion,Kapurthala,1300.0,5.0
 2025-11-14,Onion,Kapurthala,1300.0,5.0
@@ -7087,6 +7605,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-29,Onion,Kapurthala,2200.0,10.0
 2026-09-01,Onion,Kapurthala,2100.0,10.0
 2026-09-03,Onion,Kapurthala,2200.0,10.0
+2026-09-09,Onion,Kapurthala,2100.0,
 2025-11-10,Onion,Khamano,1500.0,0.4
 2025-11-13,Onion,Khamano,1500.0,0.4
 2025-11-15,Onion,Khamano,1500.0,0.4
@@ -7900,6 +8419,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Khanna,3000.0,30.0
 2026-09-04,Onion,Khanna,3000.0,9.0
 2026-09-05,Onion,Khanna,5000.0,17.5
+2026-09-09,Onion,Khanna,3000.0,
 2025-11-09,Onion,Kharar,1600.0,5.1
 2025-11-11,Onion,Kharar,1600.0,5.0
 2025-11-12,Onion,Kharar,1600.0,4.5
@@ -8254,6 +8774,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Kurali,3600.0,3.2
 2026-09-03,Onion,Kurali,3600.0,3.0
 2026-09-04,Onion,Kurali,3600.0,2.9
+2026-09-09,Onion,Kurali,3700.0,
 2025-12-12,Onion,Lalru,2000.0,4.0
 2025-12-15,Onion,Lalru,1800.0,2.5
 2025-12-16,Onion,Lalru,1500.0,3.0
@@ -9311,6 +9832,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Ludhiana,3000.0,124.3
 2026-09-04,Onion,Ludhiana,3000.0,92.9
 2026-09-05,Onion,Ludhiana,3000.0,113.6
+2026-09-09,Onion,Ludhiana,3200.0,
 2023-06-06,Onion,Machhiwara,1400.0,
 2023-06-07,Onion,Machhiwara,1500.0,
 2023-06-08,Onion,Machhiwara,1500.0,
@@ -9485,6 +10007,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Machhiwara,4200.0,9.04
 2026-09-04,Onion,Machhiwara,4200.0,0.83
 2026-09-05,Onion,Machhiwara,4200.0,0.81
+2026-09-09,Onion,Machhiwara,4300.0,
 2026-08-05,Onion,Makhu,1800.0,0.7
 2026-07-28,Onion,Malerkotla,2100.0,60.0
 2026-08-02,Onion,Malerkotla,2000.0,58.0
@@ -9510,6 +10033,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Malerkotla,3500.0,35.0
 2026-09-02,Onion,Malerkotla,3500.0,28.0
 2026-09-03,Onion,Malerkotla,3500.0,22.0
+2026-09-09,Onion,Malerkotla,3500.0,
 2025-11-08,Onion,Malout,1500.0,8.03
 2025-11-10,Onion,Malout,1500.0,11.25
 2025-11-11,Onion,Malout,1400.0,6.05
@@ -9761,6 +10285,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Malout,3800.0,7.08
 2026-09-02,Onion,Malout,4000.0,3.52
 2026-09-03,Onion,Malout,4200.0,2.05
+2026-09-09,Onion,Malout,4000.0,
 2025-11-25,Onion,Mamdot,2050.0,0.9
 2025-11-26,Onion,Mamdot,2100.0,1.0
 2025-11-27,Onion,Mamdot,2100.0,1.2
@@ -10138,6 +10663,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Maur,4000.0,0.4
 2026-09-03,Onion,Maur,4300.0,0.5
 2026-09-04,Onion,Maur,4300.0,1.0
+2026-09-09,Onion,Maur,4000.0,
 2025-11-10,Onion,Moga,1600.0,301.0
 2025-11-13,Onion,Moga,1800.0,20.3
 2025-11-21,Onion,Moga,1000.0,20.8
@@ -10448,6 +10974,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Mukerian,3800.0,2.99
 2026-09-04,Onion,Mukerian,4200.0,2.97
 2026-09-05,Onion,Mukerian,4500.0,3.0
+2026-09-09,Onion,Mukerian,4000.0,
 2026-01-01,Onion,Mukerian(Talwara),2200.0,0.56
 2026-01-02,Onion,Mukerian(Talwara),2000.0,1.3
 2026-01-08,Onion,Mukerian(Talwara),2000.0,0.8
@@ -10533,6 +11060,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Mukerian(Talwara),4000.0,0.7
 2026-09-04,Onion,Mukerian(Talwara),4500.0,0.6
 2026-09-05,Onion,Mukerian(Talwara),4500.0,0.65
+2026-09-09,Onion,Mukerian(Talwara),4500.0,
 2025-11-08,Onion,Muktsar,1000.0,2.0
 2025-11-10,Onion,Muktsar,900.0,1.6
 2025-11-11,Onion,Muktsar,900.0,1.6
@@ -11553,6 +12081,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Nawan Shahar(Subzi Mandi),3900.0,3.7
 2026-09-02,Onion,Nawan Shahar(Subzi Mandi),3900.0,3.5
 2026-09-03,Onion,Nawan Shahar(Subzi Mandi),3900.0,4.5
+2026-09-09,Onion,Nawan Shahar(Subzi Mandi),3900.0,
 2025-11-11,Onion,Nihal Singh Wala,1500.0,0.5
 2025-11-12,Onion,Nihal Singh Wala,1400.0,0.5
 2025-11-13,Onion,Nihal Singh Wala,1500.0,0.5
@@ -11756,6 +12285,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Nihal Singh Wala,3300.0,0.45
 2026-09-02,Onion,Nihal Singh Wala,4800.0,0.45
 2026-09-03,Onion,Nihal Singh Wala,4800.0,0.45
+2026-09-09,Onion,Nihal Singh Wala,4200.0,
 2026-07-16,Onion,Noor Mehal,2200.0,0.22
 2026-08-05,Onion,Noor Mehal,2000.0,0.22
 2026-08-06,Onion,Noor Mehal,2000.0,0.15
@@ -12253,6 +12783,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Patiala,2500.0,49.5
 2026-09-04,Onion,Patiala,2700.0,49.0
 2026-09-05,Onion,Patiala,2800.0,49.1
+2026-09-09,Onion,Patiala,3400.0,
 2023-06-06,Onion,Patran,810.0,
 2023-06-07,Onion,Patran,870.0,
 2023-06-09,Onion,Patran,890.0,
@@ -12851,6 +13382,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Patran,3540.0,30.0
 2026-09-02,Onion,Patran,2280.0,75.0
 2026-09-03,Onion,Patran,3395.0,110.0
+2026-09-09,Onion,Patran,2590.0,
 2025-11-07,Onion,Patti,1400.0,1.5
 2025-11-08,Onion,Patti,1050.0,0.8
 2025-11-09,Onion,Patti,1150.0,115.0
@@ -13239,6 +13771,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-26,Onion,Phillaur,3300.0,0.7
 2026-08-30,Onion,Phillaur,3300.0,3.4
 2026-08-31,Onion,Phillaur,3300.0,0.6
+2026-09-09,Onion,Phillaur,4800.0,
 2025-12-22,Onion,Phillaur(Apra Mandi),1800.0,0.2
 2025-12-23,Onion,Phillaur(Apra Mandi),1800.0,0.2
 2025-12-25,Onion,Phillaur(Apra Mandi),1800.0,0.2
@@ -13392,6 +13925,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Phillaur(Apra Mandi),4500.0,0.2
 2026-09-02,Onion,Phillaur(Apra Mandi),5000.0,0.1
 2026-09-03,Onion,Phillaur(Apra Mandi),5000.0,0.2
+2026-09-09,Onion,Phillaur(Apra Mandi),5000.0,
 2025-11-19,Onion,Quadian,1350.0,2.0
 2025-11-21,Onion,Quadian,1250.0,2.5
 2025-11-26,Onion,Quadian,1250.0,2.5
@@ -13525,6 +14059,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Quadian,3400.0,1.5
 2026-09-04,Onion,Quadian,3400.0,2.0
 2026-09-05,Onion,Quadian,3400.0,1.0
+2026-09-09,Onion,Quadian,3400.0,
 2026-06-11,Onion,Raikot,1800.0,4.0
 2026-06-12,Onion,Raikot,1700.0,4.0
 2026-06-15,Onion,Raikot,1650.0,5.0
@@ -13583,6 +14118,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Raikot,3650.0,2.0
 2026-09-02,Onion,Raikot,3670.0,3.0
 2026-09-03,Onion,Raikot,3695.0,3.0
+2026-09-09,Onion,Raikot,3785.0,
 2023-06-06,Onion,Rajpura,1250.0,
 2023-06-07,Onion,Rajpura,1200.0,
 2023-06-08,Onion,Rajpura,1200.0,
@@ -14341,6 +14877,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Rajpura,2800.0,7.7
 2026-09-03,Onion,Rajpura,2600.0,7.7
 2026-09-04,Onion,Rajpura,2600.0,5.5
+2026-09-09,Onion,Rajpura,3900.0,
 2025-11-07,Onion,Raman,1655.0,0.6
 2025-11-08,Onion,Raman,1665.0,1.2
 2025-11-10,Onion,Raman,1665.0,1.4
@@ -14863,6 +15400,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Rampuraphul(Nabha Mandi),3500.0,4.0
 2026-09-04,Onion,Rampuraphul(Nabha Mandi),3500.0,4.0
 2026-09-05,Onion,Rampuraphul(Nabha Mandi),3500.0,3.9
+2026-09-09,Onion,Rampuraphul(Nabha Mandi),3500.0,
 2023-06-06,Onion,Rayya,1600.0,
 2023-06-07,Onion,Rayya,1600.0,
 2023-06-08,Onion,Rayya,1600.0,
@@ -15610,6 +16148,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Rayya,1413.0,0.05
 2026-09-04,Onion,Rayya,1412.0,0.05
 2026-09-05,Onion,Rayya,1412.0,0.04
+2026-09-09,Onion,Rayya,1410.0,
 2025-11-10,Onion,Ropar,1800.0,105.0
 2025-11-11,Onion,Ropar,1600.0,60.0
 2025-11-12,Onion,Ropar,1600.0,5.0
@@ -15819,6 +16358,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Ropar,4200.0,100.0
 2026-09-02,Onion,Ropar,4000.0,105.0
 2026-09-03,Onion,Ropar,4200.0,95.0
+2026-09-09,Onion,Ropar,4200.0,
 2023-06-07,Onion,Sahnewal,800.0,
 2023-06-09,Onion,Sahnewal,1600.0,
 2023-06-13,Onion,Sahnewal,1400.0,
@@ -17099,6 +17639,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Onion,Samrala,4000.0,1.7
 2026-09-03,Onion,Samrala,4700.0,1.5
 2026-09-04,Onion,Samrala,5500.0,2.2
+2026-09-09,Onion,Samrala,4500.0,
 2025-12-19,Onion,Sangrur,2000.0,90.0
 2025-12-20,Onion,Sangrur,2000.0,10.0
 2026-01-16,Onion,Sangrur,2000.0,5.0
@@ -17299,6 +17840,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Onion,Sirhind,4000.0,6.5
 2026-09-02,Onion,Sirhind,4000.0,6.4
 2026-09-03,Onion,Sirhind,4000.0,6.8
+2026-09-09,Onion,Sirhind,4000.0,
 2026-07-24,Onion,Sri Har Gobindpur,3100.0,0.1
 2026-07-28,Onion,Sri Har Gobindpur,3000.0,0.1
 2026-07-29,Onion,Sri Har Gobindpur,2900.0,0.1
@@ -17818,6 +18360,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Tanda Urmur,5000.0,3.3
 2026-09-04,Onion,Tanda Urmur,4200.0,1.6
 2026-09-05,Onion,Tanda Urmur,4800.0,3.1
+2026-09-09,Onion,Tanda Urmur,5000.0,
 2025-11-22,Onion,Tarantaran,1300.0,1.0
 2025-11-28,Onion,Tarantaran,1200.0,1.2
 2025-11-29,Onion,Tarantaran,1100.0,2.5
@@ -18289,22 +18832,87 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Onion,Zira,4600.0,0.55
 2026-09-04,Onion,Zira,4600.0,0.1
 2026-09-05,Onion,Zira,4600.0,0.89
+2026-09-09,Onion,Zira,4800.0,
+2026-09-09,Orange,Jalandhar City(Jalandhar),4500.0,
+2026-09-09,Paddy(Basmati),Ajnala,3900.0,
+2026-09-09,Paddy(Basmati),Ajnala (Sudhar),3900.0,
+2026-09-09,Paddy(Basmati),Attari,3741.0,
+2026-09-09,Paddy(Basmati),Gehri,3980.0,
+2026-09-09,Paddy(Basmati),Majitha,3850.0,
+2026-09-09,Papaya,Abohar,2500.0,
+2026-09-09,Papaya,Bathinda,1700.0,
+2026-09-09,Papaya,Chamkaur Sahib,3000.0,
+2026-09-09,Papaya,Dasuya,4000.0,
+2026-09-09,Papaya,Dhuri,2100.0,
+2026-09-09,Papaya,Dinanagar,4500.0,
+2026-09-09,Papaya,Fazilka,3500.0,
+2026-09-09,Papaya,Garh Shankar,3500.0,
+2026-09-09,Papaya,Garh Shankar(Mahalpur),3700.0,
+2026-09-09,Papaya,Jalalabad,3600.0,
+2026-09-09,Papaya,Jalandhar City(Jalandhar),1600.0,
+2026-09-09,Papaya,Khanna,2000.0,
+2026-09-09,Papaya,Malerkotla,2000.0,
+2026-09-09,Papaya,Malout,1500.0,
+2026-09-09,Papaya,Mukerian,3000.0,
 2026-08-17,Papaya,Patiala,1600.0,
+2026-09-09,Papaya,Patiala,3200.0,
 2026-08-17,Papaya,Patran,4000.0,
+2026-09-09,Papaya,Patran,3500.0,
+2026-09-09,Papaya,Quadian,3600.0,
+2026-09-09,Papaya,Rampuraphul(Nabha Mandi),3000.0,
+2026-09-09,Papaya,Sirhind,3500.0,
+2026-09-09,Pea Pod/Pea Cod/हरी मटर,Banur,5800.0,
 2026-08-17,Pea Pod/Pea Cod/हरी मटर,Ludhiana,5000.0,
 2026-08-17,Pea Pod/Pea Cod/हरी मटर,Nabha,5000.0,
+2026-09-09,Pear(Marasebu),Dasuya,6500.0,
+2026-09-09,Pear(Marasebu),Jalalabad,5400.0,
 2026-08-17,Pear(Marasebu),Ludhiana,3000.0,
+2026-09-09,Pear(Marasebu),Ludhiana,3000.0,
 2026-08-17,Pear(Marasebu),Nabha,6700.0,
 2026-08-17,Pear(Marasebu),Patiala,3100.0,
 2026-08-17,Pear(Marasebu),Patran,6000.0,
+2026-09-09,Pear(Marasebu),Patti,4000.0,
 2026-08-17,Pear(Marasebu),Raikot,4730.0,
+2026-09-09,Pear(Marasebu),Raikot,3110.0,
+2026-09-09,Peas Wet,Adampur,10000.0,
+2026-09-09,Peas Wet,Chamkaur Sahib,8000.0,
+2026-09-09,Peas Wet,Doraha,8000.0,
+2026-09-09,Peas Wet,Jalandhar City(Jalandhar),7500.0,
+2026-09-09,Peas Wet,Khanna,6000.0,
+2026-09-09,Peas Wet,Kharar,7000.0,
+2026-09-09,Peas Wet,Malerkotla,7500.0,
 2026-08-17,Peas Wet,Patran,7310.0,
+2026-09-09,Peas Wet,Patran,5260.0,
+2026-09-09,Peas Wet,Raikot,5549.0,
+2026-09-09,Peas Wet,Sirhind,9500.0,
+2026-09-09,Pineapple,Jalandhar City(Jalandhar),2800.0,
+2026-09-09,Pineapple,Malout,3800.0,
 2026-08-17,Pineapple,Patiala,2100.0,
+2026-09-09,Pineapple,Patiala,4700.0,
 2026-08-17,Pineapple,Patran,4760.0,
+2026-09-09,Pineapple,Patran,7590.0,
+2026-09-09,Pineapple,Ropar,4400.0,
+2026-09-09,Pineapple,Sirhind,5000.0,
+2026-09-09,Pineapple,Tanda Urmur,5500.0,
+2026-09-09,Plum,Jalandhar City(Jalandhar),4500.0,
 2026-08-17,Plum,Ludhiana,3000.0,
+2026-09-09,Plum,Tanda Urmur,11000.0,
+2026-09-09,Pomegranate,Bathinda,15000.0,
+2026-09-09,Pomegranate,Chamkaur Sahib,9000.0,
+2026-09-09,Pomegranate,Dinanagar,11000.0,
+2026-09-09,Pomegranate,Faridkot,10000.0,
+2026-09-09,Pomegranate,Garh Shankar,7500.0,
+2026-09-09,Pomegranate,Jalalabad,13200.0,
+2026-09-09,Pomegranate,Khanna,4000.0,
 2026-08-17,Pomegranate,Ludhiana,4000.0,
+2026-09-09,Pomegranate,Ludhiana,4000.0,
+2026-09-09,Pomegranate,Malerkotla,5500.0,
+2026-09-09,Pomegranate,Mukerian,11000.0,
+2026-09-09,Pomegranate,Nawan Shahar(Subzi Mandi),8300.0,
 2026-08-17,Pomegranate,Patiala,7100.0,
+2026-09-09,Pomegranate,Patiala,10600.0,
 2026-08-17,Pomegranate,Patran,9100.0,
+2026-09-09,Pomegranate,Sirhind,8500.0,
 2026-06-22,Potato,Abohar,600.0,25.0
 2026-06-23,Potato,Abohar,600.0,20.0
 2025-11-17,Potato,Adampur,800.0,1.8
@@ -18523,6 +19131,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Adampur,600.0,4.0
 2026-09-04,Potato,Adampur,600.0,3.0
 2026-09-05,Potato,Adampur,600.0,5.0
+2026-09-09,Potato,Adampur,600.0,
 2025-11-08,Potato,Ahmedgarh,1500.0,0.2
 2025-11-09,Potato,Ahmedgarh,1400.0,0.2
 2025-11-10,Potato,Ahmedgarh,1400.0,0.3
@@ -18750,6 +19359,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Ajnala,800.0,0.2
 2026-09-02,Potato,Ajnala,800.0,0.1
 2026-09-05,Potato,Ajnala,770.0,0.3
+2026-09-09,Potato,Ajnala,750.0,
 2023-06-06,Potato,Amritsar(Amritsar Mewa Mandi),600.0,
 2023-06-07,Potato,Amritsar(Amritsar Mewa Mandi),600.0,
 2023-06-08,Potato,Amritsar(Amritsar Mewa Mandi),600.0,
@@ -19515,6 +20125,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-28,Potato,Banur,1000.0,0.5
 2026-08-29,Potato,Banur,1000.0,0.6
 2026-08-30,Potato,Banur,1100.0,0.5
+2026-09-09,Potato,Banur,1040.0,
 2025-12-01,Potato,Bariwala,2000.0,0.1
 2025-12-02,Potato,Bariwala,2000.0,0.1
 2025-12-06,Potato,Bariwala,2000.0,0.1
@@ -19939,6 +20550,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Bathinda,750.0,410.0
 2026-09-03,Potato,Bathinda,800.0,410.0
 2026-09-04,Potato,Bathinda,750.0,400.0
+2026-09-09,Potato,Bathinda,750.0,
 2025-11-19,Potato,Bhagta Bhai Ka,1800.0,0.2
 2025-11-20,Potato,Bhagta Bhai Ka,2000.0,0.4
 2025-11-21,Potato,Bhagta Bhai Ka,2100.0,0.5
@@ -20180,6 +20792,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Bhagta Bhai Ka,1100.0,0.7
 2026-09-04,Potato,Bhagta Bhai Ka,900.0,0.6
 2026-09-05,Potato,Bhagta Bhai Ka,800.0,0.5
+2026-09-09,Potato,Bhagta Bhai Ka,900.0,
 2025-11-11,Potato,Bhawanigarh,1000.0,5.0
 2025-11-13,Potato,Bhawanigarh,900.0,4.0
 2025-11-14,Potato,Bhawanigarh,950.0,3.5
@@ -20500,6 +21113,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Bhogpur,800.0,0.2
 2026-09-04,Potato,Bhogpur,800.0,0.25
 2026-09-05,Potato,Bhogpur,700.0,0.3
+2026-09-09,Potato,Bhogpur,500.0,
 2025-12-12,Potato,Bhucho,900.0,0.3
 2025-12-15,Potato,Bhucho,500.0,0.3
 2025-12-16,Potato,Bhucho,1500.0,0.4
@@ -20589,6 +21203,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Potato,Bhucho,700.0,0.4
 2026-09-01,Potato,Bhucho,700.0,0.3
 2026-09-03,Potato,Bhucho,900.0,0.4
+2026-09-09,Potato,Bhucho,700.0,
 2025-11-12,Potato,Bhulath,1350.0,0.1
 2025-11-13,Potato,Bhulath,1200.0,0.8
 2025-11-14,Potato,Bhulath,1275.0,0.09
@@ -21032,6 +21647,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Dasuya,1100.0,1.5
 2026-09-02,Potato,Dasuya,1100.0,1.9
 2026-09-03,Potato,Dasuya,1100.0,1.5
+2026-09-09,Potato,Dasuya,1100.0,
 2026-02-06,Potato,Dera Baba Nanak,360.0,0.1
 2026-02-21,Potato,Dera Baba Nanak,600.0,0.1
 2026-03-01,Potato,Dera Baba Nanak,400.0,0.1
@@ -21302,12 +21918,14 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Potato,Dharamkot,1000.0,2.0
 2026-09-02,Potato,Dharamkot,1000.0,1.14
 2026-09-03,Potato,Dharamkot,1000.0,2.3
+2026-09-09,Potato,Dharamkot,1000.0,
 2026-08-21,Potato,Dhariwal,950.0,9.8
 2026-08-22,Potato,Dhariwal,890.0,7.2
 2026-08-24,Potato,Dhariwal,930.0,8.0
 2026-08-26,Potato,Dhariwal,850.0,6.8
 2026-08-27,Potato,Dhariwal,850.0,8.5
 2026-08-31,Potato,Dhariwal,750.0,6.5
+2026-09-09,Potato,Dhariwal,650.0,
 2026-06-04,Potato,Dhilwan,1000.0,11.0
 2025-12-17,Potato,Dhuri,750.0,0.7
 2025-12-18,Potato,Dhuri,820.0,0.8
@@ -21455,6 +22073,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Dhuri,600.0,1.0
 2026-09-02,Potato,Dhuri,620.0,1.0
 2026-09-03,Potato,Dhuri,630.0,1.0
+2026-09-09,Potato,Dhuri,620.0,
 2025-11-09,Potato,Dinanagar,1500.0,2.5
 2025-11-10,Potato,Dinanagar,1500.0,2.8
 2025-11-12,Potato,Dinanagar,1500.0,2.8
@@ -21632,6 +22251,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Dinanagar,1100.0,3.15
 2026-09-02,Potato,Dinanagar,1100.0,3.55
 2026-09-03,Potato,Dinanagar,1100.0,1.65
+2026-09-09,Potato,Dinanagar,1100.0,
 2023-06-06,Potato,Doraha,978.0,
 2023-06-07,Potato,Doraha,936.0,
 2023-06-08,Potato,Doraha,945.0,
@@ -22306,6 +22926,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Doraha,600.0,4.3
 2026-09-04,Potato,Doraha,600.0,3.7
 2026-09-05,Potato,Doraha,600.0,5.45
+2026-09-09,Potato,Doraha,600.0,
 2023-06-07,Potato,Dudhansadhan,1400.0,
 2023-06-08,Potato,Dudhansadhan,1400.0,
 2023-06-09,Potato,Dudhansadhan,1400.0,
@@ -23122,6 +23743,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,F.G.Churian,900.0,0.5
 2026-09-04,Potato,F.G.Churian,1000.0,0.4
 2026-09-05,Potato,F.G.Churian,900.0,0.5
+2026-09-09,Potato,F.G.Churian,1000.0,
 2026-08-06,Potato,Faridkot,800.0,6.5
 2026-08-07,Potato,Faridkot,900.0,5.1
 2026-08-08,Potato,Faridkot,1000.0,4.0
@@ -23341,6 +23963,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Fazilka,900.0,21.42
 2026-09-02,Potato,Fazilka,900.0,15.5
 2026-09-03,Potato,Fazilka,900.0,12.95
+2026-09-09,Potato,Fazilka,900.0,
 2025-11-10,Potato,Ferozepur Cantt.,1000.0,0.4
 2025-11-11,Potato,Ferozepur Cantt.,1100.0,0.7
 2025-11-12,Potato,Ferozepur Cantt.,1000.0,0.65
@@ -23700,6 +24323,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Garh Shankar,1000.0,8.7
 2026-09-03,Potato,Garh Shankar,900.0,8.6
 2026-09-04,Potato,Garh Shankar,1000.0,9.4
+2026-09-09,Potato,Garh Shankar,1000.0,
 2025-11-11,Potato,Garh Shankar(Mahalpur),1200.0,8.5
 2025-11-17,Potato,Garh Shankar(Mahalpur),1300.0,5.9
 2025-11-18,Potato,Garh Shankar(Mahalpur),1200.0,7.9
@@ -23907,6 +24531,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Garh Shankar(Mahalpur),800.0,6.5
 2026-09-02,Potato,Garh Shankar(Mahalpur),800.0,6.5
 2026-09-03,Potato,Garh Shankar(Mahalpur),700.0,6.4
+2026-09-09,Potato,Garh Shankar(Mahalpur),700.0,
 2025-11-20,Potato,GarhShankar (Kotfatuhi),1000.0,2.0
 2025-11-26,Potato,GarhShankar (Kotfatuhi),1200.0,0.3
 2025-11-27,Potato,GarhShankar (Kotfatuhi),1200.0,0.4
@@ -24108,6 +24733,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,GarhShankar (Kotfatuhi),1000.0,0.8
 2026-09-03,Potato,GarhShankar (Kotfatuhi),900.0,0.6
 2026-09-04,Potato,GarhShankar (Kotfatuhi),1000.0,0.5
+2026-09-09,Potato,GarhShankar (Kotfatuhi),1000.0,
 2024-09-02,Potato,Gehri,2000.0,
 2024-09-03,Potato,Gehri,2000.0,
 2024-09-06,Potato,Gehri,1500.0,
@@ -24466,6 +25092,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Ghanaur,900.0,0.2
 2026-09-04,Potato,Ghanaur,900.0,0.2
 2026-09-05,Potato,Ghanaur,900.0,0.2
+2026-09-09,Potato,Ghanaur,800.0,
 2025-11-14,Potato,Giddarbaha,1500.0,1.5
 2025-11-26,Potato,Giddarbaha,1400.0,2.0
 2025-12-05,Potato,Giddarbaha,1500.0,2.5
@@ -25249,6 +25876,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Jalalabad,1100.0,5.2
 2026-09-03,Potato,Jalalabad,1100.0,5.3
 2026-09-04,Potato,Jalalabad,1100.0,5.0
+2026-09-09,Potato,Jalalabad,1100.0,
 2025-11-10,Potato,Jalandhar City(Jalandhar),660.0,326.4
 2025-11-11,Potato,Jalandhar City(Jalandhar),380.0,259.2
 2025-11-12,Potato,Jalandhar City(Jalandhar),480.0,193.6
@@ -25460,6 +26088,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Jalandhar City(Jalandhar),360.0,155.5
 2026-09-02,Potato,Jalandhar City(Jalandhar),400.0,138.1
 2026-09-03,Potato,Jalandhar City(Jalandhar),320.0,192.9
+2026-09-09,Potato,Jalandhar City(Jalandhar),300.0,
 2025-11-12,Potato,Kapurthala,900.0,7.0
 2025-11-14,Potato,Kapurthala,900.0,3.0
 2025-11-17,Potato,Kapurthala,900.0,5.0
@@ -25597,6 +26226,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-29,Potato,Khamano,1000.0,0.5
 2026-08-31,Potato,Khamano,1000.0,0.45
 2026-09-03,Potato,Khamano,1000.0,0.5
+2026-09-09,Potato,Khamano,700.0,
 2023-06-06,Potato,Khanna,400.0,
 2023-06-07,Potato,Khanna,300.0,
 2023-06-09,Potato,Khanna,400.0,
@@ -26386,6 +27016,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Khanna,500.0,59.5
 2026-09-04,Potato,Khanna,500.0,35.6
 2026-09-05,Potato,Khanna,500.0,24.7
+2026-09-09,Potato,Khanna,500.0,
 2025-11-09,Potato,Kharar,1000.0,10.1
 2025-11-11,Potato,Kharar,1000.0,10.0
 2025-11-12,Potato,Kharar,1000.0,9.8
@@ -26619,6 +27250,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Kharar,800.0,9.8
 2026-09-04,Potato,Kharar,800.0,9.7
 2026-09-05,Potato,Kharar,800.0,9.9
+2026-09-09,Potato,Kharar,800.0,
 2026-02-05,Potato,Kot ise Khan,600.0,0.01
 2026-02-06,Potato,Kot ise Khan,400.0,0.01
 2026-02-11,Potato,Kot ise Khan,500.0,0.01
@@ -26938,6 +27570,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Kurali,900.0,3.6
 2026-09-03,Potato,Kurali,850.0,3.8
 2026-09-04,Potato,Kurali,800.0,3.6
+2026-09-09,Potato,Kurali,810.0,
 2025-12-12,Potato,Lalru,1000.0,6.0
 2025-12-15,Potato,Lalru,1000.0,5.0
 2025-12-16,Potato,Lalru,800.0,6.0
@@ -27109,6 +27742,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Lalru,800.0,6.0
 2026-09-04,Potato,Lalru,870.0,5.6
 2026-09-05,Potato,Lalru,870.0,5.5
+2026-09-09,Potato,Lalru,850.0,
 2025-11-25,Potato,Lehra Gaga,2000.0,0.05
 2025-12-01,Potato,Lehra Gaga,800.0,0.38
 2025-12-03,Potato,Lehra Gaga,1000.0,0.16
@@ -27290,6 +27924,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Lohian Khas,400.0,1.0
 2026-09-04,Potato,Lohian Khas,400.0,1.0
 2026-09-05,Potato,Lohian Khas,400.0,0.5
+2026-09-09,Potato,Lohian Khas,400.0,
 2023-06-06,Potato,Ludhiana,800.0,
 2023-06-07,Potato,Ludhiana,900.0,
 2023-06-08,Potato,Ludhiana,800.0,
@@ -28112,6 +28747,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Ludhiana,300.0,174.3
 2026-09-04,Potato,Ludhiana,300.0,111.3
 2026-09-05,Potato,Ludhiana,300.0,126.8
+2026-09-09,Potato,Ludhiana,300.0,
 2023-06-06,Potato,Machhiwara,1000.0,
 2023-06-07,Potato,Machhiwara,1000.0,
 2023-06-08,Potato,Machhiwara,1000.0,
@@ -28291,6 +28927,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Machhiwara,700.0,1.1
 2026-09-04,Potato,Machhiwara,700.0,1.67
 2026-09-05,Potato,Machhiwara,700.0,1.06
+2026-09-09,Potato,Machhiwara,700.0,
 2026-08-05,Potato,Makhu,1200.0,0.3
 2026-08-10,Potato,Makhu,800.0,0.2
 2026-08-04,Potato,Malerkotla,500.0,8.0
@@ -28315,6 +28952,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Malerkotla,500.0,20.0
 2026-09-02,Potato,Malerkotla,500.0,14.0
 2026-09-03,Potato,Malerkotla,500.0,15.0
+2026-09-09,Potato,Malerkotla,500.0,
 2025-11-11,Potato,Malout,800.0,5.0
 2025-11-12,Potato,Malout,800.0,5.0
 2025-11-13,Potato,Malout,800.0,7.75
@@ -28564,6 +29202,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Malout,500.0,0.2
 2026-09-02,Potato,Malout,700.0,16.01
 2026-09-03,Potato,Malout,600.0,14.02
+2026-09-09,Potato,Malout,400.0,
 2025-11-25,Potato,Mamdot,1100.0,1.6
 2025-11-26,Potato,Mamdot,1000.0,1.6
 2025-11-27,Potato,Mamdot,1100.0,2.0
@@ -28947,6 +29586,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Maur,550.0,0.4
 2026-09-03,Potato,Maur,650.0,0.4
 2026-09-04,Potato,Maur,650.0,0.5
+2026-09-09,Potato,Maur,650.0,
 2025-11-20,Potato,Mehatpur,1800.0,0.5
 2026-02-26,Potato,Mehatpur,600.0,0.3
 2025-11-10,Potato,Moga,1100.0,8.0
@@ -29236,6 +29876,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Mukerian,1100.0,2.99
 2026-09-04,Potato,Mukerian,1100.0,2.96
 2026-09-05,Potato,Mukerian,1100.0,2.99
+2026-09-09,Potato,Mukerian,1100.0,
 2026-01-01,Potato,Mukerian(Talwara),1000.0,0.8
 2026-01-02,Potato,Mukerian(Talwara),900.0,1.1
 2026-01-08,Potato,Mukerian(Talwara),1000.0,0.6
@@ -29321,6 +29962,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Mukerian(Talwara),1200.0,1.0
 2026-09-04,Potato,Mukerian(Talwara),1200.0,0.8
 2026-09-05,Potato,Mukerian(Talwara),1200.0,0.9
+2026-09-09,Potato,Mukerian(Talwara),1200.0,
 2025-11-08,Potato,Muktsar,950.0,1.8
 2025-11-10,Potato,Muktsar,900.0,1.8
 2025-11-11,Potato,Muktsar,900.0,2.0
@@ -30371,6 +31013,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Nakodar,400.0,1.0
 2026-09-04,Potato,Nakodar,450.0,1.25
 2026-09-05,Potato,Nakodar,390.0,0.9
+2026-09-09,Potato,Nakodar,400.0,
 2025-11-07,Potato,Nawan Shahar(Subzi Mandi),1400.0,6.0
 2025-11-11,Potato,Nawan Shahar(Subzi Mandi),1350.0,4.5
 2025-11-12,Potato,Nawan Shahar(Subzi Mandi),1350.0,6.0
@@ -30537,6 +31180,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Nawan Shahar(Subzi Mandi),700.0,7.0
 2026-09-02,Potato,Nawan Shahar(Subzi Mandi),750.0,6.0
 2026-09-03,Potato,Nawan Shahar(Subzi Mandi),750.0,4.0
+2026-09-09,Potato,Nawan Shahar(Subzi Mandi),750.0,
 2025-11-11,Potato,Nihal Singh Wala,1300.0,0.5
 2025-11-12,Potato,Nihal Singh Wala,1300.0,0.5
 2025-11-13,Potato,Nihal Singh Wala,1300.0,0.5
@@ -30738,6 +31382,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Nihal Singh Wala,850.0,0.75
 2026-09-02,Potato,Nihal Singh Wala,700.0,1.0
 2026-09-03,Potato,Nihal Singh Wala,700.0,1.0
+2026-09-09,Potato,Nihal Singh Wala,750.0,
 2025-11-24,Potato,Pathankot,1200.0,78.1
 2025-11-26,Potato,Pathankot,1200.0,78.1
 2025-11-27,Potato,Pathankot,1100.0,18.6
@@ -31211,6 +31856,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Patiala,600.0,51.0
 2026-09-04,Potato,Patiala,650.0,50.0
 2026-09-05,Potato,Patiala,600.0,51.0
+2026-09-09,Potato,Patiala,600.0,
 2023-06-06,Potato,Patran,590.0,
 2023-06-07,Potato,Patran,660.0,
 2023-06-09,Potato,Patran,680.0,
@@ -31856,6 +32502,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Patran,450.0,73.0
 2026-09-02,Potato,Patran,450.0,85.0
 2026-09-03,Potato,Patran,430.0,75.0
+2026-09-09,Potato,Patran,450.0,
 2025-11-07,Potato,Patti,1150.0,2.0
 2025-11-08,Potato,Patti,800.0,0.8
 2025-11-09,Potato,Patti,800.0,0.8
@@ -32300,6 +32947,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Potato,Phillaur(Apra Mandi),900.0,0.2
 2026-09-01,Potato,Phillaur(Apra Mandi),800.0,0.2
 2026-09-02,Potato,Phillaur(Apra Mandi),900.0,0.3
+2026-09-09,Potato,Phillaur(Apra Mandi),900.0,
 2025-11-19,Potato,Quadian,1000.0,2.2
 2025-11-21,Potato,Quadian,950.0,2.3
 2025-11-26,Potato,Quadian,850.0,2.2
@@ -32432,6 +33080,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Quadian,500.0,2.0
 2026-09-04,Potato,Quadian,500.0,1.5
 2026-09-05,Potato,Quadian,500.0,1.5
+2026-09-09,Potato,Quadian,500.0,
 2024-07-29,Potato,Raikot,900.0,
 2025-04-01,Potato,Raikot,350.0,
 2025-04-02,Potato,Raikot,350.0,
@@ -32505,6 +33154,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Raikot,650.0,3.0
 2026-09-02,Potato,Raikot,650.0,3.0
 2026-09-03,Potato,Raikot,650.0,4.0
+2026-09-09,Potato,Raikot,650.0,
 2023-06-06,Potato,Rajpura,800.0,
 2023-06-07,Potato,Rajpura,700.0,
 2023-06-08,Potato,Rajpura,700.0,
@@ -33331,6 +33981,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Rajpura,850.0,6.6
 2026-09-03,Potato,Rajpura,750.0,8.0
 2026-09-04,Potato,Rajpura,650.0,7.0
+2026-09-09,Potato,Rajpura,800.0,
 2025-11-07,Potato,Raman,1295.0,3.0
 2025-11-08,Potato,Raman,1285.0,3.4
 2025-11-10,Potato,Raman,1345.0,3.6
@@ -33851,6 +34502,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Rampuraphul(Nabha Mandi),700.0,3.0
 2026-09-04,Potato,Rampuraphul(Nabha Mandi),700.0,3.0
 2026-09-05,Potato,Rampuraphul(Nabha Mandi),700.0,4.0
+2026-09-09,Potato,Rampuraphul(Nabha Mandi),700.0,
 2023-06-06,Potato,Rayya,800.0,
 2023-06-07,Potato,Rayya,900.0,
 2023-06-08,Potato,Rayya,800.0,
@@ -34711,6 +35363,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Rayya,752.0,0.04
 2026-09-04,Potato,Rayya,618.0,0.05
 2026-09-05,Potato,Rayya,750.0,0.05
+2026-09-09,Potato,Rayya,635.0,
 2025-11-07,Potato,Ropar,1200.0,175.0
 2025-11-10,Potato,Ropar,1200.0,160.0
 2025-11-11,Potato,Ropar,1200.0,130.0
@@ -34923,6 +35576,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Ropar,800.0,150.0
 2026-09-02,Potato,Ropar,800.0,165.0
 2026-09-03,Potato,Ropar,800.0,150.0
+2026-09-09,Potato,Ropar,800.0,
 2023-06-06,Potato,Sahnewal,1000.0,
 2023-06-08,Potato,Sahnewal,1000.0,
 2023-06-09,Potato,Sahnewal,1000.0,
@@ -36500,6 +37154,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Potato,Samrala,600.0,2.8
 2026-09-03,Potato,Samrala,500.0,3.5
 2026-09-04,Potato,Samrala,500.0,2.5
+2026-09-09,Potato,Samrala,450.0,
 2025-12-19,Potato,Sangrur,600.0,25.0
 2025-12-20,Potato,Sangrur,600.0,20.0
 2026-01-16,Potato,Sangrur,400.0,10.0
@@ -36758,6 +37413,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Potato,Sirhind,800.0,9.2
 2026-09-02,Potato,Sirhind,850.0,10.6
 2026-09-03,Potato,Sirhind,800.0,10.5
+2026-09-09,Potato,Sirhind,800.0,
 2025-12-02,Potato,Sultanpur,1000.0,0.5
 2025-12-04,Potato,Sultanpur,1000.0,0.5
 2025-12-17,Potato,Sultanpur,500.0,1.0
@@ -37320,6 +37976,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Tanda Urmur,1100.0,3.2
 2026-09-04,Potato,Tanda Urmur,1100.0,2.9
 2026-09-05,Potato,Tanda Urmur,1100.0,3.2
+2026-09-09,Potato,Tanda Urmur,1100.0,
 2025-11-23,Potato,Tarantaran,1025.61,8.2
 2025-11-28,Potato,Tarantaran,1000.0,6.0
 2025-11-29,Potato,Tarantaran,950.0,4.0
@@ -37803,22 +38460,109 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Potato,Zira,700.0,1.83
 2026-09-04,Potato,Zira,800.0,0.85
 2026-09-05,Potato,Zira,800.0,2.5
+2026-09-09,Potato,Zira,700.0,
+2026-09-09,Pumpkin,Abohar,1600.0,
+2026-09-09,Pumpkin,Ahmedgarh,2500.0,
+2026-09-09,Pumpkin,Bhagta Bhai Ka,2500.0,
+2026-09-09,Pumpkin,Bhulath,850.0,
+2026-09-09,Pumpkin,Dhuri,1900.0,
+2026-09-09,Pumpkin,Fazilka,2500.0,
+2026-09-09,Pumpkin,Harike,250.0,
+2026-09-09,Pumpkin,Jalandhar City(Jalandhar),600.0,
+2026-09-09,Pumpkin,Kalanaur,1300.0,
+2026-09-09,Pumpkin,Khamano,1500.0,
+2026-09-09,Pumpkin,Khanna,1200.0,
+2026-09-09,Pumpkin,Lalru,1500.0,
+2026-09-09,Pumpkin,Lohian Khas,1600.0,
 2026-08-17,Pumpkin,Ludhiana,700.0,
+2026-09-09,Pumpkin,Ludhiana,800.0,
+2026-09-09,Pumpkin,Malerkotla,1500.0,
+2026-09-09,Pumpkin,Maur,2000.0,
+2026-09-09,Pumpkin,Mukerian(Talwara),1400.0,
+2026-09-09,Pumpkin,Nawan Shahar(Subzi Mandi),1800.0,
+2026-09-09,Pumpkin,Noor Mehal,1000.0,
 2026-08-17,Pumpkin,Patiala,200.0,
+2026-09-09,Pumpkin,Patiala,1300.0,
 2026-08-17,Pumpkin,Patran,1140.0,
+2026-09-09,Pumpkin,Patran,1500.0,
+2026-09-09,Pumpkin,Rampuraphul(Nabha Mandi),1500.0,
 2026-08-17,Pumpkin,Samrala,700.0,
+2026-09-09,Pumpkin,Samrala,800.0,
+2026-09-09,Pumpkin,Shahkot,1300.0,
+2026-09-09,Pumpkin,Sirhind,1600.0,
+2026-09-09,Pumpkin,Tanda Urmur,1200.0,
+2026-09-09,Raddish,Abohar,1800.0,
+2026-09-09,Raddish,Adampur,2000.0,
 2026-08-17,Raddish,Amritsar(Amritsar Mewa Mandi),600.0,
+2026-09-09,Raddish,F.G.Churian,3000.0,
+2026-09-09,Raddish,Fazilka,2500.0,
+2026-09-09,Raddish,Jalalabad,3000.0,
+2026-09-09,Raddish,Jalandhar City(Jalandhar),1200.0,
+2026-09-09,Raddish,Khanna,1500.0,
 2026-08-17,Raddish,Ludhiana,600.0,
+2026-09-09,Raddish,Ludhiana,600.0,
+2026-09-09,Raddish,Machhiwara,1800.0,
+2026-09-09,Raddish,Malerkotla,1500.0,
+2026-09-09,Raddish,Mukerian,2000.0,
 2026-08-17,Raddish,Nabha,2000.0,
+2026-09-09,Raddish,Nawan Shahar(Subzi Mandi),2200.0,
+2026-09-09,Raddish,Noor Mehal,1600.0,
 2026-08-17,Raddish,Patiala,800.0,
+2026-09-09,Raddish,Patiala,2000.0,
 2026-08-17,Raddish,Patran,2520.0,
+2026-09-09,Raddish,Patran,2150.0,
+2026-09-09,Raddish,Rampuraphul(Nabha Mandi),1500.0,
+2026-09-09,Raddish,Rayya,1952.0,
+2026-09-09,Raddish,Sirhind,1900.0,
+2026-09-09,Raddish,Tanda Urmur,2800.0,
+2026-09-09,Ridgeguard(Tori),Adampur,1500.0,
 2026-08-17,Ridgeguard(Tori),Doraha,2500.0,
+2026-09-09,Ridgeguard(Tori),Doraha,1800.0,
+2026-09-09,Ridgeguard(Tori),F.G.Churian,1000.0,
+2026-09-09,Ridgeguard(Tori),Harike,1150.0,
+2026-09-09,Ridgeguard(Tori),Jalalabad,3100.0,
+2026-09-09,Ridgeguard(Tori),Jalandhar City(Jalandhar),1800.0,
+2026-09-09,Ridgeguard(Tori),Khanna,2000.0,
 2026-08-17,Ridgeguard(Tori),Ludhiana,1600.0,
+2026-09-09,Ridgeguard(Tori),Ludhiana,900.0,
+2026-09-09,Ridgeguard(Tori),Majitha,1000.0,
+2026-09-09,Ridgeguard(Tori),Naushera Pannuan,1400.0,
+2026-09-09,Ridgeguard(Tori),Noor Mehal,1900.0,
 2026-08-17,Ridgeguard(Tori),Patran,2550.0,
+2026-09-09,Ridgeguard(Tori),Patran,2290.0,
+2026-09-09,Ridgeguard(Tori),Phillaur(Apra Mandi),2500.0,
+2026-09-09,Ridgeguard(Tori),Rampuraphul(Nabha Mandi),2000.0,
 2026-08-17,Ridgeguard(Tori),Rayya,2087.0,
+2026-09-09,Ridgeguard(Tori),Rayya,2050.0,
+2026-09-09,Ridgeguard(Tori),Sirhind,1900.0,
+2026-09-09,Round gourd,Adampur,1500.0,
+2026-09-09,Round gourd,Dharamkot,3000.0,
+2026-09-09,Round gourd,Harike,750.0,
+2026-09-09,Round gourd,Nawan Shahar(Subzi Mandi),850.0,
+2026-09-09,Round gourd,Patti,450.0,
+2026-09-09,Spinach,Adampur,3000.0,
+2026-09-09,Spinach,Doraha,3000.0,
+2026-09-09,Spinach,Jalandhar City(Jalandhar),1400.0,
+2026-09-09,Spinach,Khamano,3000.0,
+2026-09-09,Spinach,Malerkotla,2000.0,
+2026-09-09,Spinach,Naushera Pannuan,1500.0,
 2026-08-17,Spinach,Patran,1360.0,
+2026-09-09,Spinach,Patran,1860.0,
+2026-09-09,Spinach,Shahkot,2000.0,
+2026-09-09,Spinach,Sirhind,1400.0,
+2026-09-09,Sponge gourd,Abohar,2300.0,
+2026-09-09,Sponge gourd,Malerkotla,1200.0,
+2026-09-09,Sponge gourd,Nawan Shahar(Subzi Mandi),2800.0,
+2026-09-09,Squash(Chappal Kadoo),Doraha,1300.0,
+2026-09-09,Squash(Chappal Kadoo),F.G.Churian,1100.0,
+2026-09-09,Squash(Chappal Kadoo),Malerkotla,800.0,
+2026-09-09,Squash(Chappal Kadoo),Phillaur(Apra Mandi),1500.0,
+2026-09-09,Sweet Pumpkin,Machhiwara,1800.0,
+2026-09-09,Tender Coconut,Jalandhar City(Jalandhar),2500.0,
 2026-08-17,Tender Coconut,Patran,5440.0,
+2026-09-09,Tender Coconut,Patran,6280.0,
 2026-08-17,Tinda,Rayya,1801.0,
+2026-09-09,Tinda,Tanda Urmur,3200.0,
 2025-11-19,Tomato,Adampur,4500.0,0.8
 2025-11-24,Tomato,Adampur,5500.0,0.6
 2025-11-25,Tomato,Adampur,6000.0,1.0
@@ -38036,6 +38780,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Adampur,3250.0,2.6
 2026-09-03,Tomato,Adampur,4000.0,2.2
 2026-09-04,Tomato,Adampur,3500.0,2.5
+2026-09-09,Tomato,Adampur,3000.0,
 2025-11-09,Tomato,Ahmedgarh,3200.0,1.0
 2025-11-30,Tomato,Ahmedgarh,4000.0,0.2
 2025-12-19,Tomato,Ahmedgarh,6000.0,0.05
@@ -38180,6 +38925,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Ahmedgarh,4000.0,0.2
 2026-09-04,Tomato,Ahmedgarh,3400.0,0.1
 2026-09-05,Tomato,Ahmedgarh,3500.0,0.2
+2026-09-09,Tomato,Ahmedgarh,4000.0,
 2026-06-03,Tomato,Ajnala,3700.0,0.2
 2026-08-05,Tomato,Ajnala,1500.0,1.8
 2026-08-17,Tomato,Ajnala,2700.0,0.1
@@ -38587,6 +39333,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-28,Tomato,Banur,1700.0,0.3
 2026-08-29,Tomato,Banur,1700.0,0.3
 2026-08-30,Tomato,Banur,1700.0,0.2
+2026-09-09,Tomato,Banur,1800.0,
 2025-12-01,Tomato,Bariwala,3000.0,0.04
 2025-12-06,Tomato,Bariwala,3000.0,0.02
 2025-12-31,Tomato,Bariwala,5500.0,0.02
@@ -39023,6 +39770,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Bathinda,2200.0,75.0
 2026-09-02,Tomato,Bathinda,2200.0,70.0
 2026-09-04,Tomato,Bathinda,2200.0,75.0
+2026-09-09,Tomato,Bathinda,2200.0,
 2025-11-20,Tomato,Bhagta Bhai Ka,2200.0,0.4
 2025-11-21,Tomato,Bhagta Bhai Ka,2300.0,0.6
 2025-11-22,Tomato,Bhagta Bhai Ka,2100.0,0.4
@@ -39250,6 +39998,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Bhagta Bhai Ka,2900.0,0.4
 2026-09-03,Tomato,Bhagta Bhai Ka,2800.0,0.6
 2026-09-04,Tomato,Bhagta Bhai Ka,2900.0,0.4
+2026-09-09,Tomato,Bhagta Bhai Ka,3100.0,
 2025-11-09,Tomato,Bhawanigarh,2000.0,1.0
 2025-11-10,Tomato,Bhawanigarh,2000.0,1.0
 2025-11-11,Tomato,Bhawanigarh,2200.0,1.0
@@ -39760,6 +40509,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-26,Tomato,Chamkaur Sahib,5000.0,2.0
 2026-08-31,Tomato,Chamkaur Sahib,4500.0,4.0
 2026-09-02,Tomato,Chamkaur Sahib,5000.0,1.5
+2026-09-09,Tomato,Chamkaur Sahib,5000.0,
 2025-11-11,Tomato,Dasuya,2000.0,0.4
 2025-11-17,Tomato,Dasuya,2000.0,0.6
 2025-11-18,Tomato,Dasuya,2200.0,0.8
@@ -39797,6 +40547,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Dasuya,3500.0,1.1
 2026-09-02,Tomato,Dasuya,4000.0,0.5
 2026-09-03,Tomato,Dasuya,4000.0,0.5
+2026-09-09,Tomato,Dasuya,4000.0,
 2026-02-17,Tomato,Dera Baba Nanak,1368.0,0.1
 2026-03-12,Tomato,Dera Baba Nanak,1092.0,0.1
 2026-03-17,Tomato,Dera Baba Nanak,1126.0,0.1
@@ -40163,6 +40914,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Dhuri,1900.0,0.3
 2026-09-02,Tomato,Dhuri,2050.0,0.2
 2026-09-03,Tomato,Dhuri,2100.0,0.2
+2026-09-09,Tomato,Dhuri,2400.0,
 2025-11-07,Tomato,Dinanagar,2500.0,0.7
 2025-11-08,Tomato,Dinanagar,2400.0,0.8
 2025-11-09,Tomato,Dinanagar,2500.0,0.8
@@ -40373,6 +41125,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Dinanagar,2300.0,2.35
 2026-09-03,Tomato,Dinanagar,2200.0,2.55
 2026-09-04,Tomato,Dinanagar,2900.0,2.35
+2026-09-09,Tomato,Dinanagar,2800.0,
 2023-06-06,Tomato,Doraha,1033.0,
 2023-06-07,Tomato,Doraha,878.0,
 2023-06-08,Tomato,Doraha,879.0,
@@ -40647,6 +41400,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Doraha,2550.0,0.8
 2026-09-04,Tomato,Doraha,2500.0,0.76
 2026-09-05,Tomato,Doraha,3000.0,0.88
+2026-09-09,Tomato,Doraha,2500.0,
 2023-06-07,Tomato,Dudhansadhan,800.0,
 2023-06-08,Tomato,Dudhansadhan,750.0,
 2023-06-10,Tomato,Dudhansadhan,900.0,
@@ -40995,6 +41749,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,F.G.Churian,3000.0,0.08
 2026-09-03,Tomato,F.G.Churian,2800.0,0.1
 2026-09-04,Tomato,F.G.Churian,2500.0,0.15
+2026-09-09,Tomato,F.G.Churian,2500.0,
 2026-08-05,Tomato,Faridkot,3000.0,1.4
 2026-08-06,Tomato,Faridkot,2500.0,2.45
 2026-08-08,Tomato,Faridkot,3600.0,1.1
@@ -41015,6 +41770,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Tomato,Faridkot,1800.0,1.74
 2026-09-01,Tomato,Faridkot,1800.0,2.23
 2026-09-03,Tomato,Faridkot,3000.0,1.89
+2026-09-09,Tomato,Faridkot,3000.0,
 2025-11-07,Tomato,Fazilka,2500.0,1.83
 2025-11-10,Tomato,Fazilka,2500.0,3.47
 2025-11-11,Tomato,Fazilka,2500.0,3.71
@@ -41237,6 +41993,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Fazilka,3000.0,0.61
 2026-09-02,Tomato,Fazilka,3000.0,0.58
 2026-09-03,Tomato,Fazilka,3000.0,0.47
+2026-09-09,Tomato,Fazilka,2500.0,
 2026-08-17,Tomato,Ferozepur Cantt.,2500.0,0.15
 2025-11-12,Tomato,Firozepur City,2000.0,5.0
 2025-11-13,Tomato,Firozepur City,1800.0,0.4
@@ -41466,6 +42223,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Garh Shankar,2400.0,1.7
 2026-09-03,Tomato,Garh Shankar,2500.0,1.7
 2026-09-04,Tomato,Garh Shankar,2000.0,1.7
+2026-09-09,Tomato,Garh Shankar,2600.0,
 2025-11-11,Tomato,Garh Shankar(Mahalpur),2300.0,1.3
 2025-11-18,Tomato,Garh Shankar(Mahalpur),3500.0,2.2
 2025-11-19,Tomato,Garh Shankar(Mahalpur),3800.0,2.4
@@ -41655,6 +42413,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Garh Shankar(Mahalpur),2400.0,1.2
 2026-09-02,Tomato,Garh Shankar(Mahalpur),2400.0,2.3
 2026-09-03,Tomato,Garh Shankar(Mahalpur),2200.0,0.8
+2026-09-09,Tomato,Garh Shankar(Mahalpur),2400.0,
 2025-11-20,Tomato,GarhShankar (Kotfatuhi),3000.0,0.1
 2025-11-26,Tomato,GarhShankar (Kotfatuhi),3800.0,0.1
 2025-11-27,Tomato,GarhShankar (Kotfatuhi),3500.0,0.2
@@ -41847,6 +42606,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,GarhShankar (Kotfatuhi),2500.0,0.1
 2026-09-02,Tomato,GarhShankar (Kotfatuhi),2200.0,0.2
 2026-09-03,Tomato,GarhShankar (Kotfatuhi),2200.0,0.2
+2026-09-09,Tomato,GarhShankar (Kotfatuhi),2800.0,
 2026-01-21,Tomato,Gehri,1500.0,0.3
 2026-02-16,Tomato,Gehri,1700.0,0.5
 2026-02-19,Tomato,Gehri,1200.0,0.5
@@ -42032,6 +42792,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Ghanaur,1900.0,0.2
 2026-09-02,Tomato,Ghanaur,1900.0,0.2
 2026-09-03,Tomato,Ghanaur,1900.0,0.2
+2026-09-09,Tomato,Ghanaur,2100.0,
 2025-11-14,Tomato,Giddarbaha,1700.0,0.45
 2025-11-26,Tomato,Giddarbaha,3200.0,0.4
 2025-12-05,Tomato,Giddarbaha,2800.0,0.4
@@ -42568,6 +43329,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Jalalabad,3000.0,1.5
 2026-09-03,Tomato,Jalalabad,3100.0,1.4
 2026-09-04,Tomato,Jalalabad,3000.0,1.55
+2026-09-09,Tomato,Jalalabad,3100.0,
 2026-08-21,Tomato,Jalandhar City,1600.0,46.8
 2025-11-10,Tomato,Jalandhar City(Jalandhar),1300.0,43.6
 2025-11-11,Tomato,Jalandhar City(Jalandhar),1100.0,53.2
@@ -42747,6 +43509,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Jalandhar City(Jalandhar),1200.0,40.1
 2026-09-02,Tomato,Jalandhar City(Jalandhar),1700.0,46.7
 2026-09-03,Tomato,Jalandhar City(Jalandhar),1600.0,46.4
+2026-09-09,Tomato,Jalandhar City(Jalandhar),1200.0,
 2025-11-26,Tomato,Kalanaur,3500.0,0.01
 2025-11-27,Tomato,Kalanaur,3500.0,0.01
 2025-12-03,Tomato,Kalanaur,7500.0,0.01
@@ -43004,6 +43767,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Khamano,2000.0,0.1
 2026-09-02,Tomato,Khamano,2000.0,0.2
 2026-09-03,Tomato,Khamano,2000.0,0.1
+2026-09-09,Tomato,Khamano,3700.0,
 2023-06-06,Tomato,Khanna,1300.0,
 2023-06-07,Tomato,Khanna,1300.0,
 2023-06-09,Tomato,Khanna,1300.0,
@@ -43281,6 +44045,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Khanna,1500.0,4.5
 2026-09-04,Tomato,Khanna,1500.0,9.4
 2026-09-05,Tomato,Khanna,1500.0,19.0
+2026-09-09,Tomato,Khanna,2500.0,
 2025-11-09,Tomato,Kharar,2700.0,3.4
 2025-11-11,Tomato,Kharar,2700.0,3.3
 2025-11-12,Tomato,Kharar,2700.0,3.0
@@ -43513,6 +44278,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Kharar,3000.0,4.0
 2026-09-04,Tomato,Kharar,3000.0,3.8
 2026-09-05,Tomato,Kharar,3000.0,4.1
+2026-09-09,Tomato,Kharar,3000.0,
 2025-11-11,Tomato,Kurali,3000.0,0.7
 2025-11-13,Tomato,Kurali,2300.0,1.6
 2025-11-18,Tomato,Kurali,1900.0,1.0
@@ -43634,6 +44400,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Kurali,3100.0,1.1
 2026-09-03,Tomato,Kurali,2900.0,1.4
 2026-09-04,Tomato,Kurali,2900.0,1.5
+2026-09-09,Tomato,Kurali,2950.0,
 2025-12-12,Tomato,Lalru,3500.0,2.0
 2025-12-15,Tomato,Lalru,3500.0,0.8
 2025-12-16,Tomato,Lalru,2400.0,1.4
@@ -43803,6 +44570,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Lalru,1900.0,2.4
 2026-09-04,Tomato,Lalru,2580.0,1.9
 2026-09-05,Tomato,Lalru,2700.0,1.5
+2026-09-09,Tomato,Lalru,2400.0,
 2025-11-17,Tomato,Lehra Gaga,3700.0,0.04
 2025-11-19,Tomato,Lehra Gaga,4000.0,0.02
 2025-12-01,Tomato,Lehra Gaga,4200.0,0.02
@@ -44243,6 +45011,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Ludhiana,1700.0,60.2
 2026-09-04,Tomato,Ludhiana,1700.0,63.1
 2026-09-05,Tomato,Ludhiana,1700.0,61.1
+2026-09-09,Tomato,Ludhiana,1700.0,
 2023-06-06,Tomato,Machhiwara,800.0,
 2023-06-07,Tomato,Machhiwara,1000.0,
 2023-06-08,Tomato,Machhiwara,800.0,
@@ -44339,6 +45108,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Machhiwara,2000.0,1.45
 2026-09-03,Tomato,Machhiwara,3500.0,0.58
 2026-09-04,Tomato,Machhiwara,2200.0,0.56
+2026-09-09,Tomato,Machhiwara,2700.0,
 2026-07-28,Tomato,Malerkotla,1500.0,15.0
 2026-08-04,Tomato,Malerkotla,1500.0,4.5
 2026-08-05,Tomato,Malerkotla,1500.0,5.0
@@ -44362,6 +45132,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Malerkotla,1500.0,6.5
 2026-09-02,Tomato,Malerkotla,2000.0,5.0
 2026-09-03,Tomato,Malerkotla,2500.0,5.5
+2026-09-09,Tomato,Malerkotla,2500.0,
 2025-11-08,Tomato,Malout,2500.0,2.7
 2025-11-10,Tomato,Malout,2800.0,3.9
 2025-11-11,Tomato,Malout,2200.0,2.57
@@ -44612,6 +45383,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Malout,3000.0,6.5
 2026-09-02,Tomato,Malout,2000.0,2.03
 2026-09-03,Tomato,Malout,3000.0,4.3
+2026-09-09,Tomato,Malout,2500.0,
 2025-11-26,Tomato,Mamdot,2800.0,0.1
 2025-11-30,Tomato,Mamdot,2800.0,0.12
 2025-12-01,Tomato,Mamdot,3500.0,0.14
@@ -44899,6 +45671,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Maur,2800.0,0.2
 2026-09-03,Tomato,Maur,2500.0,0.2
 2026-09-04,Tomato,Maur,2500.0,0.4
+2026-09-09,Tomato,Maur,2800.0,
 2025-11-13,Tomato,Mehatpur,4000.0,0.3
 2025-12-17,Tomato,Mehatpur,5000.0,0.04
 2026-01-06,Tomato,Mehatpur,6000.0,0.05
@@ -45251,6 +46024,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Mukerian,2000.0,2.99
 2026-09-04,Tomato,Mukerian,2500.0,2.92
 2026-09-05,Tomato,Mukerian,2500.0,2.99
+2026-09-09,Tomato,Mukerian,2000.0,
 2026-01-01,Tomato,Mukerian(Talwara),6000.0,0.2
 2026-01-02,Tomato,Mukerian(Talwara),6000.0,0.3
 2026-01-08,Tomato,Mukerian(Talwara),5000.0,0.25
@@ -45336,6 +46110,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Mukerian(Talwara),2800.0,0.5
 2026-09-04,Tomato,Mukerian(Talwara),3000.0,0.45
 2026-09-05,Tomato,Mukerian(Talwara),3500.0,0.5
+2026-09-09,Tomato,Mukerian(Talwara),3500.0,
 2025-11-08,Tomato,Muktsar,1100.0,0.09
 2025-11-10,Tomato,Muktsar,1100.0,0.09
 2025-11-11,Tomato,Muktsar,1100.0,0.09
@@ -46013,6 +46788,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Nawan Shahar(Subzi Mandi),2100.0,1.64
 2026-09-02,Tomato,Nawan Shahar(Subzi Mandi),2100.0,1.76
 2026-09-03,Tomato,Nawan Shahar(Subzi Mandi),2100.0,1.79
+2026-09-09,Tomato,Nawan Shahar(Subzi Mandi),2200.0,
 2025-11-11,Tomato,Nihal Singh Wala,2500.0,0.2
 2025-11-12,Tomato,Nihal Singh Wala,3000.0,0.2
 2025-11-13,Tomato,Nihal Singh Wala,2500.0,0.2
@@ -46210,6 +46986,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Nihal Singh Wala,2200.0,0.2
 2026-09-02,Tomato,Nihal Singh Wala,3500.0,0.23
 2026-09-03,Tomato,Nihal Singh Wala,3500.0,0.23
+2026-09-09,Tomato,Nihal Singh Wala,2800.0,
 2026-06-26,Tomato,Noor Mehal,2400.0,0.2
 2026-06-27,Tomato,Noor Mehal,2200.0,0.22
 2026-06-29,Tomato,Noor Mehal,2200.0,0.22
@@ -46625,6 +47402,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Patiala,1400.0,22.9
 2026-09-04,Tomato,Patiala,1500.0,22.6
 2026-09-05,Tomato,Patiala,1200.0,22.0
+2026-09-09,Tomato,Patiala,2500.0,
 2023-06-06,Tomato,Patran,440.0,
 2023-06-07,Tomato,Patran,560.0,
 2023-06-09,Tomato,Patran,400.0,
@@ -47210,6 +47988,7 @@ date,crop,mandi,price,arrival_qty
 2026-06-11,Tomato,Phillaur,1800.0,0.1
 2026-06-12,Tomato,Phillaur,1800.0,0.2
 2026-06-14,Tomato,Phillaur,1800.0,0.11
+2026-09-09,Tomato,Phillaur,2600.0,
 2025-12-23,Tomato,Phillaur(Apra Mandi),5000.0,0.1
 2025-12-25,Tomato,Phillaur(Apra Mandi),5000.0,0.1
 2025-12-26,Tomato,Phillaur(Apra Mandi),5000.0,0.1
@@ -47325,6 +48104,7 @@ date,crop,mandi,price,arrival_qty
 2026-08-31,Tomato,Phillaur(Apra Mandi),3000.0,0.1
 2026-09-01,Tomato,Phillaur(Apra Mandi),3000.0,0.1
 2026-09-03,Tomato,Phillaur(Apra Mandi),4000.0,0.1
+2026-09-09,Tomato,Phillaur(Apra Mandi),4000.0,
 2025-11-19,Tomato,Quadian,2550.0,0.4
 2025-11-26,Tomato,Quadian,2450.0,0.4
 2025-11-27,Tomato,Quadian,2350.0,0.4
@@ -47446,6 +48226,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Quadian,2900.0,0.2
 2026-09-04,Tomato,Quadian,2900.0,0.4
 2026-09-05,Tomato,Quadian,2900.0,0.2
+2026-09-09,Tomato,Quadian,2900.0,
 2026-06-14,Tomato,Raikot,1650.0,4.0
 2026-06-15,Tomato,Raikot,1700.0,3.0
 2026-06-17,Tomato,Raikot,1800.0,1.0
@@ -47741,6 +48522,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Rajpura,2000.0,2.0
 2026-09-03,Tomato,Rajpura,1900.0,1.8
 2026-09-04,Tomato,Rajpura,2100.0,2.2
+2026-09-09,Tomato,Rajpura,2100.0,
 2025-11-07,Tomato,Raman,2275.0,0.6
 2025-11-08,Tomato,Raman,2275.0,1.0
 2025-11-10,Tomato,Raman,2505.0,1.3
@@ -48252,6 +49034,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-02,Tomato,Rampuraphul(Nabha Mandi),2500.0,2.5
 2026-09-03,Tomato,Rampuraphul(Nabha Mandi),2000.0,2.0
 2026-09-04,Tomato,Rampuraphul(Nabha Mandi),2500.0,1.5
+2026-09-09,Tomato,Rampuraphul(Nabha Mandi),2500.0,
 2023-06-06,Tomato,Rayya,1600.0,
 2023-06-07,Tomato,Rayya,1800.0,
 2023-06-08,Tomato,Rayya,1900.0,
@@ -48561,6 +49344,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Rayya,715.0,0.04
 2026-09-04,Tomato,Rayya,715.0,0.04
 2026-09-05,Tomato,Rayya,720.0,0.04
+2026-09-09,Tomato,Rayya,715.0,
 2025-11-22,Tomato,Ropar,5500.0,7.0
 2025-11-25,Tomato,Ropar,6500.0,5.0
 2025-11-26,Tomato,Ropar,6200.0,7.0
@@ -48757,6 +49541,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Ropar,3000.0,4.0
 2026-09-02,Tomato,Ropar,3400.0,4.0
 2026-09-03,Tomato,Ropar,3000.0,5.0
+2026-09-09,Tomato,Ropar,3200.0,
 2023-06-07,Tomato,Sahnewal,500.0,
 2023-06-09,Tomato,Sahnewal,750.0,
 2023-06-13,Tomato,Sahnewal,1000.0,
@@ -49340,6 +50125,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-01,Tomato,Sirhind,2400.0,2.8
 2026-09-02,Tomato,Sirhind,2500.0,2.6
 2026-09-03,Tomato,Sirhind,2500.0,3.1
+2026-09-09,Tomato,Sirhind,2400.0,
 2026-04-22,Tomato,Sultanpur,2000.0,0.2
 2026-05-10,Tomato,Sultanpur,1000.0,0.2
 2026-06-22,Tomato,Sultanpur,2000.0,0.3
@@ -49824,6 +50610,7 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Tanda Urmur,2800.0,1.1
 2026-09-04,Tomato,Tanda Urmur,2500.0,1.2
 2026-09-05,Tomato,Tanda Urmur,2800.0,1.3
+2026-09-09,Tomato,Tanda Urmur,2800.0,
 2026-01-01,Tomato,Tarantaran,1500.0,0.3
 2026-01-02,Tomato,Tarantaran,1500.0,0.23
 2026-01-03,Tomato,Tarantaran,1600.0,0.25
@@ -50263,5 +51050,9 @@ date,crop,mandi,price,arrival_qty
 2026-09-03,Tomato,Zira,2200.0,0.42
 2026-09-04,Tomato,Zira,2000.0,0.29
 2026-09-05,Tomato,Zira,2200.0,0.91
+2026-09-09,Tomato,Zira,2900.0,
+2026-09-09,Water Melon,Jalandhar City(Jalandhar),1500.0,
 2026-08-17,Water Melon,Nabha,1500.0,
 2026-08-17,Water Melon,Patiala,800.0,
+2026-09-09,Water Melon,Patiala,1400.0,
+2026-09-09,Wheat,Nawanshahar,2625.0,
