@@ -1,9 +1,9 @@
-/* Nearby Mandis page — extends style.css's dark theme with map + list
-   specific styles. Loaded after style.css so :root vars are available. */
+/* Nearby Mandis page — extends dashboard.css with map + list specific
+   styles. Loaded after dashboard.css so :root vars are available. */
 
 .locate-btn {
-  background: var(--mustard);
-  color: var(--text);
+  background: var(--leaf);
+  color: var(--bg);
   border: none;
   border-radius: var(--radius-sm);
   padding: 0 16px;
@@ -14,7 +14,8 @@
   transition: opacity 0.15s ease;
 }
 
-.locate-btn:hover { opacity: 0.88; }
+.locate-btn:hover { background: var(--leaf-soft); }
+.locate-btn:focus-visible { outline: 2px solid var(--mustard-soft); outline-offset: 2px; }
 .locate-btn:disabled { opacity: 0.5; cursor: wait; }
 
 .map-panel { padding: 0; overflow: hidden; }
@@ -26,13 +27,13 @@
   background: var(--panel-raised);
 }
 
-/* Leaflet's default popup/control chrome is light-themed; keep it legible
-   against this page's dark background without fighting Leaflet's own CSS
-   too hard. */
+/* Keep Leaflet's default popup chrome on the same parchment palette as the
+   rest of the page without fighting Leaflet's own CSS too hard. */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-  background: var(--panel-raised);
+  background: var(--panel);
   color: var(--text);
 }
+.leaflet-popup-content-wrapper { border: 1px solid var(--hairline-soft); border-radius: var(--radius-md); }
 .leaflet-popup-content { font-family: var(--font-body); font-size: 13px; margin: 10px 12px; }
 .leaflet-popup-content b { font-family: var(--font-display); font-weight: 600; }
 

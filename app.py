@@ -779,28 +779,30 @@ def voice_test():
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --paper: #FBF6EA;
-            --paper-dim: #F1EADA;
-            --ink: #241C12;
-            --ink-soft: #5B5140;
-            --wheat: #D9A431;
-            --wheat-deep: #B8842A;
-            --green: #1B4332;
-            --green-light: #2D6A4F;
-            --rust: #B5432B;
-            --line: rgba(36, 28, 18, 0.14);
-            --shadow: 0 10px 30px rgba(27, 67, 50, 0.12);
+            --paper: #FBF8EE;
+            --paper-deep: #F6F2E5;
+            --paper-dim: #EFECE2;
+            --card: #FFFFFF;
+            --ink: #173A27;
+            --ink-soft: #555B53;
+            --wheat: #C89635;
+            --wheat-deep: #A87C27;
+            --green: #173A27;
+            --green-light: #24563A;
+            --rust: #A34328;
+            --line: #DED8C7;
+            --card-line: #E7E2D3;
+            --radius: 12px;
+            --shadow: 0 1px 2px rgba(23, 58, 39, 0.04), 0 8px 20px rgba(23, 58, 39, 0.06);
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             min-height: 100vh;
-            background:
-                radial-gradient(circle at 12% 8%, rgba(217, 164, 49, 0.16), transparent 45%),
-                radial-gradient(circle at 88% 92%, rgba(27, 67, 50, 0.12), transparent 40%),
-                var(--paper);
+            background: linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
+            background-attachment: fixed;
             color: var(--ink);
-            font-family: "Work Sans", sans-serif;
+            font-family: "Work Sans", system-ui, sans-serif;
             display: flex;
             justify-content: center;
             padding: 48px 20px 64px;
@@ -815,8 +817,8 @@ def voice_test():
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--green);
-            background: rgba(27, 67, 50, 0.08);
-            border: 1px solid rgba(27, 67, 50, 0.18);
+            background: var(--paper-dim);
+            border: 1px solid var(--line);
             border-radius: 999px;
             padding: 6px 14px;
             margin-bottom: 18px;
@@ -833,7 +835,7 @@ def voice_test():
             font-family: "Noto Sans Gurmukhi", sans-serif;
             font-weight: 600;
             font-size: 0.55em;
-            color: var(--wheat-deep);
+            color: var(--wheat);
             display: block;
         }
         .tagline {
@@ -857,7 +859,7 @@ def voice_test():
             padding: 9px 20px;
             border-radius: 999px;
             border: 1.5px solid var(--line);
-            background: var(--paper);
+            background: var(--paper-dim);
             font-size: 14.5px;
             font-weight: 600;
             color: var(--ink-soft);
@@ -882,7 +884,7 @@ def voice_test():
             height: 108px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(160deg, var(--wheat) 0%, var(--wheat-deep) 100%);
+            background: var(--wheat);
             box-shadow: var(--shadow);
             cursor: pointer;
             display: grid;
@@ -902,7 +904,7 @@ def voice_test():
             opacity: 0;
         }
         .mic-button.listening {
-            background: linear-gradient(160deg, var(--rust) 0%, #8f3320 100%);
+            background: var(--rust);
         }
         .mic-button.listening .mic-rings {
             opacity: 1;
@@ -931,23 +933,11 @@ def voice_test():
         .ticket {
             position: relative;
             margin: 30px 0 0;
-            background: #fff;
-            border: 1px solid var(--line);
-            border-radius: 4px;
+            background: var(--card);
+            border: 1px solid var(--card-line);
+            border-radius: var(--radius);
             box-shadow: var(--shadow);
             padding: 22px 22px 18px;
-            transform: rotate(-0.6deg);
-        }
-        .ticket::before {
-            content: "";
-            position: absolute;
-            top: -1px; left: 0; right: 0; height: 12px;
-            background-image:
-                linear-gradient(135deg, var(--paper) 25%, transparent 25.5%),
-                linear-gradient(-135deg, var(--paper) 25%, transparent 25.5%);
-            background-position: top left;
-            background-size: 16px 16px;
-            background-repeat: repeat-x;
         }
         .ticket-label {
             display: block;
@@ -956,7 +946,7 @@ def voice_test():
             letter-spacing: 0.1em;
             text-transform: uppercase;
             color: var(--wheat-deep);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .ticket-transcript {
             font-family: "Fraunces", serif;
@@ -974,7 +964,7 @@ def voice_test():
         .fallback {
             margin-top: 40px;
             padding-top: 24px;
-            border-top: 1px dashed var(--line);
+            border-top: 1px solid var(--line);
         }
         .fallback-label {
             text-align: center;
@@ -987,9 +977,9 @@ def voice_test():
             flex: 1;
             min-width: 0;
             padding: 12px 14px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             border: 1.5px solid var(--line);
-            background: var(--paper-dim);
+            background: var(--card);
             font-family: inherit;
             font-size: 14.5px;
             color: var(--ink);
@@ -997,11 +987,11 @@ def voice_test():
         #textInput:focus-visible {
             outline: none;
             border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.15);
+            box-shadow: 0 0 0 3px rgba(23, 58, 39, 0.14);
         }
         #textButton {
             padding: 12px 20px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             border: none;
             background: var(--green);
             color: var(--paper);
@@ -1019,12 +1009,12 @@ def voice_test():
             align-items: center;
             gap: 8px;
             justify-content: center;
-            background: rgba(181, 67, 43, 0.12);
-            border: 1px solid rgba(181, 67, 43, 0.3);
+            background: rgba(163, 67, 40, 0.09);
+            border: 1px solid rgba(163, 67, 40, 0.26);
             color: var(--rust);
             font-size: 13.5px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: var(--radius);
             padding: 10px 14px;
             margin-bottom: 24px;
         }
@@ -1035,17 +1025,17 @@ def voice_test():
             font-size: 13.5px;
             font-weight: 600;
             color: var(--green);
-            background: rgba(27, 67, 50, 0.08);
+            background: var(--paper-dim);
             border-radius: 999px;
             padding: 4px 12px;
             margin: 0 0 14px;
         }
-        .price-line.trend-falling { color: var(--rust); background: rgba(181, 67, 43, 0.1); }
+        .price-line.trend-falling { color: var(--rust); background: rgba(163, 67, 40, 0.09); }
 
         .recent-section {
             margin-top: 40px;
             padding-top: 24px;
-            border-top: 1px dashed var(--line);
+            border-top: 1px solid var(--line);
         }
         .recent-header {
             display: flex;
@@ -1081,9 +1071,9 @@ def voice_test():
             width: 100%;
             text-align: left;
             padding: 12px 14px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: #fff;
+            border: 1px solid var(--card-line);
+            border-radius: var(--radius);
+            background: var(--card);
             cursor: pointer;
             font-family: inherit;
         }
@@ -1737,52 +1727,62 @@ def trends_dashboard():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mandi Rate Board — Punjab Crop Price Trends</title>
+<title>Mandi Rujhan — Trend Board — Punjab Crop Prices</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --board: #1B2420;
-    --panel: #232E28;
-    --chalk: #F1EDE2;
-    --chalk-dim: #B9C2B8;
-    --slate: #6B7A72;
-    --turmeric: #E0A227;
-    --rust: #C1502E;
-    --rule: rgba(241, 237, 226, 0.14);
+    --paper: #FBF8EE;
+    --paper-deep: #F6F2E5;
+    --paper-dim: #EFECE2;
+    --panel: #FFFFFF;
+    --ink: #173A27;
+    --ink-soft: #555B53;
+    --slate: #7C8079;
+    --turmeric: #C89635;
+    --turmeric-deep: #A87C27;
+    --rust: #A34328;
+    --rule: #DED8C7;
+    --panel-line: #E7E2D3;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(23, 58, 39, 0.04), 0 8px 20px rgba(23, 58, 39, 0.06);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--board);
-    background-image:
-      radial-gradient(ellipse at top left, rgba(241,237,226,0.05), transparent 55%),
-      radial-gradient(ellipse at bottom right, rgba(224,162,39,0.04), transparent 55%);
-    color: var(--chalk);
-    font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, 'Segoe UI', sans-serif;
     min-height: 100vh;
     padding: 32px 20px 64px;
   }
   .wrap { max-width: 960px; margin: 0 auto; }
-  header { border-bottom: 2px dashed var(--rule); padding-bottom: 20px; margin-bottom: 24px; }
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 24px; }
   .eyebrow {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--turmeric);
+    color: var(--turmeric-deep);
     margin: 0 0 8px;
   }
   h1 {
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    font-size: clamp(28px, 5vw, 44px);
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-size: clamp(30px, 5vw, 46px);
+    color: var(--ink);
     margin: 0 0 6px;
   }
-  .sub { color: var(--chalk-dim); font-size: 15px; margin: 0 0 20px; max-width: 60ch; }
+  .title-sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+  }
+  .sub { color: var(--ink-soft); font-size: 15px; line-height: 1.55; margin: 0 0 20px; max-width: 60ch; }
   .summary-strip {
     display: flex;
     gap: 28px;
@@ -1791,41 +1791,50 @@ def trends_dashboard():
   }
   .stat { display: flex; align-items: baseline; gap: 8px; }
   .stat .n { font-size: 28px; font-weight: 700; }
-  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--chalk-dim); }
-  .stat.up .n { color: var(--turmeric); }
+  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .stat.up .n { color: var(--turmeric-deep); }
   .stat.down .n { color: var(--rust); }
   .stat.flat .n { color: var(--slate); }
 
   .crop-panel { margin-bottom: 28px; }
   .crop-title {
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 15px;
-    color: var(--chalk-dim);
+    font-family: 'Fraunces', Georgia, serif;
+    letter-spacing: 0;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
     margin: 0 0 10px;
     padding-bottom: 6px;
-    border-bottom: 1px solid var(--rule);
   }
-  table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 6px; overflow: hidden; }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
   th, td {
     text-align: left;
-    padding: 10px 14px;
+    padding: 11px 14px;
     font-size: 14px;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--panel-line);
   }
   th {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--chalk-dim);
+    color: var(--ink-soft);
+    background: var(--paper-dim);
     font-weight: 500;
   }
   tr:last-child td { border-bottom: none; }
   td.num, th.num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
   .arrow { display: inline-block; width: 1.4em; text-align: center; }
-  .rising { color: var(--turmeric); }
+  .rising { color: var(--turmeric-deep); }
   .falling { color: var(--rust); }
   .stable-cell { color: var(--slate); }
   .mandi-name { font-weight: 600; }
@@ -1833,13 +1842,14 @@ def trends_dashboard():
   .foot-note {
     margin-top: 32px;
     font-size: 12.5px;
-    color: var(--slate);
-    border-top: 1px dashed var(--rule);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--rule);
     padding-top: 16px;
     max-width: 65ch;
   }
-  .state-msg { color: var(--chalk-dim); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 24px 0; }
-  a { color: var(--turmeric); }
+  .state-msg { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 24px 0; }
+  a { color: var(--turmeric-deep); }
 
   @media (max-width: 640px) {
     th:nth-child(4), td:nth-child(4) { display: none; } /* hide "in 7d" col on very small screens */
@@ -1850,7 +1860,8 @@ def trends_dashboard():
 <div class="wrap">
   <header>
     <p class="eyebrow">Punjab &middot; Live from clean_mandi_prices.csv</p>
-    <h1>Mandi Rate Board</h1>
+    <h1>Mandi Rujhan</h1>
+    <p class="title-sub">Trend Board</p>
     <p class="sub">Which crops are moving, and where — a market-wide view for mandi boards and policymakers, built from the same 7-day forecasts as the farmer advisory.</p>
     <div class="summary-strip" id="summary-strip">
       <div class="stat"><span class="n">—</span><span class="label">loading</span></div>
