@@ -150,7 +150,13 @@ export default function NearbyPage() {
             <div className="page-meta">{statusLabel}</div>
           </div>
           <div className="selector-row">
-            <select className="selector" value={crop} onChange={(e) => setCrop(e.target.value)}>
+            <select
+          id="crop-select-nearby"
+          name="crop"
+          className="selector"
+          value={crop}
+          onChange={(e) => setCrop(e.target.value)}
+        >
               <option value="">No price overlay</option>
               {crops.map((c) => (
                 <option key={c} value={c}>{c}</option>

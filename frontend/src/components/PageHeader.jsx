@@ -32,7 +32,9 @@ export default function PageHeader({
         <div className="page-meta">{todayLabel}</div>
       </div>
       <div className="selector-row">
-        <select
+                <select
+          id="crop-select"
+          name="crop"
           className="selector"
           value={crop || ''}
           disabled={disabled}
@@ -43,6 +45,8 @@ export default function PageHeader({
           ))}
         </select>
         <select
+          id="mandi-select"
+          name="mandi"
           className="selector"
           value={mandi || ''}
           disabled={disabled}
@@ -56,3 +60,4 @@ export default function PageHeader({
     </div>
   );
 }
+
