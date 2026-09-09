@@ -15,3 +15,4 @@ twilio
 python-multipart
 lightgbm
 joblib
+slowapi==0.1.10

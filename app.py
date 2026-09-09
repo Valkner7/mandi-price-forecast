@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 import time
 import json
 import re
@@ -7,9 +10,9 @@ import uuid
 import hmac
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 
@@ -19,6 +22,9 @@ import numpy as np
 import pandas as pd
 from fastapi import HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from google import genai
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from voice_extraction import extract_crop_and_mandi
@@ -39,13 +45,22 @@ FORECAST_MODEL_META_PATH = BASE_DIR / "models" / "lgbm_price_model_meta.json"
 
 app = FastAPI(title="Mandi Price Forecast API", version="1.0.0")
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Mount Static Folder (for Leaflet CSS, JS, and Images)
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+# (removed dead /static mount - unused by current React/Vite frontend)
 
 # Root Route to serve dashboard UI
 @app.get("/")
 async def read_index():
     index_path = BASE_DIR / "static" / "dashboard" / "index.html"
+    if not index_path.exists():
+        return JSONResponse(
+            {"error": "Dashboard build not found. Run `npm run build` in frontend/ and copy the output to static/dashboard."},
+            status_code=503,
+        )
     return FileResponse(str(index_path))
 
 # The dashboard (static/dashboard) is served from the same origin as the
@@ -1537,6 +1552,18 @@ def _viable_mandis_for_crop(crop: str, min_points: int = 30) -> list[str]:
 _TRENDS_CACHE_TTL_SECONDS = 600  # 10 minutes
 _trends_cache: dict = {}
 
+@app.on_event("startup")
+def _warm_trends_cache():
+    """Pre-compute /trends for the default crop set on startup, so the
+    first real dashboard visitor doesn't pay the cold-cache cost (see
+    _TRENDS_CACHE_TTL_SECONDS above). Uses the same default crops the
+    route itself defaults to, so it fills the exact cache key a fresh
+    page load will hit."""
+    try:
+        trends(crops=",".join(_RELIABLE_TREND_CROPS))
+    except Exception as exc:
+        print(f"[TRENDS] cache warm-up failed: {exc}")
+
 
 @app.get("/trends")
 def trends(
@@ -2154,7 +2181,9 @@ def _ascii_safe_header_value(value: str, fallback: str = "unknown") -> str:
 
 
 @app.post("/voice-advisory")
+@limiter.limit("10/minute")
 def voice_advisory(
+    request: Request,
     question: str = Query(..., description="Farmer's spoken or typed question"),
     language: str = Query(
         "en",
@@ -2669,6 +2698,7 @@ def _twiml_response(message: str) -> Response:
 
 
 @app.post("/sms")
+@limiter.limit("20/minute")
 async def sms_webhook(request: Request):
     """Twilio SMS webhook: a farmer texts a crop + mandi (any of the three
     languages), gets a price + short advisory back — no app, no internet
@@ -2686,6 +2716,7 @@ async def sms_webhook(request: Request):
 
 
 @app.post("/whatsapp")
+@limiter.limit("20/minute")
 async def whatsapp_webhook(request: Request):
     """Twilio WhatsApp webhook — identical behavior to /sms, just a
     different transport. WhatsApp Sandbox has no DLT requirement, works
