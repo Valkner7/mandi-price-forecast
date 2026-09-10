@@ -159,7 +159,7 @@
     "is_observed_today"
   ],
   "series_start_date": "2023-06-06",
-  "trained_at": "2026-09-10T08:49:03.979358+00:00",
+  "trained_at": "2026-09-10T09:00:51.005270+00:00",
   "backtest_mae": 128.033,
   "naive_backtest_mae": 128.169,
   "backtest_rmse": 263.325,
