@@ -2054,7 +2054,7 @@ def compare_mandis(
     errors = []
     for mandi_name in mandi_names:
         try:
-            results.append(predict(crop=crop, mandi=mandi_name))
+            results.append(_build_prediction(crop=crop, mandi=mandi_name))
         except HTTPException as error:
             errors.append({"mandi": mandi_name, "detail": error.detail})
 
@@ -2986,7 +2986,7 @@ def _latest_prices_by_mandi(crop: str) -> dict:
 
 
 @app.get("/api/nearby-mandis")
-async def get_nearby_mandis(
+def get_nearby_mandis(
     lat: float,
     lon: float,
     limit: int = 10,
