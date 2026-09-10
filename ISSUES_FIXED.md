@@ -3,6 +3,18 @@
 Repo: `github.com/Valkner7/mandi-price-forecast`
 Session date: 2026-09-10
 
+**2026-09-10 update:** Item #1 below previously described a fix that turned
+out not to actually be in the code — `price_model.py`/`train_forecast_model.py`/
+`app.py` still had none of the five features, and the trained artifact was
+still at the old 5.8% win rate, despite this doc and the README both
+describing the fix as done. That gap has now been closed for real: the
+features are implemented, the model has been retrained, and the retrained
+artifact's own `crop_mandi_win_rate_vs_naive` is 0.4484 (100/223) —
+matching what the README claims, verified directly from
+`models/lgbm_price_model_meta.json` rather than asserted in prose. See the
+`analysis_notes.md` companion file in this bundle for the verification
+steps (self-check pass, tree count, feature importances).
+
 ## Fixed
 
 ### 1. The changelog's accuracy fix was never actually merged

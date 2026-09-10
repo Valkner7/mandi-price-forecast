@@ -151,16 +151,21 @@
     "day_of_week",
     "day_of_month",
     "month",
-    "days_since_start"
+    "days_since_start",
+    "zscore_7",
+    "days_since_price_change",
+    "momentum_7_30",
+    "cv_7",
+    "is_observed_today"
   ],
   "series_start_date": "2023-06-06",
-  "trained_at": "2026-09-09T20:52:06.576366+00:00",
-  "backtest_mae": 125.775,
-  "naive_backtest_mae": 125.77,
-  "backtest_rmse": 260.277,
-  "naive_backtest_rmse": 260.276,
+  "trained_at": "2026-09-10T08:49:03.979358+00:00",
+  "backtest_mae": 128.033,
+  "naive_backtest_mae": 128.169,
+  "backtest_rmse": 263.325,
+  "naive_backtest_rmse": 266.48,
   "crop_mandi_combinations_tested": 223,
-  "crop_mandi_win_rate_vs_naive": 0.0583,
+  "crop_mandi_win_rate_vs_naive": 0.4484,
   "backtest_days": 45,
   "val_days": 30
 }

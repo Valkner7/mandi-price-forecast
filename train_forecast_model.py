@@ -176,6 +176,10 @@ def self_check_serving_matches_training(features: pd.DataFrame, panel: pd.DataFr
         arrival_history = series["arrival_qty"].values
         dates = pd.DatetimeIndex(series["date"].values)
         series_start = panel[(panel["crop"] == crop) & (panel["mandi"] == mandi)]["date"].min()
+        # Whether as_of_date itself was a real Agmarknet report vs a
+        # forward-filled repeat — needed to reconstruct is_observed_today
+        # exactly as serving would have known it "as of" this row's date.
+        as_of_is_observed = bool(series["is_observed"].iloc[-1])
 
         served_row = pm._build_serving_row(
             price_history=price_history,
@@ -186,6 +190,7 @@ def self_check_serving_matches_training(features: pd.DataFrame, panel: pd.DataFr
             mandi_categories=mandi_categories,
             series_start_date=series_start,
             arrival_history=arrival_history,
+            is_observed_today=as_of_is_observed,
         ).iloc[0]
 
         for col in feature_cols:

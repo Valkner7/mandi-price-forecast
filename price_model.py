@@ -36,6 +36,17 @@ ROLLING_WINDOWS = [7, 14, 30]
 # +1 because a lag/rolling feature also consumes one row as "the present".
 MIN_HISTORY_FOR_FEATURES = 31
 
+# Below this absolute rolling std, a window is treated as "flat" (no
+# meaningful volatility) rather than dividing by a near-zero number.
+# Matches the tolerance train_forecast_model.py's self-check already uses
+# for roll_std_* columns, since it exists for the same reason: pandas'
+# incremental rolling .std() and a fresh .std() on a short slice can
+# disagree by a few floating-point ULPs on a perfectly flat window (e.g.
+# 4.6e-5 vs 0.0 exactly) — negligible alone, but a divisor here, so it
+# gets amplified into a real train/serve mismatch if not floored
+# identically on both sides.
+ZERO_STD_EPS = 1e-3
+
 
 def build_panel(df: pd.DataFrame) -> pd.DataFrame:
     """Resample every crop-mandi series in df to daily frequency with
@@ -136,6 +147,75 @@ def _add_lag_rolling_features(feat: pd.DataFrame, series: pd.Series, prefix: str
         feat[f"{prefix}roll_max_{window}"] = shifted.rolling(window).max()
 
 
+def _safe_ratio(numerator: pd.Series, denominator: pd.Series, zero_eps: float = ZERO_STD_EPS) -> pd.Series:
+    """numerator / denominator, except a near-zero (but non-NaN) denominator
+    yields 0 instead of a blown-up or infinite ratio — e.g. zscore_7 on a
+    perfectly flat 7-day window (roll_std_7 ~= 0) is "no deviation", not a
+    division-by-near-zero spike. A genuinely NaN denominator (not enough
+    history yet) still propagates to NaN, same as an ordinary division.
+    Shared by training (Series in, Series out) and serving (scalar
+    wrapper below) so the two can't drift apart."""
+    result = numerator / denominator
+    near_zero = denominator.notna() & (denominator.abs() < zero_eps)
+    return result.where(~near_zero, 0.0)
+
+
+def _safe_ratio_scalar(numerator: float, denominator: float, zero_eps: float = ZERO_STD_EPS) -> float:
+    """Scalar sibling of _safe_ratio for serving-time single-row features."""
+    if pd.isna(numerator) or pd.isna(denominator):
+        return np.nan
+    if abs(denominator) < zero_eps:
+        return 0.0
+    return numerator / denominator
+
+
+def _days_since_price_change(price: pd.Series) -> pd.Series:
+    """For each position, how many consecutive prior days (ending at and
+    including this one) the price has been unchanged from the day before
+    it. 0 means the price moved from the previous day (or this is the
+    first day of the series); a large value means the price has been
+    "stuck" for a while, which is the signal this feature is meant to
+    surface: a long flat streak makes a real move more overdue.
+
+    Vectorized run-length: bump a group counter every time the price
+    changes, then count position-within-group. Uses only price up to and
+    including the current row, so it's safe to compute directly on "today"
+    at serving time too (no future leakage) — see _build_serving_row."""
+    price = pd.Series(price).reset_index(drop=True)
+    changed = ~price.eq(price.shift(1))  # first row: shift(1) is NaN -> True (counts as a "change")
+    group = changed.cumsum()
+    return changed.groupby(group).cumcount()
+
+
+def _add_derived_signal_features(feat: pd.DataFrame, price: pd.Series, is_observed: pd.Series) -> None:
+    """Add the "which days look overdue for a real move" feature family
+    onto `feat` in place. Shared by add_features() (training) and
+    _build_serving_row() (serving, via the scalar path below) so the two
+    can't drift apart:
+
+      - zscore_7: how far today's price sits from its own trailing 7-day
+        average, scaled by recent volatility (mean-reversion signal).
+      - days_since_price_change: how long the price has been stuck at its
+        current value.
+      - momentum_7_30: short-term vs long-term trend (7-day vs 30-day
+        rolling mean).
+      - cv_7: relative volatility (7-day rolling std / 7-day rolling mean).
+      - is_observed_today: whether TODAY (the day these features describe,
+        not tomorrow's target) is a real Agmarknet report or a
+        forward-filled repeat. Distinct from target_is_observed, which is
+        about tomorrow and is used only to filter training rows, never as
+        a model input.
+
+    Requires roll_mean_7 / roll_std_7 / roll_mean_30 to already be present
+    on `feat` (added by _add_lag_rolling_features before this is called).
+    """
+    feat["zscore_7"] = _safe_ratio(price - feat["roll_mean_7"], feat["roll_std_7"])
+    feat["momentum_7_30"] = _safe_ratio(feat["roll_mean_7"] - feat["roll_mean_30"], feat["roll_mean_30"])
+    feat["cv_7"] = _safe_ratio(feat["roll_std_7"], feat["roll_mean_7"])
+    feat["days_since_price_change"] = _days_since_price_change(price).values
+    feat["is_observed_today"] = is_observed.astype(int).values
+
+
 def add_features(panel: pd.DataFrame) -> pd.DataFrame:
     """Add lag/rolling/calendar features plus targets to a daily panel
     built by build_panel(). One row per (crop, mandi, date); features are
@@ -176,6 +256,7 @@ def add_features(panel: pd.DataFrame) -> pd.DataFrame:
 
         _add_lag_rolling_features(feat, price, prefix="")
         _add_lag_rolling_features(feat, arrival, prefix="arrival_")
+        _add_derived_signal_features(feat, price, is_observed)
 
         cal = _calendar_features(group["date"])
         feat = pd.concat([feat, cal], axis=1)
@@ -222,6 +303,7 @@ def get_feature_columns() -> list[str]:
             f"arrival_roll_max_{window}",
         ]
     cols += ["day_of_week", "day_of_month", "month", "days_since_start"]
+    cols += ["zscore_7", "days_since_price_change", "momentum_7_30", "cv_7", "is_observed_today"]
     return cols
 
 
@@ -275,6 +357,7 @@ def _build_serving_row(
     mandi_categories: list[str],
     series_start_date: pd.Timestamp,
     arrival_history: np.ndarray | pd.Series | None = None,
+    is_observed_today: bool = True,
 ) -> pd.DataFrame:
     """Build ONE feature row at serving time from a plain price history
     array (most-recent price last) and its matching dates. Must stay
@@ -282,6 +365,13 @@ def _build_serving_row(
     the last row of an equivalent panel — this is the train/serve-skew
     risk point, checked automatically by train_forecast_model.py's
     self-check on every retrain.
+
+    `is_observed_today` says whether `dates[-1]` (the day these features
+    describe) is a real reported price or a forward-filled/synthetic one.
+    Defaults to True since most existing callers describe a real known
+    "today"; forecast_recursive()/forecast_recursive_batch() explicitly
+    pass False for every day after the first, since those are the model's
+    own synthetic forecasts, not real reports.
 
     `current_date` is the last *known* day (the day we're forecasting
     FROM), not the day being predicted — an earlier version of this
@@ -315,6 +405,15 @@ def _build_serving_row(
     row["month"] = int(current_date.month)
     row["days_since_start"] = int((current_date - series_start_date).days)
 
+    # Derived signal features — must mirror _add_derived_signal_features()
+    # exactly (same _safe_ratio floor, same run-length definition).
+    today_price = float(price_history.iloc[-1])
+    row["zscore_7"] = _safe_ratio_scalar(today_price - row["roll_mean_7"], row["roll_std_7"])
+    row["momentum_7_30"] = _safe_ratio_scalar(row["roll_mean_7"] - row["roll_mean_30"], row["roll_mean_30"])
+    row["cv_7"] = _safe_ratio_scalar(row["roll_std_7"], row["roll_mean_7"])
+    row["days_since_price_change"] = int(_days_since_price_change(price_history).iloc[-1])
+    row["is_observed_today"] = int(bool(is_observed_today))
+
     df_row = pd.DataFrame([row])
     # Categorical dtype must be assigned on the constructed column directly
     # (not via `pd.Categorical([crop], categories=...)[0]`, which collapses
@@ -335,6 +434,7 @@ def forecast_recursive(
     mandi: str,
     horizon: int = 7,
     arrival_series: pd.Series | None = None,
+    is_observed_today: bool = True,
 ) -> list[float]:
     """Recursive multi-day forecast: predict day+1's pct change, apply it
     to get day+1's price, append it to the working history, repeat for
@@ -343,6 +443,12 @@ def forecast_recursive(
 
     price_series: a pandas Series of daily prices, DatetimeIndex, most
     recent last (same shape as app.py's load_series() output).
+
+    is_observed_today: whether price_series's last (most recent) point is
+    a real reported price or a forward-filled/stale one — see
+    _build_serving_row. Only meaningful for the FIRST forecast day; every
+    day after that is the model's own synthetic prediction and is always
+    treated as not-observed, regardless of this argument.
 
     arrival_series: optional, same shape/index convention as price_series.
     Honest limitation: a real arrival figure only ever informs step 1 of
@@ -363,6 +469,7 @@ def forecast_recursive(
     dates = list(price_series.index)
     arrival_history = list(arrival_series.values) if arrival_series is not None else None
     forecasts = []
+    current_is_observed = is_observed_today
 
     for _ in range(horizon):
         row = _build_serving_row(
@@ -374,6 +481,7 @@ def forecast_recursive(
             mandi_categories=mandi_categories,
             series_start_date=series_start_date,
             arrival_history=np.array(arrival_history) if arrival_history is not None else None,
+            is_observed_today=current_is_observed,
         )
         pct_change = float(model.predict(row)[0])
         next_price = history[-1] * (1.0 + pct_change)
@@ -385,6 +493,7 @@ def forecast_recursive(
         if arrival_history is not None:
             # No model for future arrival: pad with NaN from step 2 onward.
             arrival_history.append(np.nan)
+        current_is_observed = False  # every day after the first is synthetic
 
     return forecasts
 
@@ -395,6 +504,7 @@ def forecast_recursive_batch(
     series_map: dict,
     horizon: int = 7,
     arrival_map: dict | None = None,
+    is_observed_map: dict | None = None,
 ) -> dict:
     """Batched sibling of forecast_recursive() for forecasting MANY
     crop-mandi pairs at once (built for /trends, which forecasts every
@@ -428,6 +538,11 @@ def forecast_recursive_batch(
     forecast_recursive(arrival_series=None) — i.e. as if arrival data
     doesn't exist for that pair, not as an error.
 
+    is_observed_map: optional {(crop, mandi): bool}, same meaning as
+    forecast_recursive()'s is_observed_today argument, per pair. A pair
+    missing from this map (or is_observed_map=None entirely) defaults to
+    True, matching forecast_recursive()'s default.
+
     Returns {(crop, mandi): [forecast_day_1, ..., forecast_day_horizon]},
     one entry per key present in series_map. /predict's single-pair path
     is untouched — it still calls forecast_recursive() directly, so this
@@ -452,6 +567,10 @@ def forecast_recursive_batch(
             arrival_histories[k] = None
 
     forecasts = {k: [] for k in keys}
+    current_is_observed = {
+        k: bool(is_observed_map.get(k, True)) if is_observed_map is not None else True
+        for k in keys
+    }
 
     for _ in range(horizon):
         rows = []
@@ -470,6 +589,7 @@ def forecast_recursive_batch(
                     if arrival_histories[k] is not None
                     else None
                 ),
+                is_observed_today=current_is_observed[k],
             )
             rows.append(row)
 
@@ -494,6 +614,7 @@ def forecast_recursive_batch(
             dates[k].append(next_date)
             if arrival_histories[k] is not None:
                 arrival_histories[k].append(np.nan)
+            current_is_observed[k] = False  # every day after the first is synthetic
 
     return forecasts
 

@@ -515,13 +515,19 @@ def load_series(crop: str, mandi: str) -> pd.Series:
 
     # Forecasting needs a regular daily frequency. Missing days are filled
     # with the most recent observed mandi price; raw gaps are still reported
-    # separately in the notebook.
-    series = series.resample("D").last().ffill()
+    # separately in the notebook. Resample to the daily grid BEFORE
+    # ffilling so we can record whether the most recent day is a real
+    # report or a forward-filled repeat — the forecasting model uses this
+    # as its is_observed_today feature (see price_model.py).
+    daily = series.resample("D").last()
+    is_observed_today = bool(daily.notna().iloc[-1]) if len(daily) else True
+    series = daily.ffill()
     series.attrs["raw"] = raw_series
+    series.attrs["is_observed_today"] = is_observed_today
     return series
 
 
-def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> dict:
+def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> tuple[dict, dict]:
     """Bulk equivalent of load_series() for /trends: scans the full
     dataframe ONCE for all requested crops and builds a price series for
     every (crop, mandi) pair found, instead of load_series()'s pattern of
@@ -537,8 +543,11 @@ def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> dict:
     — callers just won't see that pair, mirroring /trends' existing
     "skip pairs that can't forecast" behavior.
 
-    Returns {(crop, mandi): price_series}, one entry per pair with enough
-    history. Crop/mandi names are stripped, matching load_series().
+    Returns ({(crop, mandi): price_series}, {(crop, mandi): is_observed_today}),
+    one entry per pair with enough history. Crop/mandi names are stripped,
+    matching load_series(). The second dict mirrors load_series()'s
+    series.attrs["is_observed_today"] per pair, for callers (forecast_recursive_batch)
+    that need to know whether each pair's most recent day is a real report.
     """
     df = _load_full_dataframe()
     crop_set = {c.strip().casefold() for c in crop_names}
@@ -546,14 +555,16 @@ def _load_series_bulk(crop_names: list[str], min_points: int = 30) -> dict:
     sub = sub.dropna(subset=["price"])
 
     series_map: dict = {}
+    is_observed_map: dict = {}
     for (crop_val, mandi_val), group in sub.groupby(["crop", "mandi"], sort=False):
         series = group.groupby("date")["price"].mean().sort_index()
         if len(series) < min_points:
             continue
-        series = series.resample("D").last().ffill()
+        daily = series.resample("D").last()
         key = (str(crop_val).strip(), str(mandi_val).strip())
-        series_map[key] = series
-    return series_map
+        is_observed_map[key] = bool(daily.notna().iloc[-1]) if len(daily) else True
+        series_map[key] = daily.ffill()
+    return series_map, is_observed_map
 
 
 def _load_arrival_bulk(crop_names: list[str], price_index_by_pair: dict) -> dict:
@@ -1405,6 +1416,7 @@ def predict(
             forecast_values = pm.forecast_recursive(
                 lgbm_model, lgbm_meta, series, crop, mandi, horizon=horizon,
                 arrival_series=arrival_series,
+                is_observed_today=series.attrs.get("is_observed_today", True),
             )
             model_name = "LightGBM_global"
         except Exception as error:
@@ -1662,7 +1674,7 @@ def trends(
     horizon = 7
     lgbm_model, lgbm_meta = _load_forecast_model()
 
-    series_map = _load_series_bulk(crop_names)
+    series_map, is_observed_map = _load_series_bulk(crop_names)
 
     batch_forecasts: dict = {}
     if lgbm_model is not None and series_map:
@@ -1672,6 +1684,7 @@ def trends(
             batch_forecasts = pm.forecast_recursive_batch(
                 lgbm_model, lgbm_meta, series_map, horizon=horizon,
                 arrival_map=arrival_map,
+                is_observed_map=is_observed_map,
             )
         except Exception as error:
             print("LIGHTGBM BATCH PREDICT ERROR, falling back to per-pair ETS:", error)
