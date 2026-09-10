@@ -92,7 +92,7 @@ export default function NearbyPage() {
         if (typeof data.total_mandis === 'number') setTotalMandis(data.total_mandis);
       } catch (err) {
         if (cancelled) return;
-        if (fix) setStatus('Could not load nearby mandis: ' + err.message, true);
+        setStatus('Could not load nearby mandis: ' + err.message, true);
       }
     })();
     return () => { cancelled = true; };

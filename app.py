@@ -44,7 +44,16 @@ STATIC_DASHBOARD_DIR = BASE_DIR / "static" / "dashboard"
 FORECAST_MODEL_PATH = BASE_DIR / "models" / "lgbm_price_model.joblib"
 FORECAST_MODEL_META_PATH = BASE_DIR / "models" / "lgbm_price_model_meta.json"
 
-app = FastAPI(title="Mandi Price Forecast API", version="1.0.0")
+app = FastAPI(
+    title="Mandi Setu API",
+    version="1.0.0",
+    description=(
+        "Backend for Mandi Setu — daily-price forecasting, trend tracking, "
+        "and voice/WhatsApp advisory for Punjab's mandis. Powers "
+        "MandiDarpan (dashboard), Mandi Sameep (nearby mandis), Mandi "
+        "Rujhan (trend board), and Mandi Bol (voice advisory)."
+    ),
+)
 
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -1199,14 +1208,27 @@ function renderRecent() {
         row.type = "button";
         row.className = "recent-item";
         const savedWhen = new Date(item.savedAt).toLocaleDateString();
-        row.innerHTML = `
-            <span>
-                <span class="recent-item-name">${item.crop} · ${item.mandi}</span>
-                <span class="recent-item-meta">as of ${item.latest_date} · saved ${savedWhen}</span>
-            </span>
-            <span class="recent-item-price ${item.trend === "falling" ? "falling" : ""}">
-                ₹${item.latest_price}${item.trend === "rising" ? " ↑" : item.trend === "falling" ? " ↓" : ""}
-            </span>`;
+
+        // Built with createElement/textContent rather than a template-literal
+        // innerHTML, even though `item` only ever comes from this page's own
+        // localStorage (self-XSS at worst) — matches the escaping fix used
+        // for the Mandi Rujhan dashboard, and stays safe if this data source
+        // ever changes.
+        const nameGroup = document.createElement("span");
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "recent-item-name";
+        nameSpan.textContent = `${item.crop} · ${item.mandi}`;
+        const metaSpan = document.createElement("span");
+        metaSpan.className = "recent-item-meta";
+        metaSpan.textContent = `as of ${item.latest_date} · saved ${savedWhen}`;
+        nameGroup.append(nameSpan, metaSpan);
+
+        const priceSpan = document.createElement("span");
+        priceSpan.className = "recent-item-price" + (item.trend === "falling" ? " falling" : "");
+        const arrow = item.trend === "rising" ? " ↑" : item.trend === "falling" ? " ↓" : "";
+        priceSpan.textContent = `₹${item.latest_price}${arrow}`;
+
+        row.append(nameGroup, priceSpan);
         row.onclick = () => showCachedEntry(item);
         recentList.appendChild(row);
     }
@@ -1896,6 +1918,12 @@ function esc(s) {
   return div.innerHTML;
 }
 
+// Mirrors the React dashboard's inr() helper (frontend/src/utils/format.js)
+// so prices read consistently across both "prices" pages.
+function fmtPrice(n) {
+  return new Intl.NumberFormat('en-IN').format(Math.round(n));
+}
+
 async function loadTrends() {
   const contentEl = document.getElementById('content');
   const summaryEl = document.getElementById('summary-strip');
@@ -1925,9 +1953,9 @@ async function loadTrends() {
         return `
           <tr>
             <td class="mandi-name">${esc(r.mandi)}</td>
-            <td class="num">&#8377;${r.latest_price}</td>
+            <td class="num">&#8377;${fmtPrice(r.latest_price)}</td>
             <td class="num ${trendClass}"><span class="arrow">${arrow}</span> ${pctSign}${r.pct_change}%</td>
-            <td class="num">&#8377;${r.forecast_price} in ${r.forecast_horizon_days}d</td>
+            <td class="num">&#8377;${fmtPrice(r.forecast_price)} in ${r.forecast_horizon_days}d</td>
           </tr>`;
       }).join('');
 
