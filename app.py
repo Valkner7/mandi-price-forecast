@@ -1395,6 +1395,21 @@ def predict(
     crop: str = Query(..., description="Crop name, e.g. Potato"),
     mandi: str = Query(..., description="Mandi name, e.g. Rayya"),
 ):
+    result = _build_prediction(crop=crop, mandi=mandi)
+    return JSONResponse(
+        content=result,
+        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
+    )
+
+
+def _build_prediction(crop: str, mandi: str) -> dict:
+    """Core prediction logic, returning a plain dict.
+
+    Used both by the /predict HTTP route (which wraps this in a
+    JSONResponse) and by internal callers like the voice advisory
+    pipeline, which need the raw dict — not an HTTP response object —
+    so they can subscript it directly (e.g. forecast_data["crop"]).
+    """
     series = load_series(crop, mandi)
     horizon = 7
 
@@ -1499,10 +1514,7 @@ def predict(
         )
     if model_note:
         result["model_note"] = model_note
-    return JSONResponse(
-        content=result,
-        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
-    )
+    return result
 
 
 @app.get("/anomalies")
@@ -2263,7 +2275,7 @@ def advisory(
     ),
 ):
     # First obtain factual data from your existing forecasting model.
-    forecast_data = predict(crop=crop, mandi=mandi)
+    forecast_data = _build_prediction(crop=crop, mandi=mandi)
 
     # Then ask the LLM only to explain those facts. A missing API key
     # (status 500 config problem) falls back to a plain data reply instead
@@ -2344,7 +2356,7 @@ def voice_advisory(
             detail="Could not identify the mandi from the question.",
         )
 
-    forecast_data = predict(crop=crop, mandi=mandi)
+    forecast_data = _build_prediction(crop=crop, mandi=mandi)
 
     # Give Gemini whatever's left of the shared budget, minus a guaranteed
     # reserve for TTS afterward — so however long Gemini actually takes (up
@@ -2599,7 +2611,7 @@ def create_alert_from_message(body: str, sender: str) -> str:
         return f"What price should I watch for {crop} at {mandi}? Try e.g. 'alert me {crop.lower()} {mandi.lower()} 850'."
 
     try:
-        forecast_data = predict(crop=crop, mandi=mandi)
+        forecast_data = _build_prediction(crop=crop, mandi=mandi)
     except HTTPException as error:
         return str(error.detail)
 
@@ -2689,7 +2701,7 @@ def check_all_alerts() -> dict:
     notified = 0
     for (crop, mandi), group in groups.items():
         try:
-            forecast_data = predict(crop=crop, mandi=mandi)
+            forecast_data = _build_prediction(crop=crop, mandi=mandi)
         except HTTPException as exc:
             print(f"[ALERTS] Skipping {crop}/{mandi}: {exc.detail}")
             continue
@@ -2813,7 +2825,7 @@ def build_reply_text(body: str, sender: str | None = None) -> str:
         return f"Could not identify the {missing} from your message. Try e.g. 'Potato Rayya'."
 
     try:
-        forecast_data = predict(crop=crop, mandi=mandi)
+        forecast_data = _build_prediction(crop=crop, mandi=mandi)
     except HTTPException as error:
         return str(error.detail)
 
