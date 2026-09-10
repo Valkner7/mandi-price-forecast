@@ -1496,15 +1496,26 @@ def anomalies(
 
 
 @app.get("/meta")
-def meta():
+def meta(
+    crop: str | None = Query(
+        None,
+        description="Optional crop name — if given, the returned `mandis` list "
+        "is narrowed to mandis with enough history to forecast this crop "
+        "(same criteria /predict uses), instead of every mandi in the dataset.",
+    ),
+):
     """Crop and mandi names present in the dataset, so a frontend can
     populate its dropdowns from real data instead of a hardcoded list.
-    Doesn't filter by data sufficiency — /predict is still the source of
-    truth for whether a given crop-mandi pair has enough history to
-    forecast (see its 422 response)."""
+    Without `crop`, doesn't filter by data sufficiency — /predict is still
+    the source of truth for whether a given crop-mandi pair has enough
+    history to forecast (see its 422 response). With `crop`, `mandis` is
+    pre-filtered to pairs /predict can actually serve."""
     df = _load_full_dataframe()
     crops = sorted(df["crop"].dropna().astype(str).str.strip().unique().tolist())
-    mandi_names = sorted(df["mandi"].dropna().astype(str).str.strip().unique().tolist())
+    if crop:
+        mandi_names = _viable_mandis_for_crop(crop)
+    else:
+        mandi_names = sorted(df["mandi"].dropna().astype(str).str.strip().unique().tolist())
     return {
         "crops": crops,
         "mandis": mandi_names,
@@ -1879,6 +1890,12 @@ def trends_dashboard():
 </div>
 
 <script>
+function esc(s) {
+  const div = document.createElement('div');
+  div.textContent = String(s);
+  return div.innerHTML;
+}
+
 async function loadTrends() {
   const contentEl = document.getElementById('content');
   const summaryEl = document.getElementById('summary-strip');
@@ -1907,7 +1924,7 @@ async function loadTrends() {
         const pctSign = r.pct_change > 0 ? '+' : '';
         return `
           <tr>
-            <td class="mandi-name">${r.mandi}</td>
+            <td class="mandi-name">${esc(r.mandi)}</td>
             <td class="num">&#8377;${r.latest_price}</td>
             <td class="num ${trendClass}"><span class="arrow">${arrow}</span> ${pctSign}${r.pct_change}%</td>
             <td class="num">&#8377;${r.forecast_price} in ${r.forecast_horizon_days}d</td>
@@ -1916,7 +1933,7 @@ async function loadTrends() {
 
       return `
         <section class="crop-panel">
-          <h2 class="crop-title">${crop}</h2>
+          <h2 class="crop-title">${esc(crop)}</h2>
           <table>
             <thead>
               <tr>
@@ -2867,7 +2884,12 @@ def _latest_price_for(crop: str, mandi: str):
     """Best-effort latest reported price for crop+mandi, or None if that
     pair has no rows. Doesn't require the 30-point minimum load_series()
     enforces for forecasting — a single most-recent price is still useful
-    to show on the nearby-mandis map even for a thin series."""
+    to show on the nearby-mandis map even for a thin series.
+
+    Scans the full dataframe on every call, so it's fine for a single
+    lookup but should NOT be called in a loop over many mandis — see
+    _latest_prices_by_mandi() below for the batched equivalent used by
+    /api/nearby-mandis."""
     df = _load_full_dataframe()
     mask = (
         df["crop"].astype(str).str.casefold().eq(crop.casefold())
@@ -2880,6 +2902,33 @@ def _latest_price_for(crop: str, mandi: str):
     return {"date": last["date"].date().isoformat(), "price": round(float(last["price"]), 2)}
 
 
+def _latest_prices_by_mandi(crop: str) -> dict:
+    """Latest reported price for every mandi, for a single crop — computed
+    with one pass over the dataframe (filter by crop once, then group by
+    mandi) instead of one full-dataframe scan per mandi. Used by
+    /api/nearby-mandis, which previously called _latest_price_for() once
+    per tracked mandi (~110 full ~50k-row scans per request).
+
+    Keys are casefolded mandi names, matching the casefold comparison
+    _latest_price_for() uses, so callers should look up with
+    mandi_name.casefold()."""
+    df = _load_full_dataframe()
+    sub = df[df["crop"].astype(str).str.casefold() == crop.casefold()]
+    sub = sub.dropna(subset=["date", "price"])
+    if sub.empty:
+        return {}
+    sub = sub.copy()
+    sub["_mandi_key"] = sub["mandi"].astype(str).str.casefold()
+    latest = sub.sort_values("date").groupby("_mandi_key").tail(1)
+    return {
+        row["_mandi_key"]: {
+            "date": row["date"].date().isoformat(),
+            "price": round(float(row["price"]), 2),
+        }
+        for _, row in latest.iterrows()
+    }
+
+
 @app.get("/api/nearby-mandis")
 async def get_nearby_mandis(
     lat: float,
@@ -2889,6 +2938,8 @@ async def get_nearby_mandis(
         None, description="Optional crop name, e.g. Potato — if given, each mandi includes its latest reported price for this crop.",
     ),
 ):
+    latest_by_mandi = _latest_prices_by_mandi(crop) if crop else {}
+
     nearby_list = []
     for mandi_name, info in PUNJAB_MANDI_COORDINATES.items():
         dist_km = calculate_haversine_distance(lat, lon, info["lat"], info["lon"])
@@ -2900,7 +2951,7 @@ async def get_nearby_mandis(
             "distance_km": dist_km,
         }
         if crop:
-            entry["latest_price"] = _latest_price_for(crop, mandi_name)
+            entry["latest_price"] = latest_by_mandi.get(mandi_name.casefold())
         nearby_list.append(entry)
 
     nearby_list.sort(key=lambda x: x["distance_km"])

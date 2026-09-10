@@ -47,6 +47,7 @@ export default function NearbyPage() {
   const [crops, setCrops] = useState([]);
   const [crop, setCrop] = useState('');
   const [mandis, setMandis] = useState([]);
+  const [totalMandis, setTotalMandis] = useState(null);
   const [fix, setFix] = useState(null); // { lat, lon } once the user shares GPS
   const [locating, setLocating] = useState(false);
   const [statusLabel, setStatusLabel] = useState('Location not shared yet');
@@ -75,9 +76,11 @@ export default function NearbyPage() {
   }, []);
 
   // ---- load mandis whenever crop or GPS fix changes ----
-  // Before a GPS fix, still show every mandi on the map (distance from
-  // Ludhiana's centre as a neutral reference point) so the page isn't
-  // empty on first load — same behaviour as the old loadAllMandisUnsorted.
+  // Before a GPS fix, show the closest mandis to Ludhiana's centre as a
+  // neutral reference point (capped at `limit`, see mapSub/listSub labels
+  // for the accurate "N of total" count) so the page isn't empty on first
+  // load — same behaviour as the old loadAllMandisUnsorted, minus its
+  // inaccurate "all mandis" claim.
   useEffect(() => {
     const center = fix || LUDHIANA_CENTER;
     let cancelled = false;
@@ -86,6 +89,7 @@ export default function NearbyPage() {
         const data = await getNearbyMandis(center.lat, center.lon, 22, crop);
         if (cancelled) return;
         setMandis(data.mandis);
+        if (typeof data.total_mandis === 'number') setTotalMandis(data.total_mandis);
       } catch (err) {
         if (cancelled) return;
         if (fix) setStatus('Could not load nearby mandis: ' + err.message, true);
@@ -128,8 +132,8 @@ export default function NearbyPage() {
     : "Share your location to see distances and today's price";
 
   const mapSub = fix
-    ? 'Your location (red pin) and every tracked mandi, closest first'
-    : `All ${mandis.length || 22} tracked mandis — tap "Use my location" to centre on you and sort by distance`;
+    ? `Your location (red pin) and the closest ${mandis.length} of ${totalMandis ?? '110+'} tracked mandis`
+    : `Showing ${mandis.length} of ${totalMandis ?? '110+'} tracked mandis — tap "Use my location" to centre on you and sort by distance`;
 
   return (
     <div className="app-shell">

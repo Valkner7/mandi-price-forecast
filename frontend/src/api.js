@@ -15,8 +15,9 @@ async function fetchJSON(url) {
   return body;
 }
 
-export function getMeta() {
-  return fetchJSON('/meta');
+export function getMeta(crop) {
+  const query = crop ? `?crop=${encodeURIComponent(crop)}` : '';
+  return fetchJSON(`/meta${query}`);
 }
 
 export function getPredict(crop, mandi) {

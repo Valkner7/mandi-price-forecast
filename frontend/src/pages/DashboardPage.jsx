@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import StatusBanner from '../components/StatusBanner';
 import PageHeader from '../components/PageHeader';
@@ -38,16 +38,25 @@ export default function DashboardPage() {
   const [tableRows, setTableRows] = useState([]);
   const [tableError, setTableError] = useState('');
 
-  // ---- init: load meta, pick default crop/mandi ----
+  // ---- init: load crop list + reliable crops ----
+  const skipNextMandiRefilter = useRef(false);
   useEffect(() => {
     (async () => {
       try {
         const m = await getMeta();
         const reliableCrops = m.reliable_crops || FALLBACK_RELIABLE_CROPS;
-        setMeta({ crops: m.crops, mandis: m.mandis, reliableCrops });
-
         const defaultCrop = reliableCrops[0] || m.crops[0];
-        const defaultMandi = m.mandis.includes('Rayya') ? 'Rayya' : m.mandis[0];
+
+        // Mandi list is crop-specific (not every mandi has enough history
+        // for every crop), so fetch it filtered to the default crop rather
+        // than showing the full unfiltered mandi list.
+        const filtered = await getMeta(defaultCrop);
+        const defaultMandi = filtered.mandis.includes('Rayya') ? 'Rayya' : filtered.mandis[0];
+
+        setMeta({ crops: m.crops, mandis: filtered.mandis, reliableCrops });
+        // The crop-change effect below would otherwise immediately refetch
+        // the same mandi list we just loaded, for the same crop — skip it once.
+        skipNextMandiRefilter.current = true;
         setCrop(defaultCrop);
         setMandi(defaultMandi);
       } catch (err) {
@@ -55,6 +64,35 @@ export default function DashboardPage() {
       }
     })();
   }, []);
+
+  // ---- whenever the selected crop changes, refilter the mandi dropdown ----
+  // Only ~3 of 42 crops have enough history to forecast at all, and even
+  // those are only viable at a subset of mandis — this keeps the dropdown
+  // from offering combinations that just 422.
+  useEffect(() => {
+    if (!crop) return;
+    if (skipNextMandiRefilter.current) {
+      skipNextMandiRefilter.current = false;
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const filtered = await getMeta(crop);
+        if (cancelled) return;
+        setMeta((prev) => (prev ? { ...prev, mandis: filtered.mandis } : prev));
+        setMandi((prevMandi) => {
+          if (filtered.mandis.includes(prevMandi)) return prevMandi;
+          return filtered.mandis.includes('Rayya') ? 'Rayya' : (filtered.mandis[0] || null);
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setStatus(`Could not load mandis for ${crop}: ${err.message}`, true);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crop]);
 
   // ---- load predict + history whenever crop/mandi changes ----
   useEffect(() => {

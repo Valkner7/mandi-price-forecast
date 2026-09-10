@@ -76,7 +76,7 @@ export default function PriceChart({ history, predict }) {
           ticks: {
             color: '#8A8F86',
             font: { family: 'IBM Plex Mono', size: 11 },
-            callback: (v) => `₹${Math.round(v / 100) / 10}k`,
+            callback: (v) => (v >= 1000 ? `₹${Math.round(v / 100) / 10}k` : `₹${inr(v)}`),
           },
         },
       },
