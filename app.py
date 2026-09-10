@@ -1499,7 +1499,10 @@ def predict(
         )
     if model_note:
         result["model_note"] = model_note
-    return result
+    return JSONResponse(
+        content=result,
+        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
+    )
 
 
 @app.get("/anomalies")
