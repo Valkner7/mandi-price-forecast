@@ -159,13 +159,13 @@
     "is_observed_today"
   ],
   "series_start_date": "2023-06-06",
-  "trained_at": "2026-09-10T09:00:51.005270+00:00",
-  "backtest_mae": 128.033,
-  "naive_backtest_mae": 128.169,
-  "backtest_rmse": 263.325,
-  "naive_backtest_rmse": 266.48,
+  "trained_at": "2026-09-10T18:28:32.982838+00:00",
+  "backtest_mae": 127.324,
+  "naive_backtest_mae": 127.742,
+  "backtest_rmse": 262.171,
+  "naive_backtest_rmse": 265.413,
   "crop_mandi_combinations_tested": 223,
-  "crop_mandi_win_rate_vs_naive": 0.4484,
+  "crop_mandi_win_rate_vs_naive": 0.4395,
   "backtest_days": 45,
   "val_days": 30
 }
