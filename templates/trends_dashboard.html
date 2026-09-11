@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MandiRujhan — Trend Board — Punjab Crop Prices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FBF8EE;
+    --paper-deep: #F6F2E5;
+    --paper-dim: #EFECE2;
+    --panel: #FFFFFF;
+    --ink: #173A27;
+    --ink-soft: #555B53;
+    --slate: #7C8079;
+    --turmeric: #C89635;
+    --turmeric-deep: #A87C27;
+    --rust: #A34328;
+    --rule: #DED8C7;
+    --panel-line: #E7E2D3;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(23, 58, 39, 0.04), 0 8px 20px rgba(23, 58, 39, 0.06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 64px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 24px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--turmeric-deep);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-size: clamp(30px, 5vw, 46px);
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .title-sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+  }
+  .sub { color: var(--ink-soft); font-size: 15px; line-height: 1.55; margin: 0 0 20px; max-width: 60ch; }
+  .summary-strip {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stat { display: flex; align-items: baseline; gap: 8px; }
+  .stat .n { font-size: 28px; font-weight: 700; }
+  .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .stat.up .n { color: var(--turmeric-deep); }
+  .stat.down .n { color: var(--rust); }
+  .stat.flat .n { color: var(--slate); }
+
+  .crop-panel { margin-bottom: 28px; }
+  .crop-title {
+    font-family: 'Fraunces', Georgia, serif;
+    letter-spacing: 0;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+  }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 11px 14px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--panel-line);
+  }
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    background: var(--paper-dim);
+    font-weight: 500;
+  }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+  .arrow { display: inline-block; width: 1.4em; text-align: center; }
+  .rising { color: var(--turmeric-deep); }
+  .falling { color: var(--rust); }
+  .stable-cell { color: var(--slate); }
+  .mandi-name { font-weight: 600; }
+
+  .foot-note {
+    margin-top: 32px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+    max-width: 65ch;
+  }
+  .state-msg { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 24px 0; }
+  a { color: var(--turmeric-deep); }
+
+  @media (max-width: 640px) {
+    th:nth-child(4), td:nth-child(4) { display: none; } /* hide "in 7d" col on very small screens */
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Punjab &middot; Live from clean_mandi_prices.csv</p>
+    <h1>MandiRujhan</h1>
+    <p class="title-sub">Trend Board</p>
+    <p class="sub">Which crops are moving, and where — a market-wide view for mandi boards and policymakers, built from the same 7-day forecasts as the farmer advisory.</p>
+    <div class="summary-strip" id="summary-strip">
+      <div class="stat"><span class="n">—</span><span class="label">loading</span></div>
+    </div>
+  </header>
+
+  <div id="content">
+    <p class="state-msg">Reading today's rates&hellip;</p>
+  </div>
+
+  <p class="foot-note">
+    Forecasts are directional estimates, not guaranteed prices — see <code>/predict</code>'s confidence note for the model's own honestly-reported accuracy.
+    Only crops with enough price history to forecast reliably are shown here (currently Potato, Onion, Tomato).
+  </p>
+</div>
+
+<script>
+function esc(s) {
+  const div = document.createElement('div');
+  div.textContent = String(s);
+  return div.innerHTML;
+}
+
+// Mirrors the React dashboard's inr() helper (frontend/src/utils/format.js)
+// so prices read consistently across both "prices" pages.
+function fmtPrice(n) {
+  return new Intl.NumberFormat('en-IN').format(Math.round(n));
+}
+
+async function loadTrends() {
+  const contentEl = document.getElementById('content');
+  const summaryEl = document.getElementById('summary-strip');
+  try {
+    const res = await fetch('/trends');
+    if (!res.ok) throw new Error('Request failed: ' + res.status);
+    const data = await res.json();
+
+    summaryEl.innerHTML = `
+      <div class="stat up"><span class="n">${data.summary.rising}</span><span class="label">Rising</span></div>
+      <div class="stat down"><span class="n">${data.summary.falling}</span><span class="label">Falling</span></div>
+      <div class="stat flat"><span class="n">${data.summary.stable}</span><span class="label">Stable</span></div>
+    `;
+
+    const crops = Object.keys(data.crops);
+    if (crops.length === 0) {
+      contentEl.innerHTML = '<p class="state-msg">No crop-mandi pairs with enough history right now.</p>';
+      return;
+    }
+
+    contentEl.innerHTML = crops.map(crop => {
+      const rows = data.crops[crop];
+      const rowsHtml = rows.map(r => {
+        const arrow = r.trend === 'rising' ? '&#9650;' : (r.trend === 'falling' ? '&#9660;' : '&mdash;');
+        const trendClass = r.trend === 'rising' ? 'rising' : (r.trend === 'falling' ? 'falling' : 'stable-cell');
+        const pctSign = r.pct_change > 0 ? '+' : '';
+        return `
+          <tr>
+            <td class="mandi-name">${esc(r.mandi)}</td>
+            <td class="num">&#8377;${fmtPrice(r.latest_price)}</td>
+            <td class="num ${trendClass}"><span class="arrow">${arrow}</span> ${pctSign}${r.pct_change}%</td>
+            <td class="num">&#8377;${fmtPrice(r.forecast_price)} in ${r.forecast_horizon_days}d</td>
+          </tr>`;
+      }).join('');
+
+      return `
+        <section class="crop-panel">
+          <h2 class="crop-title">${esc(crop)}</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Mandi</th>
+                <th class="num">Latest</th>
+                <th class="num">7-day move</th>
+                <th class="num">Forecast</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </section>`;
+    }).join('');
+  } catch (err) {
+    contentEl.innerHTML = '<p class="state-msg">Could not load rates right now. Try refreshing.</p>';
+    console.error(err);
+  }
+}
+loadTrends();
+</script>
+</body>
+</html>
