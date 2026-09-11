@@ -1,0 +1,42 @@
+# Render Blueprint — documents the deploy config that currently only lives in
+# the Render dashboard. Not required for the existing service to keep running,
+# but if it's ever deleted or needs recreating under time pressure (e.g. right
+# before a demo), this is a working starting point:
+#   https://dashboard.render.com/blueprints -> New Blueprint Instance -> point
+#   at this repo. Render will read this file and propose the service below.
+#
+# After creating from this blueprint, set the `sync: false` env vars in the
+# Render dashboard (Environment tab) — they're intentionally NOT committed
+# here. See README.md "2. Set environment variables" for what each one does.
+services:
+  - type: web
+    name: mandi-price-forecast
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # Text/voice advisory generation (README section 2)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.7-flash
+      # Outbound WhatsApp price alerts (README "Price alerts")
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      # Protects /check-alerts from being triggered by anyone who finds the URL
+      - key: ALERTS_CRON_SECRET
+        sync: false
+      # Leave unset/false on Render — alert checking is driven by the
+      # .github/workflows/check-alerts.yml cron instead, since a free-tier
+      # dyno's background thread sleeps with the rest of the process
+      # (see README "Deployment reality"). Only for local rehearsal.
+      - key: ENABLE_INTERNAL_ALERT_SCHEDULER
+        value: "false"
