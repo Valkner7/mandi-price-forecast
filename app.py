@@ -3,24 +3,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 import time
-import json
-import re
-import threading
-import uuid
-import hmac
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-
-from datetime import datetime, timezone
-from fastapi import HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from fastapi.responses import HTMLResponse, Response
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -131,9 +122,9 @@ ALERTS_CRON_SECRET = os.getenv("ALERTS_CRON_SECRET")
 # GET /check-alerts?secret=... every 5-10 minutes instead — see README.
 ENABLE_INTERNAL_ALERT_SCHEDULER = os.getenv("ENABLE_INTERNAL_ALERT_SCHEDULER", "false").lower() == "true"
 ALERT_CHECK_INTERVAL_SECONDS = int(os.getenv("ALERT_CHECK_INTERVAL_SECONDS", "600"))
-
-_subscriptions_lock = threading.Lock()
-
+# (subscriptions.json's own lock lives in routers/alerts.py, right next to
+# the code that actually touches the file — this module only needs the
+# path and the Twilio/scheduler config above.)
 
 
 @app.middleware("http")
@@ -181,8 +172,6 @@ def voice_test():
     return HTMLResponse(voice_test_path.read_text(encoding="utf-8"))
 
 
-
-
 @app.get("/trends-dashboard", response_class=HTMLResponse)
 def trends_dashboard():
     """Rate-board style page for mandi boards/policymakers — a market-wide
@@ -194,8 +183,6 @@ def trends_dashboard():
     if not trends_dashboard_path.exists():
         raise HTTPException(status_code=404, detail="trends_dashboard.html not found")
     return HTMLResponse(trends_dashboard_path.read_text(encoding="utf-8"))
-
-
 
 
 # --- Router registration -----------------------------------------------
