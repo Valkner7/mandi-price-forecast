@@ -5,15 +5,18 @@ HANDOFF_REPORT.md). This module owns the Twilio-specific transport concerns:
 signature verification, TwiML reply building, and the /sms and /whatsapp
 routes themselves.
 
-The actual forecasting/advisory/alert business logic (create_alert_from_message,
-_build_prediction, generate_advisory, etc.) still lives in app.py for now —
-build_reply_text() below imports those from `app` at module load time. This
-only works because app.py registers this router at the very bottom of the
-file, *after* every name imported here is already defined — by the time
-Python executes `from routers.voice import router` in app.py, app's module
-object already has all of these attributes set, even though app.py as a
-whole hasn't finished executing yet. If routers/alerts.py is split out
-later, this import can point there instead.
+The actual forecasting/advisory logic (_build_prediction, generate_advisory)
+still lives in app.py for now — build_reply_text() below imports those from
+`app` at module load time. Alert-command handling (stop_alerts_for,
+list_alerts_for, create_alert_from_message, etc.) now lives in
+routers/alerts.py and is imported from there instead.
+
+Both cross-module imports only work because app.py registers this router
+(and routers/alerts.py, which this module also depends on) at the very
+bottom of the file, *after* every name imported here is already defined —
+by the time Python executes `from routers.voice import router` in app.py,
+app's module object already has all of these attributes set, even though
+app.py as a whole hasn't finished executing yet.
 """
 
 from fastapi import APIRouter, Request, HTTPException, Response
@@ -23,14 +26,16 @@ from twilio.request_validator import RequestValidator
 from app import (
     TWILIO_AUTH_TOKEN,
     limiter,
+    _build_prediction,
+    generate_advisory,
+)
+from routers.alerts import (
     _ALERT_STOP_PHRASES,
     _ALERT_LIST_PHRASES,
     _looks_like_alert_command,
     stop_alerts_for,
     list_alerts_for,
     create_alert_from_message,
-    _build_prediction,
-    generate_advisory,
 )
 from voice_extraction import extract_crop_and_mandi
 
