@@ -106,7 +106,8 @@ Recommended order (lowest risk → highest risk):
 
 - [x] Repo cloned
 - [x] Structural map completed (this document)
-- [x] **Step 1 (sw.js extraction) — DONE.** JS moved verbatim to `static/sw.js`.
+- [x] **Step 1 (sw.js extraction) — DONE, committed, and pushed to origin/main**
+      (commit `f38635f`). JS moved verbatim to `static/sw.js`.
       The `/sw.js` route now serves it via `FileResponse` (same convention already
       used by the existing `/favicon.svg` and `/icons.svg` routes), preserving the
       `Cache-Control: no-cache` header and `application/javascript` media type.
@@ -117,17 +118,29 @@ Recommended order (lowest risk → highest risk):
       **NOTE: line numbers in Section 3's table above are now stale by ~-60 lines
       from `/voice-test` onward** — re-run `grep -n "^@app\." app.py` before
       continuing to get fresh line numbers before Step 2.
-- [ ] Step 2 (voice-test HTML extraction) — not started
+- [x] **Step 2 (voice-test HTML extraction) — DONE locally, not yet pushed
+      (patch: `0002-extract-voice-test-html.patch`).** The 600-line inline
+      HTML string was confirmed to be a plain triple-quoted string (not an
+      f-string — no Python variable interpolation), so it was moved verbatim
+      to `templates/voice_test.html` with zero risk. The `/voice-test` route
+      now reads and serves that file directly via `HTMLResponse(path.read_text())`
+      — no Jinja2 needed since there's no server-side templating happening.
+      `app.py`: 2,962 → 2,370 lines. Verified: compiles clean, route count
+      unchanged (23 routes before and after), no dangling references to the
+      old inline string.
+      **NOTE: line numbers in Section 3 are now stale by ~-590 lines from
+      `/predict` onward** — re-run `grep -n "^@app\." app.py` before Step 3.
 - [ ] Step 3 (trends-dashboard HTML extraction) — not started
 - [ ] Step 4 (Twilio/voice router) — not started
 - [ ] Step 5 (alerts router) — not started
 - [ ] Step 6 (predict/dashboard router) — not started
 - [ ] Step 7 (final app.py slimdown) — not started
 
-**Not yet committed to git** — changes exist only in the local clone at
-`/home/claude/mandi-price-forecast`. Run `git diff` there to review, then
-`git add -A && git commit` (and push, if you have write access) once you're
-happy with the extraction so it's not lost between sessions.
+**Step 1 is committed and pushed** (commit `f38635f` on `origin/main`), applied
+via a patch file (`git format-patch` + `git am`) since the working sandbox isn't
+directly connected to the GitHub remote. Steps 2+ will follow the same
+pattern: make the change in the sandbox clone, export a patch, hand it off for
+you to apply and push from your machine.
 
 ## 6. Instructions for the next Claude session
 
