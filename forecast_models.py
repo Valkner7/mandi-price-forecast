@@ -54,6 +54,10 @@ Usage
     python forecast_models.py --crop Potato --mandi Rayya --skip-rnn   # NB only, no TF needed
     # RNN path needs `pip install tensorflow` manually — it's no longer in
     # requirements.txt now that the production app doesn't need it.
+    # Same for the Naive Bayes path below: `pip install scikit-learn` manually
+    # if you run this file standalone — scikit-learn was removed from
+    # requirements.txt since this is the only module in the repo that
+    # imports it, and nothing here runs in production (see STATUS above).
 
 Expects `clean_mandi_prices.csv` in the same directory (or pass --csv),
 with columns: date, crop, mandi, price  (this matches the repo's schema).

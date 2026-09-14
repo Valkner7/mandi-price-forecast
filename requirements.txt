@@ -5,7 +5,6 @@ pandas
 requests
 numpy
 matplotlib
-scikit-learn
 statsmodels
 jupyter
 google-genai
