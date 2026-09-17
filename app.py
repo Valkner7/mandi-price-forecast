@@ -13,9 +13,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+import db
 
 BASE_DIR = Path(__file__).resolve().parent
-SUBSCRIPTIONS_PATH = BASE_DIR / "subscriptions.json"
 STATIC_DASHBOARD_DIR = BASE_DIR / "static" / "dashboard"
 
 app = FastAPI(
@@ -122,9 +122,11 @@ ALERTS_CRON_SECRET = os.getenv("ALERTS_CRON_SECRET")
 # GET /check-alerts?secret=... every 5-10 minutes instead — see README.
 ENABLE_INTERNAL_ALERT_SCHEDULER = os.getenv("ENABLE_INTERNAL_ALERT_SCHEDULER", "false").lower() == "true"
 ALERT_CHECK_INTERVAL_SECONDS = int(os.getenv("ALERT_CHECK_INTERVAL_SECONDS", "600"))
-# (subscriptions.json's own lock lives in routers/alerts.py, right next to
-# the code that actually touches the file — this module only needs the
-# path and the Twilio/scheduler config above.)
+# Subscriptions live in Turso (see db.py) rather than a local file, so this
+# module doesn't need a path or a lock for them anymore — just the Twilio/
+# scheduler config above. db.py reads TURSO_DATABASE_URL and
+# TURSO_AUTH_TOKEN from the environment directly (both required; get them
+# from the Turso dashboard for whichever database you created).
 
 
 @app.middleware("http")
@@ -188,7 +190,7 @@ def trends_dashboard():
 # --- Router registration -----------------------------------------------
 # Imported here, at the very end of the file, on purpose: routers/voice.py
 # and routers/alerts.py both do `from app import <names>` for functions
-# they need (_build_prediction, generate_advisory, SUBSCRIPTIONS_PATH,
+# they need (_build_prediction, generate_advisory, FORECAST_CONFIDENCE_NOTE,
 # etc.). Those names are all defined above this point in the file, so by
 # the time these imports execute, app's (partially-initialized) module
 # object already has them. Importing these routers any earlier would raise
@@ -226,6 +228,12 @@ from routers.alerts import (  # noqa: E402
     _maybe_start_internal_alert_scheduler,
 )
 app.include_router(alerts_router)
+# Creates the subscriptions table in Turso if it doesn't exist yet (see
+# db.py). Registered before the scheduler startup hook below, so the table
+# is guaranteed to exist before anything might try to check alerts against
+# it, whether that's the optional in-process scheduler or the very first
+# /check-alerts request.
+app.on_event("startup")(db.init_db)
 # APIRouter has no .on_event of its own, so this startup hook (moved out of
 # app.py along with the rest of the alerts code) is registered directly on
 # the app instance here instead of via a decorator in routers/alerts.py.

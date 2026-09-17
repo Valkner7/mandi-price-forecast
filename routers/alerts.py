@@ -1,9 +1,10 @@
 """Price-alert subscriptions and checking logic.
 
 Extracted out of app.py's monolith (Step 5 of the app.py breakup — see
-HANDOFF_REPORT.md). Owns: the subscriptions.json file store, alert-command
-parsing (used by routers/voice.py's build_reply_text), alert triggering
-logic, outbound WhatsApp sends, and the /check-alerts endpoint.
+HANDOFF_REPORT.md). Owns: subscription storage (via db.py / Turso — see
+below), alert-command parsing (used by routers/voice.py's
+build_reply_text), alert triggering logic, outbound WhatsApp sends, and
+the /check-alerts endpoint.
 
 Like routers/voice.py, this module imports forecasting internals
 (_build_prediction) from `app` at load time. This only works because
@@ -14,10 +15,16 @@ The startup-scheduler function (_maybe_start_internal_alert_scheduler) is
 exported WITHOUT an @app.on_event decorator, since APIRouter has no
 on_event of its own — app.py registers it directly on the app instance
 after including this router.
+
+Subscriptions used to live in a subscriptions.json file on local disk.
+Render's filesystem is ephemeral, so that file (and every alert in it)
+silently reset on every redeploy. Storage now goes through db.py (Turso,
+a remote database), which has no such problem — see db.py's module
+docstring for the full reasoning and why it doesn't share one cached
+connection across threads.
 """
 
 import hmac
-import json
 import re
 import threading
 import time
@@ -27,8 +34,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from twilio.rest import Client as TwilioRestClient
 
+import db
 from app import (
-    SUBSCRIPTIONS_PATH,
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     TWILIO_WHATSAPP_FROM,
@@ -41,24 +48,6 @@ from app import (
 from voice_extraction import extract_crop_and_mandi
 
 router = APIRouter()
-
-_subscriptions_lock = threading.Lock()
-
-
-def load_subscriptions() -> list[dict]:
-    if not SUBSCRIPTIONS_PATH.exists():
-        return []
-    try:
-        with open(SUBSCRIPTIONS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as exc:
-        print(f"[ALERTS] Failed to read subscriptions file, treating as empty: {exc}")
-        return []
-
-
-def save_subscriptions(subs: list[dict]) -> None:
-    with open(SUBSCRIPTIONS_PATH, "w", encoding="utf-8") as f:
-        json.dump(subs, f, indent=2, ensure_ascii=False)
 
 
 # Two tiers, not one flat list. Phrases like "alert me" / "notify me" are
@@ -202,10 +191,7 @@ def create_alert_from_message(body: str, sender: str) -> str:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "active": True,
     }
-    with _subscriptions_lock:
-        subs = load_subscriptions()
-        subs.append(new_sub)
-        save_subscriptions(subs)
+    db.insert_subscription(new_sub)
 
     return (
         f"Alert set: I'll message you here when {crop} at {mandi} "
@@ -216,7 +202,7 @@ def create_alert_from_message(body: str, sender: str) -> str:
 
 
 def list_alerts_for(sender: str) -> str:
-    subs = load_subscriptions()
+    subs = db.load_subscriptions()
     mine = [s for s in subs if s.get("phone") == sender and s.get("active")]
     if not mine:
         return "You have no active price alerts. Try 'alert me potato rayya 850'."
@@ -228,14 +214,7 @@ def list_alerts_for(sender: str) -> str:
 
 
 def stop_alerts_for(sender: str) -> str:
-    with _subscriptions_lock:
-        subs = load_subscriptions()
-        count = 0
-        for s in subs:
-            if s.get("phone") == sender and s.get("active"):
-                s["active"] = False
-                count += 1
-        save_subscriptions(subs)
+    count = db.deactivate_for_phone(sender)
     if count == 0:
         return "You had no active alerts to cancel."
     return f"Cancelled {count} active alert{'s' if count != 1 else ''}."
@@ -247,19 +226,15 @@ def check_all_alerts() -> dict:
     only predicted once no matter how many farmers are watching it.
 
     Concurrency note: the (potentially slow — one predict() per distinct
-    crop+mandi group) checking work below happens outside the lock, using
-    a snapshot of subscriptions taken at the start. To avoid losing any
-    alert a farmer creates or cancels via WhatsApp while that snapshot is
-    stale, this function does NOT save that snapshot back wholesale.
-    Instead it tracks only the specific alerts that actually fired (by id),
-    then re-loads subscriptions.json fresh immediately before saving and
-    applies just those updates on top of the current file — so concurrent
-    changes made elsewhere during the check are preserved rather than
-    silently overwritten (a merge-on-save, not last-write-wins). This is a
-    single-process guard (the lock doesn't span multiple worker processes),
-    which is fine for a single-process hackathon deployment."""
-    with _subscriptions_lock:
-        subs = load_subscriptions()
+    crop+mandi group) checking work below happens against a snapshot of
+    subscriptions taken at the start, same as before. What changed is how
+    a fired alert gets saved: each one is now committed with its own
+    db.mark_fired(id, ...) call, an UPDATE scoped to that single row by
+    id. That's already atomic and can't clobber a concurrent create/cancel
+    the way saving the whole old subscriptions.json file back could — so
+    the reload-and-merge dance that used to live here (see git history)
+    isn't needed anymore; there's nothing left for it to protect against."""
+    subs = db.load_subscriptions()
 
     active = [s for s in subs if s.get("active")]
     if not active:
@@ -269,10 +244,6 @@ def check_all_alerts() -> dict:
     for s in active:
         groups.setdefault((s["crop"], s["mandi"]), []).append(s)
 
-    # Collect only the updates for alerts that actually fired, keyed by id,
-    # rather than mutating and later saving the whole (possibly-stale)
-    # `subs` snapshot. Applied on top of a fresh reload just before saving.
-    fired_updates: dict[str, dict] = {}
     notified = 0
     for (crop, mandi), group in groups.items():
         try:
@@ -291,23 +262,12 @@ def check_all_alerts() -> dict:
                 f"{FORECAST_CONFIDENCE_NOTE['en']}"
             )
             if send_whatsapp_message(sub["phone"], message):
-                fired_updates[sub["id"]] = {
-                    "active": False,
-                    "notified_at": datetime.now(timezone.utc).isoformat(),
-                    "notified_price": current_price,
-                }
+                db.mark_fired(
+                    sub["id"],
+                    notified_at=datetime.now(timezone.utc).isoformat(),
+                    notified_price=current_price,
+                )
                 notified += 1
-
-    with _subscriptions_lock:
-        # Reload fresh rather than reusing the stale `subs` snapshot, so any
-        # alert created/cancelled by a farmer during the loop above isn't
-        # lost. Only the specific alerts that fired get updated, by id.
-        current_subs = load_subscriptions()
-        for sub in current_subs:
-            update = fired_updates.get(sub.get("id"))
-            if update:
-                sub.update(update)
-        save_subscriptions(current_subs)
 
     return {"checked": len(active), "notified": notified}
 
