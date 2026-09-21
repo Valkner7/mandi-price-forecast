@@ -154,12 +154,21 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
                 timeout=REQUEST_TIMEOUT_SECONDS,
                 headers=REQUEST_HEADERS,
             )
-            if response.status_code in RETRYABLE_STATUS_CODES:
+            if not response.ok:
+                # Capture the actual response body here, for EVERY non-2xx
+                # status -- not just the ones in RETRYABLE_STATUS_CODES.
+                # response.raise_for_status() alone (the old code path for
+                # non-retryable codes like 400) only gives a generic
+                # "400 Client Error: Bad Request for url: ..." with no body,
+                # which hides the one thing that actually explains *why*
+                # the API rejected the request (bad/expired key, a changed
+                # filter param, a deprecated resource ID, etc). Retry
+                # behavior is unchanged -- this only widens what gets
+                # reported in the raised error's message.
                 raise requests.HTTPError(
-                    f"HTTP {response.status_code}: {response.text[:120]}",
+                    f"HTTP {response.status_code}: {response.text[:200]}",
                     response=response,
                 )
-            response.raise_for_status()
             return response.text
         except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as error:
             last_error = error
