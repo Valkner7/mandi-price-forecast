@@ -23,14 +23,33 @@ connection per call sidesteps that question entirely. Given how rarely
 subscriptions are created/checked (a handful of WhatsApp messages and one
 /check-alerts sweep every several minutes), the extra connection overhead
 is irrelevant.
+Startup timeout: init_db() wraps its connection attempt in a hard
+timeout (see _INIT_TIMEOUT_SECONDS below). Without it, a bad auth token,
+a paused/deleted database, or a network hiccup between Render and Turso
+can leave the underlying call hanging indefinitely with no error at all
+-- which is exactly what took the whole app down on 2026-09-17 (Render's
+own port-scan timeout is ~15 minutes, so the deploy just sat there
+until Render itself gave up). This wrapper fails loudly within seconds
+instead. See app.py for the second half of that fix: even if this
+raises, app.py's startup hook now catches it and lets the rest of the
+app (predictions, dashboard, voice) start normally -- only the alerts
+feature should ever be degraded by a Turso problem, not the whole site.
 """
 
+import concurrent.futures
 import os
 
 import libsql
 
 TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL")
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
+
+# How long init_db() will wait for Turso before giving up and raising, in
+# seconds. Generous for a single CREATE TABLE IF NOT EXISTS against a
+# healthy remote database (normally well under a second), while being
+# dramatically faster than silently hanging for Render's own ~15 minute
+# deploy timeout.
+_INIT_TIMEOUT_SECONDS = 10
 
 # Fields that may legitimately be NULL in the table (not yet fired, or no
 # starting price recorded). Dropped from the returned dict when NULL so
@@ -53,10 +72,7 @@ def _get_connection():
     return libsql.connect(database=TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
 
 
-def init_db() -> None:
-    """Creates the subscriptions table if it doesn't exist yet. Safe to
-    call on every startup -- CREATE TABLE IF NOT EXISTS is a no-op once
-    the table already exists. Called from app.py's startup event."""
+def _create_table() -> None:
     conn = _get_connection()
     conn.execute(
         """
@@ -76,6 +92,43 @@ def init_db() -> None:
         """
     )
     conn.commit()
+
+
+def init_db() -> None:
+    """Creates the subscriptions table if it doesn't exist yet. Safe to
+    call on every startup -- CREATE TABLE IF NOT EXISTS is a no-op once
+    the table already exists. Called from app.py's startup event.
+
+    Runs the actual connection+query in a background thread so a hang
+    (rather than a clean error) can still be interrupted by a timeout --
+    Python has no way to forcibly cancel a blocking call otherwise. If it
+    times out, the stuck thread is abandoned (not killed -- Python can't
+    do that) and left to finish or die on its own; the caller doesn't
+    wait for it. That's a deliberate tradeoff: one leaked thread in the
+    rare case Turso is genuinely unreachable is a lot better than the
+    whole app hanging for 15 minutes, which is what happened without
+    this."""
+    executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="turso-init-db"
+    )
+    future = executor.submit(_create_table)
+    try:
+        future.result(timeout=_INIT_TIMEOUT_SECONDS)
+    except concurrent.futures.TimeoutError:
+        raise TimeoutError(
+            f"Connecting to Turso timed out after {_INIT_TIMEOUT_SECONDS}s. "
+            "Check that TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Render's "
+            "environment variables are correct and current (compare against "
+            "the Turso dashboard), and that the database hasn't been paused "
+            "or deleted."
+        ) from None
+    finally:
+        # wait=False: never block here regardless of outcome. On success
+        # the thread already finished, so this just frees the executor
+        # object; on timeout it lets the stuck thread be abandoned instead
+        # of this call waiting for it anyway (which would defeat the
+        # timeout above entirely).
+        executor.shutdown(wait=False)
 
 
 def _row_to_dict(columns: list[str], row: tuple) -> dict:

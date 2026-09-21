@@ -228,12 +228,42 @@ from routers.alerts import (  # noqa: E402
     _maybe_start_internal_alert_scheduler,
 )
 app.include_router(alerts_router)
+
+
+def _init_subscriptions_db_startup() -> None:
+    """Non-fatal wrapper around db.init_db(), registered as the actual
+    startup hook below instead of db.init_db itself.
+
+    On 2026-09-17, wiring db.init_db() directly into startup caused a
+    Turso connection problem to hang the ENTIRE app's startup (predictions,
+    dashboard, voice -- all of it), not just alerts, until Render's own
+    ~15 minute deploy timeout killed it. That's disproportionate: nothing
+    except the alerts feature actually depends on the subscriptions
+    database. So failures here are now caught and logged, not raised --
+    the rest of the app starts normally either way. If Turso really is
+    unreachable, alerts-related endpoints will fail individually when
+    someone actually tries to use them (a normal 5xx on that one request),
+    which is the right amount of blast radius for a storage problem in one
+    feature. db.py's own init_db() still enforces a hard timeout on the
+    connection attempt itself (see db.py) -- this wrapper is what stops a
+    failure, fast or slow, from taking the whole process down with it."""
+    try:
+        db.init_db()
+    except Exception as exc:
+        print(
+            f"[STARTUP] WARNING: subscriptions database (Turso) init failed "
+            f"-- alerts feature will be degraded until this is fixed: {exc}"
+        )
+
+
 # Creates the subscriptions table in Turso if it doesn't exist yet (see
 # db.py). Registered before the scheduler startup hook below, so the table
 # is guaranteed to exist before anything might try to check alerts against
 # it, whether that's the optional in-process scheduler or the very first
-# /check-alerts request.
-app.on_event("startup")(db.init_db)
+# /check-alerts request -- unless it fails, in which case see the wrapper
+# function's docstring just above for why that's now a warning, not a
+# crash.
+app.on_event("startup")(_init_subscriptions_db_startup)
 # APIRouter has no .on_event of its own, so this startup hook (moved out of
 # app.py along with the rest of the alerts code) is registered directly on
 # the app instance here instead of via a decorator in routers/alerts.py.
