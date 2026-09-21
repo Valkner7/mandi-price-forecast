@@ -19,6 +19,7 @@ workflow) never lets a bad artifact reach production.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -39,6 +40,35 @@ BACKTEST_DAYS = 45
 # Of the remaining (non-backtest) data, how many of the most recent days
 # are used as the early-stopping validation slice.
 VAL_DAYS = 30
+# Tier 1 #3 guard ("What to Build Next" roadmap): minimum number of new
+# rows since the last training run required to bother retraining at all.
+# Below this, skip retraining and keep serving the existing model artifact
+# instead -- a holiday or a data-source outage can otherwise silently
+# retrain on almost nothing, shipping a possibly-worse model with no
+# visible signal anything changed. Checked against real data before
+# picking this number: even the lightest normal days in this dataset's
+# recent history still bring in 50+ new rows (weekday averages are much
+# higher, sometimes 700+ after a backfilled gap) -- 20 sits comfortably
+# below every normal day while still catching a genuinely near-empty
+# fetch. Revisit if the data source's reporting pattern changes.
+MIN_NEW_ROWS_TO_RETRAIN = 20
+
+
+def _previous_total_rows() -> int | None:
+    """Row count recorded at the last successful training run (see
+    "total_rows_at_train_time" written into meta at the end of main()
+    below), or None if there isn't one yet -- the very first run, before
+    any meta.json exists. Reads META_PATH directly rather than going
+    through pm.load_artifact(), which would also load the (irrelevant
+    here, and much heavier) model file itself just to check one number."""
+    if not META_PATH.exists():
+        return None
+    try:
+        with open(META_PATH) as f:
+            meta = json.load(f)
+        return meta.get("total_rows_at_train_time")
+    except (json.JSONDecodeError, OSError):
+        return None
 
 
 def _time_based_split(features: pd.DataFrame):
@@ -222,6 +252,26 @@ def main() -> int:
     print(f"Loading data from {DATA_PATH} ...")
     df = pd.read_csv(DATA_PATH, parse_dates=["date"])
 
+    # Tier 1 #3 guard -- see MIN_NEW_ROWS_TO_RETRAIN's comment above for
+    # the reasoning and how that number was picked. previous_total is
+    # None (guard skipped) on the very first-ever run, before any
+    # meta.json exists yet.
+    previous_total = _previous_total_rows()
+    if previous_total is not None:
+        new_rows = len(df) - previous_total
+        if new_rows < MIN_NEW_ROWS_TO_RETRAIN:
+            print(
+                f"Only {new_rows} new row(s) since the last training run "
+                f"({previous_total} -> {len(df)} total rows), below the "
+                f"MIN_NEW_ROWS_TO_RETRAIN threshold of {MIN_NEW_ROWS_TO_RETRAIN}. "
+                "Skipping retrain and keeping the existing model artifact -- "
+                "this is expected on a light-reporting day (e.g. a holiday) "
+                "or during a data-source outage, not an error. "
+                "clean_mandi_prices.csv itself will still be committed with "
+                "whatever new rows did come in; only the retrain is skipped."
+            )
+            return 0
+
     print("Building daily panel across all crop-mandi combinations ...")
     panel = pm.build_panel(df)
     if panel.empty:
@@ -299,6 +349,9 @@ def main() -> int:
         "crop_mandi_win_rate_vs_naive": backtest["crop_mandi_win_rate_vs_naive"],
         "backtest_days": BACKTEST_DAYS,
         "val_days": VAL_DAYS,
+        # Consumed by _previous_total_rows() on the NEXT run, to power the
+        # MIN_NEW_ROWS_TO_RETRAIN guard above.
+        "total_rows_at_train_time": len(df),
     }
 
     print(f"Saving artifact to {MODEL_PATH} and {META_PATH} ...")

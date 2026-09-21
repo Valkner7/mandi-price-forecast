@@ -44,6 +44,7 @@ from google import genai
 from gtts import gTTS
 
 import price_model as pm
+import usage_guard
 from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 from voice_extraction import extract_crop_and_mandi
 
@@ -243,6 +244,15 @@ def generate_advisory(
             detail="A Gemini API key is missing. Set GEMINI_API_KEY or GOOGLE_API_KEY in the terminal before starting the server.",
         )
 
+    # Tier 1 #4 guard ("What to Build Next" roadmap) — see usage_guard.py.
+    # Checked before spending any time building the prompt/client below,
+    # and BEFORE record_gemini_call() further down, so a day that's
+    # already over budget skips straight to the existing plain-template
+    # fallback instead of attempting (and paying for) the call at all.
+    if not usage_guard.gemini_call_allowed():
+        print(f"GEMINI DAILY LIMIT REACHED ({usage_guard.GEMINI_DAILY_LIMIT} calls) — using fallback advisory instead of calling Gemini.")
+        return build_fallback_advisory(forecast_data, language_code), True
+
     language = LANGUAGES[language_code]
     client = genai.Client(api_key=gemini_api_key)
 
@@ -303,6 +313,7 @@ Confidence note: {forecast_data.get("confidence", {}).get("note", FORECAST_CONFI
     # return immediately; the abandoned call finishes quietly in the
     # background and its result is simply discarded.
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    usage_guard.record_gemini_call()
     future = executor.submit(call_gemini)
     effective_timeout = ADVISORY_TIMEOUT_SECONDS if timeout_seconds is None else timeout_seconds
     try:
@@ -1130,6 +1141,13 @@ def generate_compare_advisory(
             detail="A Gemini API key is missing. Set GEMINI_API_KEY or GOOGLE_API_KEY in the terminal before starting the server.",
         )
 
+    # Tier 1 #4 guard — see generate_advisory()'s identical check above and
+    # usage_guard.py for the reasoning. Both Gemini call sites share the
+    # same daily counter, since they draw from the same billed quota.
+    if not usage_guard.gemini_call_allowed():
+        print(f"GEMINI DAILY LIMIT REACHED ({usage_guard.GEMINI_DAILY_LIMIT} calls) — using fallback summary instead of calling Gemini.")
+        return comparison_data["summary"], True
+
     language = LANGUAGES[language_code]
     client = genai.Client(api_key=gemini_api_key)
 
@@ -1179,6 +1197,7 @@ Price spread: ₹{comparison_data["price_spread"]} ({comparison_data["price_spre
         )
 
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    usage_guard.record_gemini_call()
     future = executor.submit(call_gemini)
     try:
         response = future.result(timeout=ADVISORY_TIMEOUT_SECONDS)
@@ -1366,6 +1385,23 @@ def voice_advisory(
       "hi": "hi",
       "pa": "pa",
     }[language]
+
+    # Tier 1 #4 guard ("What to Build Next" roadmap) — see usage_guard.py.
+    # Checked once per request here, not once per retry attempt below:
+    # the retry loop is a resilience mechanism for ONE logical voice
+    # request, not additional independent usage. No fallback audio exists
+    # for "TTS unavailable" the way generate_advisory() has a plain-text
+    # fallback for Gemini — there's no substitute for audio other than no
+    # audio — so this fails the same honest way the retry-exhausted path
+    # below already does (a clear error), rather than silently returning
+    # text where the caller expects an audio stream.
+    if not usage_guard.gtts_call_allowed():
+        print(f"GTTS DAILY LIMIT REACHED ({usage_guard.GTTS_DAILY_LIMIT} calls) — refusing this voice request.")
+        raise HTTPException(
+            status_code=503,
+            detail="Voice responses have hit today's usage limit. Try again tomorrow, or use the text-based /advisory endpoint instead.",
+        )
+    usage_guard.record_gtts_call()
 
     # gTTS calls out to Google's endpoint over the network, which has been
     # observed to fail intermittently (especially right after a slow/timed-out

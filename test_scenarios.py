@@ -11,6 +11,8 @@ Usage:
     python3 test_scenarios.py
 """
 
+import os
+import sys
 import time
 from io import BytesIO
 
@@ -92,7 +94,7 @@ def run_scenario(language, question):
     return row
 
 
-def main():
+def main() -> int:
     results = [run_scenario(lang, q) for lang, q in SCENARIOS]
 
     print(f"\n{'#':<3}{'lang':<5}{'crop/mandi':<28}{'extract':>9}{'predict':>9}{'advisory':>10}{'tts':>9}{'TOTAL':>9}  src   stage_failed")
@@ -118,6 +120,32 @@ def main():
         print(f"No scenario completed the full pipeline. Stages that failed: {', '.join(failed_stages)}")
         print("See the '-> ...' detail lines above each failed row for the real reason — don't assume it's the API key.")
 
+    # Exit-code classification, added for CI (Tier 1 #2 in the "What to
+    # Build Next" roadmap). Distinguishes real regressions from expected
+    # environmental gaps, rather than treating every non-"complete" row as
+    # a failure:
+    #   - extraction/predict failures are always real: neither depends on
+    #     GEMINI_API_KEY or any network call this script doesn't control,
+    #     so a failure there means actual pipeline logic broke.
+    #   - an advisory failure only counts as real if GEMINI_API_KEY was
+    #     actually set. An unset key is this script's own documented,
+    #     expected reason for that stage to be skipped (see the module
+    #     docstring) — not a regression.
+    #   - tts failures are reported above but deliberately don't fail the
+    #     run on their own: gTTS depends on an external network call this
+    #     script doesn't control, and a flaky external service shouldn't
+    #     be indistinguishable in CI from an actual code regression.
+    key_present = bool(os.getenv("GEMINI_API_KEY"))
+    real_failures = [
+        r for r in results
+        if r.get("stage_failed") in ("extraction", "predict")
+        or (r.get("stage_failed", "").startswith("advisory") and key_present)
+    ]
+    if real_failures:
+        print(f"\n{len(real_failures)} scenario(s) failed for reasons unrelated to a missing GEMINI_API_KEY — treating this as a real failure.")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

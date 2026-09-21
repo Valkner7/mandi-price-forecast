@@ -1,0 +1,54 @@
+name: Run scenario tests
+
+# Tier 1 #2 in the "What to Build Next" roadmap: the scenario tests
+# already existed (test_scenarios.py) but never ran automatically. This
+# runs them on every push to main and every pull request.
+#
+# Report-only for now, deliberately: this repo currently pushes straight
+# to main with no branch-protection rules, so there's no PR-gating
+# workflow to hook a required check into yet. This makes the pass/fail
+# result visible as a commit/PR check without blocking anything. Once
+# you're working through PRs and want this to actually block a bad merge,
+# turn it into a required status check under Settings -> Branches ->
+# Branch protection rules -- no change needed here, that's a GitHub
+# repo-settings toggle, not a workflow change.
+#
+# GEMINI_API_KEY is optional here. Without it, test_scenarios.py skips
+# (not fakes) the advisory/TTS stages, and its own exit code treats that
+# as expected rather than a failure -- see that file's docstring and the
+# comment above its exit-code logic. Add GEMINI_API_KEY as a repo secret
+# (Settings -> Secrets and variables -> Actions) if you also want those
+# stages actually exercised in CI, at the cost of real Gemini API usage
+# on every push.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  test-scenarios:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # test_scenarios.py imports from app.py, which pulls in nearly
+        # everything in requirements.txt (fastapi, twilio, gtts,
+        # google-genai, lightgbm, etc.) -- unlike update-mandi-data.yml's
+        # narrower explicit package list, there's no meaningfully smaller
+        # subset to install here.
+        run: pip install -r requirements.txt
+
+      - name: Run scenario tests
+        env:
+          # Optional -- see the note above.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python test_scenarios.py
