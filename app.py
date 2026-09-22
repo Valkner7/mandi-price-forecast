@@ -1,4 +1,5 @@
 import os
+import concurrent.futures
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -214,11 +215,59 @@ from routers.predict import (  # noqa: E402
     _warm_trends_cache,
 )
 app.include_router(predict_router)
+
+_TRENDS_WARMUP_TIMEOUT_SECONDS = 45
+
+
+def _warm_trends_cache_startup() -> None:
+    """Bounded, non-fatal wrapper around _warm_trends_cache(), registered
+    as the actual startup hook below instead of _warm_trends_cache itself.
+
+    On 2026-09-21, this hook (unbounded, synchronous) caused a Render
+    deploy to hang and eventually time out ("Timed Out" after 19m05s) --
+    _warm_trends_cache() falls back to per-pair ETS fitting for any
+    crop-mandi pair the trained LightGBM model doesn't cover, and each
+    fallback fit is three separate full numerical optimizations
+    (fit_ets() in routers/predict.py) with nothing to bound how long that
+    can take. A retry with no code changes succeeded, which pointed at
+    startup-timing flakiness rather than a real code regression -- but
+    that same unbounded shape is exactly what caused the earlier Turso
+    incident (see _init_subscriptions_db_startup below), so it gets the
+    same treatment here: run the real work in a background thread with a
+    hard timeout, and never let a slow or hung warmup take the whole
+    app's startup down with it. /trends will just compute on-demand,
+    uncached, on its first real request if the warmup didn't finish in
+    time -- slower for that one request, not a startup failure."""
+    executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="trends-warmup"
+    )
+    future = executor.submit(_warm_trends_cache)
+    try:
+        future.result(timeout=_TRENDS_WARMUP_TIMEOUT_SECONDS)
+    except concurrent.futures.TimeoutError:
+        print(
+            f"[STARTUP] WARNING: /trends cache warmup did not finish within "
+            f"{_TRENDS_WARMUP_TIMEOUT_SECONDS}s -- continuing startup "
+            f"without it; /trends will compute on-demand instead of served "
+            f"from cache until it's naturally populated by a real request."
+        )
+    except Exception as exc:
+        print(
+            f"[STARTUP] WARNING: /trends cache warmup failed -- continuing "
+            f"startup without it: {exc}"
+        )
+    finally:
+        # wait=False: same reasoning as db.py's init_db() -- never block
+        # here regardless of outcome, so a hung warmup thread is abandoned
+        # rather than defeating the timeout by waiting for it anyway.
+        executor.shutdown(wait=False)
+
+
 # APIRouter has no .on_event of its own, so this startup hook (pre-warms
 # the /trends cache) is registered directly on the app instance here
 # instead of via a decorator in routers/predict.py — same pattern as the
 # alerts scheduler below.
-app.on_event("startup")(_warm_trends_cache)
+app.on_event("startup")(_warm_trends_cache_startup)
 
 from routers.voice import router as voice_router  # noqa: E402
 app.include_router(voice_router)
