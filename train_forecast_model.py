@@ -117,6 +117,55 @@ def _rmse(y_true, y_pred) -> float:
     return float(np.sqrt(np.mean((np.asarray(y_true) - np.asarray(y_pred)) ** 2)))
 
 
+def _classify_direction(base_price: np.ndarray, other_price: np.ndarray) -> np.ndarray:
+    """rising/falling/stable classification, using the EXACT same rule as
+    routers/predict.py's live trend classification (threshold = max(1.0,
+    abs(base_price) * 0.01), see _build_prediction()). Deliberately kept
+    in lockstep with that logic -- a different threshold definition here
+    would mean this backtest doesn't actually measure what farmers see in
+    the app's own trend label."""
+    delta = other_price - base_price
+    threshold = np.maximum(1.0, np.abs(base_price) * 0.01)
+    return np.where(delta > threshold, "rising",
+           np.where(delta < -threshold, "falling", "stable"))
+
+
+def backtest_directional_accuracy(test: pd.DataFrame, model) -> dict:
+    """Tier 2 #6 (roadmap): precision/recall per direction class on the
+    same held-out test window backtest_vs_naive() uses. Farmers care more
+    about "which way is it moving" than exact rupee-level error -- a model
+    can have a fine MAE while getting the direction call wrong often, or
+    vice versa, so this is tracked as its own metric rather than inferred
+    from MAE.
+    """
+    X_test = _feature_matrix(test)
+    pred_pct_change = model.predict(X_test)
+    price = test["price"].values
+    pred_price = price * (1.0 + pred_pct_change)
+    actual_price = test["target_next_price"].values
+
+    actual_dir = _classify_direction(price, actual_price)
+    pred_dir = _classify_direction(price, pred_price)
+
+    per_class = {}
+    for cls in ("rising", "falling", "stable"):
+        tp = int(np.sum((pred_dir == cls) & (actual_dir == cls)))
+        fp = int(np.sum((pred_dir == cls) & (actual_dir != cls)))
+        fn = int(np.sum((pred_dir != cls) & (actual_dir == cls)))
+        support = int(np.sum(actual_dir == cls))
+        per_class[cls] = {
+            "precision": round(tp / (tp + fp), 4) if (tp + fp) > 0 else None,
+            "recall": round(tp / (tp + fn), 4) if (tp + fn) > 0 else None,
+            "support": support,
+        }
+
+    return {
+        "overall_direction_accuracy": round(float(np.mean(pred_dir == actual_dir)), 4),
+        "per_class": per_class,
+        "n_test_rows": int(len(test)),
+    }
+
+
 def backtest_vs_naive(test: pd.DataFrame, model) -> dict:
     """Backtest the model's next-day PRICE prediction (reconstructed from
     its pct-change prediction) against naive persistence P(t+1) = P(t),
@@ -338,6 +387,12 @@ def main() -> int:
     print("Backtesting vs. naive persistence on held-out test window ...")
     backtest = backtest_vs_naive(test, model)
     for k, v in backtest.items():
+        if k != "per_pair":  # too long to print per-line; already in meta.json
+            print(f"  {k}: {v}")
+
+    print("Backtesting directional accuracy (Tier 2 #6) ...")
+    directional = backtest_directional_accuracy(test, model)
+    for k, v in directional.items():
         print(f"  {k}: {v}")
 
     print("Running train/serve skew self-check ...")
@@ -365,6 +420,9 @@ def main() -> int:
         # "-". Looked up at request time in routers/predict.py's
         # _forecast_validation_summary() / the /predict confidence block.
         "per_pair_accuracy": backtest["per_pair"],
+        # Tier 2 #6: precision/recall per rising/falling/stable class,
+        # looked up in routers/predict.py's confidence block.
+        "directional_accuracy": directional,
         "backtest_days": BACKTEST_DAYS,
         "val_days": VAL_DAYS,
         # Consumed by _previous_total_rows() on the NEXT run, to power the

@@ -89,10 +89,14 @@ MAX_PAGES = 200          # safety cap; pages can be far smaller than PAGE_SIZE
 REQUEST_TIMEOUT_SECONDS = 90  # the shared public demo key can be slow under load
 MAX_RETRIES = 5          # retry transient timeouts/connection/rate-limit errors
 RETRY_BACKOFF_SECONDS = 5
-# 429 (shared demo key throttling) and 5xx are transient: the same query
-# succeeds moments later, so they must be retried rather than treated as
-# "this date has no data".
-RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+# Every request failure (timeout, connection error, or any non-2xx HTTP
+# status) is retried up to MAX_RETRIES -- there used to be a
+# RETRYABLE_STATUS_CODES set here gating which statuses got their response
+# body captured in the error message, but the retry itself was never
+# actually conditional on it (the broad `except (... HTTPError)` below
+# always retried regardless of status code). Removed as dead weight once
+# the body-capture fix (see fetch_page()'s "if not response.ok" below)
+# made the distinction moot entirely.
 # data.gov.in's edge stalls requests carrying the default python-requests
 # User-Agent: the identical query returns in ~1s with any explicit UA and
 # times out after 45s without one (reproduced repeatedly). Sending a real
@@ -156,15 +160,14 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
             )
             if not response.ok:
                 # Capture the actual response body here, for EVERY non-2xx
-                # status -- not just the ones in RETRYABLE_STATUS_CODES.
-                # response.raise_for_status() alone (the old code path for
-                # non-retryable codes like 400) only gives a generic
-                # "400 Client Error: Bad Request for url: ..." with no body,
-                # which hides the one thing that actually explains *why*
-                # the API rejected the request (bad/expired key, a changed
-                # filter param, a deprecated resource ID, etc). Retry
-                # behavior is unchanged -- this only widens what gets
-                # reported in the raised error's message.
+                # status. response.raise_for_status() alone (the old code
+                # path) only gives a generic "400 Client Error: Bad Request
+                # for url: ..." with no body, which hides the one thing
+                # that actually explains *why* the API rejected the
+                # request (bad/expired key, a changed filter param, a
+                # deprecated resource ID, etc). Retry behavior is
+                # unchanged -- this only widens what gets reported in the
+                # raised error's message.
                 raise requests.HTTPError(
                     f"HTTP {response.status_code}: {response.text[:200]}",
                     response=response,

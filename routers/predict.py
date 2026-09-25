@@ -234,6 +234,58 @@ def _per_pair_accuracy(meta: dict | None, crop: str, mandi: str) -> dict:
     }
 
 
+def _directional_accuracy_summary(meta: dict | None) -> dict:
+    """Tier 2 #6 (roadmap): precision/recall for rising/falling/stable
+    predictions, from meta.json's directional_accuracy (written by
+    train_forecast_model.py's backtest_directional_accuracy() on every
+    retrain). Same honest-fallback style as _forecast_validation_summary
+    and _per_pair_accuracy above -- always a dict with an explanation,
+    never a silent omission.
+    """
+    if not meta:
+        return {
+            "available": False,
+            "note": "No trained global model artifact is loaded for this "
+                    "response (ETS fallback in use) — no directional "
+                    "accuracy numbers apply here.",
+        }
+
+    directional = meta.get("directional_accuracy")
+    if directional is None:
+        return {
+            "available": False,
+            "note": "Trained model artifact loaded, but it predates "
+                    "directional accuracy tracking (older artifact format).",
+        }
+
+    overall = directional.get("overall_direction_accuracy")
+    per_class = directional.get("per_class", {})
+    stable_recall = per_class.get("stable", {}).get("recall")
+
+    note = (
+        f"Across {directional.get('n_test_rows')} held-out days, correctly "
+        f"called the rising/falling/stable direction {overall:.1%} of the "
+        f"time overall."
+    )
+    if stable_recall is not None:
+        note += (
+            f" Note: mandi prices are 'stable' day-to-day far more often "
+            f"than they rise or fall, so a model that just guessed "
+            f"'stable' every time would already score well on overall "
+            f"accuracy alone -- the per-class breakdown below (precision/"
+            f"recall for rising and falling specifically) is what actually "
+            f"shows whether it's catching real moves, not just riding the "
+            f"class imbalance."
+        )
+
+    return {
+        "available": True,
+        "overall_accuracy": overall,
+        "per_class": per_class,
+        "note": note,
+    }
+
+
 def build_fallback_advisory(forecast_data: dict, language_code: str) -> str:
     """Plain, non-LLM advisory built directly from trusted forecast data.
     Used only when the Gemini call times out or fails, so the farmer still
@@ -768,6 +820,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
             "note": FORECAST_CONFIDENCE_NOTE["en"],
             "validated_on": _forecast_validation_summary(lgbm_meta),
             "per_pair": _per_pair_accuracy(lgbm_meta, crop, mandi),
+            "directional_accuracy": _directional_accuracy_summary(lgbm_meta),
         },
         "anomaly_flag": {
             "latest_price_is_anomaly": latest_is_anomaly,
