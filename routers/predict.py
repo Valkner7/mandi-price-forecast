@@ -180,6 +180,60 @@ def _forecast_validation_summary(meta: dict | None) -> str:
     )
 
 
+def _per_pair_accuracy(meta: dict | None, crop: str, mandi: str) -> dict:
+    """Looks up this specific crop-mandi pair's real backtest accuracy
+    (Tier 2 #5) from meta.json's per_pair_accuracy, written by
+    train_forecast_model.py's backtest_vs_naive() on every retrain.
+
+    Always returns a dict with an "available" flag and a human-readable
+    "note" explaining the result either way, rather than a bare number or
+    silent omission -- a missing/np pair is a real, honest outcome (e.g.
+    a newer crop-mandi combination with too little test history yet), not
+    an error, and the farmer-facing confidence block should say so plainly
+    instead of just leaving the field out with no explanation.
+    """
+    if not meta:
+        return {
+            "available": False,
+            "note": "No trained global model artifact is loaded for this "
+                    "response (ETS fallback in use) — no per-pair backtest "
+                    "numbers apply here.",
+        }
+
+    per_pair = meta.get("per_pair_accuracy")
+    if per_pair is None:
+        return {
+            "available": False,
+            "note": "Trained model artifact loaded, but it predates "
+                    "per-pair accuracy tracking (older artifact format).",
+        }
+
+    stats = per_pair.get(f"{crop}::{mandi}")
+    if stats is None:
+        return {
+            "available": False,
+            "note": f"No held-out backtest data for {crop} in {mandi} "
+                    f"specifically yet (too little test history, or this "
+                    f"pair is new since the model's last retrain) — the "
+                    f"aggregate figure above still applies.",
+        }
+
+    return {
+        "available": True,
+        "model_mae": stats["model_mae"],
+        "naive_mae": stats["naive_mae"],
+        "beat_naive_persistence": stats["beat_naive"],
+        "n_test_rows": stats["n_test_rows"],
+        "note": (
+            f"On {stats['n_test_rows']} held-out days for {crop} in {mandi}: "
+            f"average error of {stats['model_mae']} vs. {stats['naive_mae']} "
+            f"for just assuming no price change — the model "
+            + ("beat" if stats["beat_naive"] else "did not beat")
+            + " that simple baseline for this specific pair."
+        ),
+    }
+
+
 def build_fallback_advisory(forecast_data: dict, language_code: str) -> str:
     """Plain, non-LLM advisory built directly from trusted forecast data.
     Used only when the Gemini call times out or fails, so the farmer still
@@ -713,6 +767,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
         "confidence": {
             "note": FORECAST_CONFIDENCE_NOTE["en"],
             "validated_on": _forecast_validation_summary(lgbm_meta),
+            "per_pair": _per_pair_accuracy(lgbm_meta, crop, mandi),
         },
         "anomaly_flag": {
             "latest_price_is_anomaly": latest_is_anomaly,

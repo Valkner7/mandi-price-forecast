@@ -135,6 +135,7 @@ def backtest_vs_naive(test: pd.DataFrame, model) -> dict:
 
     per_group_wins = 0
     per_group_total = 0
+    per_pair: dict[str, dict] = {}
     test = test.copy()
     test["_pred_price"] = pred_price
     for (crop, mandi), group in test.groupby(["crop", "mandi"], observed=True):
@@ -142,9 +143,20 @@ def backtest_vs_naive(test: pd.DataFrame, model) -> dict:
             continue  # too little test data for this pair to be meaningful
         g_model_mae = _mae(group["target_next_price"], group["_pred_price"])
         g_naive_mae = _mae(group["target_next_price"], group["price"])
+        beat_naive = g_model_mae < g_naive_mae
         per_group_total += 1
-        if g_model_mae < g_naive_mae:
+        if beat_naive:
             per_group_wins += 1
+        # "::" as the separator: crop/mandi names can contain spaces,
+        # commas, and parentheses (e.g. "Rampuraphul(Nabha Mandi)") but
+        # "::" isn't observed in any real crop or mandi name in this
+        # dataset, so this key round-trips safely through JSON and back.
+        per_pair[f"{crop}::{mandi}"] = {
+            "model_mae": round(float(g_model_mae), 3),
+            "naive_mae": round(float(g_naive_mae), 3),
+            "beat_naive": bool(beat_naive),
+            "n_test_rows": int(len(group)),
+        }
 
     win_rate = per_group_wins / per_group_total if per_group_total else 0.0
 
@@ -156,6 +168,7 @@ def backtest_vs_naive(test: pd.DataFrame, model) -> dict:
         "crop_mandi_combinations_tested": per_group_total,
         "crop_mandi_wins_vs_naive": per_group_wins,
         "crop_mandi_win_rate_vs_naive": round(win_rate, 4),
+        "per_pair": per_pair,
     }
 
 
@@ -347,6 +360,11 @@ def main() -> int:
         "naive_backtest_rmse": backtest["naive_rmse"],
         "crop_mandi_combinations_tested": backtest["crop_mandi_combinations_tested"],
         "crop_mandi_win_rate_vs_naive": backtest["crop_mandi_win_rate_vs_naive"],
+        # Per-crop/per-mandi accuracy (Tier 2 #5) -- keyed "Crop::Mandi",
+        # see backtest_vs_naive()'s docstring for why "::" and not "|" or
+        # "-". Looked up at request time in routers/predict.py's
+        # _forecast_validation_summary() / the /predict confidence block.
+        "per_pair_accuracy": backtest["per_pair"],
         "backtest_days": BACKTEST_DAYS,
         "val_days": VAL_DAYS,
         # Consumed by _previous_total_rows() on the NEXT run, to power the
