@@ -31,7 +31,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from twilio.rest import Client as TwilioRestClient
 
 import db
@@ -275,7 +275,10 @@ def check_all_alerts() -> dict:
 
 @router.get("/check-alerts")
 @router.post("/check-alerts")
-def check_alerts_endpoint(secret: str = Query(None, description="Must match ALERTS_CRON_SECRET if that env var is set")):
+def check_alerts_endpoint(
+    secret: str = Query(None, description="Must match ALERTS_CRON_SECRET if that env var is set. Prefer the X-Cron-Secret header: query strings end up in access logs."),
+    x_cron_secret: str = Header(None),
+):
     """Point an external free scheduler (cron-job.org, UptimeRobot, a
     scheduled GitHub Action, etc.) at this endpoint every 5-10 minutes.
     This is the reliable path on Render's free tier: the request itself
@@ -283,7 +286,8 @@ def check_alerts_endpoint(secret: str = Query(None, description="Must match ALER
     demo responsive. Protect it with ALERTS_CRON_SECRET once deployed —
     it sends real outbound messages and shouldn't be publicly triggerable.
     """
-    if ALERTS_CRON_SECRET and not hmac.compare_digest(secret or "", ALERTS_CRON_SECRET):
+    supplied = x_cron_secret or secret or ""
+    if ALERTS_CRON_SECRET and not hmac.compare_digest(supplied, ALERTS_CRON_SECRET):
         raise HTTPException(status_code=403, detail="Missing or incorrect secret.")
     result = check_all_alerts()
     return {"status": "ok", **result}
@@ -298,6 +302,12 @@ def _maybe_start_internal_alert_scheduler():
     NOTE: not decorated with @app.on_event here (APIRouter has none) —
     app.py calls app.on_event("startup")(this function) directly after
     including this router."""
+    if not ALERTS_CRON_SECRET:
+        observability.log_event(
+            "startup_warning", level="warning", component="alerts",
+            problem="ALERTS_CRON_SECRET is not set",
+            effect="/check-alerts is open to anyone and can send real WhatsApp messages",
+        )
     if not ENABLE_INTERNAL_ALERT_SCHEDULER:
         return
 

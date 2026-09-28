@@ -14,10 +14,11 @@ text only.
 import platform
 import time
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from importlib import metadata
 
 import numpy as np
+import pandas as pd
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
@@ -120,6 +121,16 @@ def build_status() -> dict:
         latest = df["date"].max()
         days_stale = (datetime.now().date() - latest.date()).days
         data = {"latest_date": latest.date().isoformat(), "days_stale": days_stale, "rows": int(len(df))}
+        # Informational only (never marks the service degraded): the price
+        # source is a latest-day snapshot with no history endpoint, so a day
+        # the daily job misses can never be backfilled. Without this the gaps
+        # were invisible; forecasts forward-fill across them (see load_series).
+        window_start = latest.normalize() - timedelta(days=29)
+        reported = {d.normalize() for d in df["date"].unique() if d >= window_start}
+        expected = set(pd.date_range(window_start, latest.normalize()))
+        missing = sorted(expected - reported)
+        data["missing_days_last_30"] = len(missing)
+        data["missing_dates_last_30"] = [d.date().isoformat() for d in missing]
         if days_stale > MAX_DATA_AGE_DAYS:
             reasons.append("data_stale")
     except Exception as exc:

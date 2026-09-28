@@ -24,7 +24,8 @@ jobs:
           ALERTS_CRON_SECRET: ${{ secrets.ALERTS_CRON_SECRET }}
         run: |
           STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" --max-time 60 \
-            "https://mandi-price-forecast-1.onrender.com/check-alerts?secret=${ALERTS_CRON_SECRET}" || echo "000")
+            -H "X-Cron-Secret: ${ALERTS_CRON_SECRET}" \
+            "https://mandi-price-forecast-1.onrender.com/check-alerts" || echo "000")
           echo "check-alerts responded with HTTP $STATUS"
           cat /tmp/response.json 2>/dev/null || true
           if [ "$STATUS" != "200" ]; then
