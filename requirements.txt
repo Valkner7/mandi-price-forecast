@@ -20,6 +20,13 @@ rapidfuzz
 twilio
 python-multipart
 lightgbm
+# REQUIRED at runtime even though no app code imports it: models/lgbm_price_model.joblib
+# is an LGBMRegressor (LightGBM's sklearn-API class), and its predict() calls into
+# scikit-learn. Without this the model loads fine but every predict() throws, and
+# /predict silently falls back to ETS. f365637 removed it as "unused" and caused
+# exactly that -- do not remove it again unless the model is re-saved as a native
+# lgb.Booster.
+scikit-learn
 joblib
 slowapi==0.1.10
 libsql

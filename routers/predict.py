@@ -894,6 +894,13 @@ def _build_prediction(crop: str, mandi: str) -> dict:
     recent_anomalies = [a for a in all_anomalies if pd.Timestamp(a["date"]) >= recent_cutoff]
     latest_is_anomaly = bool(all_anomalies and all_anomalies[-1]["date"] == last_date.date().isoformat())
 
+    # The backtest / per-pair / directional numbers describe the LightGBM
+    # model only. When ETS produced this forecast (no artifact, too little
+    # history, or a LightGBM predict error) quoting them would attach
+    # LightGBM's track record to a different model's forecast, so pass None
+    # and let each helper return its own honest "not available" text.
+    accuracy_meta = lgbm_meta if model_name == "LightGBM_global" else None
+
     result = {
         "crop": crop,
         "mandi": mandi,
@@ -909,9 +916,9 @@ def _build_prediction(crop: str, mandi: str) -> dict:
         "unit": "INR per quintal",
         "confidence": {
             "note": FORECAST_CONFIDENCE_NOTE["en"],
-            "validated_on": _forecast_validation_summary(lgbm_meta),
-            "per_pair": _per_pair_accuracy(lgbm_meta, crop, mandi),
-            "directional_accuracy": _directional_accuracy_summary(lgbm_meta),
+            "validated_on": _forecast_validation_summary(accuracy_meta),
+            "per_pair": _per_pair_accuracy(accuracy_meta, crop, mandi),
+            "directional_accuracy": _directional_accuracy_summary(accuracy_meta),
         },
         "explanation": explanation,
         "anomaly_flag": {
