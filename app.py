@@ -1,10 +1,12 @@
 import os
-import concurrent.futures
 from dotenv import load_dotenv
 
 load_dotenv()
+import threading
 import time
 from pathlib import Path
+
+_IMPORT_STARTED = time.monotonic()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -235,47 +237,47 @@ from routers.status import router as status_router, run_model_selftest_startup  
 app.include_router(status_router)
 app.on_event("startup")(run_model_selftest_startup)
 
-_TRENDS_WARMUP_TIMEOUT_SECONDS = 45
+
+def _run_in_background(name: str, fn) -> None:
+    """Start fn on a daemon thread and return immediately, so a slow or
+    hung step can never keep the app from finishing startup (uvicorn only
+    opens the port once every startup hook has returned).
+
+    History: Render deploys hung on 2026-09-17 (Turso init), 2026-09-21 and
+    2026-09-28 (both ~19 minutes, "Timed Out", fixed by a plain retry). The
+    earlier fix waited for each step with future.result(timeout=...), which
+    is itself bounded, so it is not established that these two steps caused
+    the 09-21 and 09-28 hangs; the deploy log showed no timeout or error
+    line. A hang during the build, at import time or on Render's side would
+    look the same from outside. Nothing here waits, so these two steps can
+    no longer be the cause.
+
+    The begin/end breadcrumbs make a future hang identifiable: the last
+    "startup_step" line in the deploy log names the step that never ended.
+    """
+    def _target():
+        started = time.monotonic()
+        observability.log_event("startup_step", step=name, phase="begin")
+        try:
+            fn()
+        except Exception as exc:
+            observability.record_error(f"{name}_failed", exc, phase="startup")
+        finally:
+            observability.log_event(
+                "startup_step", step=name, phase="end",
+                seconds=round(time.monotonic() - started, 1),
+            )
+
+    threading.Thread(target=_target, name=f"startup-{name}", daemon=True).start()
 
 
 def _warm_trends_cache_startup() -> None:
-    """Bounded, non-fatal wrapper around _warm_trends_cache(), registered
-    as the actual startup hook below instead of _warm_trends_cache itself.
-
-    On 2026-09-21, this hook (unbounded, synchronous) caused a Render
-    deploy to hang and eventually time out ("Timed Out" after 19m05s) --
-    _warm_trends_cache() falls back to per-pair ETS fitting for any
-    crop-mandi pair the trained LightGBM model doesn't cover, and each
-    fallback fit is three separate full numerical optimizations
-    (fit_ets() in routers/predict.py) with nothing to bound how long that
-    can take. A retry with no code changes succeeded, which pointed at
-    startup-timing flakiness rather than a real code regression -- but
-    that same unbounded shape is exactly what caused the earlier Turso
-    incident (see _init_subscriptions_db_startup below), so it gets the
-    same treatment here: run the real work in a background thread with a
-    hard timeout, and never let a slow or hung warmup take the whole
-    app's startup down with it. /trends will just compute on-demand,
-    uncached, on its first real request if the warmup didn't finish in
-    time -- slower for that one request, not a startup failure."""
-    executor = concurrent.futures.ThreadPoolExecutor(
-        max_workers=1, thread_name_prefix="trends-warmup"
-    )
-    future = executor.submit(_warm_trends_cache)
-    try:
-        future.result(timeout=_TRENDS_WARMUP_TIMEOUT_SECONDS)
-    except concurrent.futures.TimeoutError:
-        observability.log_event(
-            "startup_warning", level="warning", component="trends_warmup",
-            problem="timeout", timeout_seconds=_TRENDS_WARMUP_TIMEOUT_SECONDS,
-            effect="/trends computes on demand until a real request fills the cache",
-        )
-    except Exception as exc:
-        observability.record_error("trends_warmup_failed", exc, phase="startup")
-    finally:
-        # wait=False: same reasoning as db.py's init_db() -- never block
-        # here regardless of outcome, so a hung warmup thread is abandoned
-        # rather than defeating the timeout by waiting for it anyway.
-        executor.shutdown(wait=False)
+    """Pre-fills the /trends cache in the background (see
+    _run_in_background). Until it finishes, /trends computes on demand on
+    its first real request -- slower for that one request, never a startup
+    failure. _warm_trends_cache itself already catches and records its own
+    exceptions."""
+    _run_in_background("trends_warmup", _warm_trends_cache)
 
 
 # APIRouter has no .on_event of its own, so this startup hook (pre-warms
@@ -295,37 +297,41 @@ app.include_router(alerts_router)
 
 
 def _init_subscriptions_db_startup() -> None:
-    """Non-fatal wrapper around db.init_db(), registered as the actual
-    startup hook below instead of db.init_db itself.
-
-    On 2026-09-17, wiring db.init_db() directly into startup caused a
-    Turso connection problem to hang the ENTIRE app's startup (predictions,
-    dashboard, voice -- all of it), not just alerts, until Render's own
-    ~15 minute deploy timeout killed it. That's disproportionate: nothing
-    except the alerts feature actually depends on the subscriptions
-    database. So failures here are now caught and logged, not raised --
-    the rest of the app starts normally either way. If Turso really is
-    unreachable, alerts-related endpoints will fail individually when
-    someone actually tries to use them (a normal 5xx on that one request),
-    which is the right amount of blast radius for a storage problem in one
-    feature. db.py's own init_db() still enforces a hard timeout on the
-    connection attempt itself (see db.py) -- this wrapper is what stops a
-    failure, fast or slow, from taking the whole process down with it."""
-    try:
-        db.init_db()
-    except Exception as exc:
-        observability.record_error("subscriptions_db_init_failed", exc, effect="alerts degraded")
+    """Runs db.init_db() (creates the subscriptions table in Turso if it is
+    missing) in the background, so a Turso problem, fast or slow, can never
+    hold up the whole app's startup (predictions, dashboard, voice).
+    Failures are recorded by _run_in_background, not raised. Only the alerts
+    feature depends on this table: in the first seconds after boot, an
+    alerts request could fail on its own before the table check finishes,
+    which is a normal one-request 5xx, not a startup failure. See
+    db.init_db() for its own connection timeout."""
+    _run_in_background("subscriptions_db_init", db.init_db)
 
 
 # Creates the subscriptions table in Turso if it doesn't exist yet (see
-# db.py). Registered before the scheduler startup hook below, so the table
-# is guaranteed to exist before anything might try to check alerts against
-# it, whether that's the optional in-process scheduler or the very first
-# /check-alerts request -- unless it fails, in which case see the wrapper
-# function's docstring just above for why that's now a warning, not a
-# crash.
+# db.py), in the background (see _run_in_background). The table is therefore
+# NOT guaranteed to exist by the time the optional in-process alert scheduler
+# below (local rehearsal only) or the very first /check-alerts request runs;
+# either can fail once in the first seconds after boot, and the scheduler
+# just logs the error and tries again on its next cycle.
 app.on_event("startup")(_init_subscriptions_db_startup)
 # APIRouter has no .on_event of its own, so this startup hook (moved out of
 # app.py along with the rest of the alerts code) is registered directly on
 # the app instance here instead of via a decorator in routers/alerts.py.
 app.on_event("startup")(_maybe_start_internal_alert_scheduler)
+
+
+def _log_startup_complete() -> None:
+    """Registered LAST, so every hook above has returned by the time this
+    runs. In a deploy log, "startup_complete" present means the app got past
+    startup (a hang after that point is Render's, not ours); absent means it
+    stalled before this line: check the last "startup_step" or
+    "model_selftest" line, and if there is none, the hang was at build or
+    import time."""
+    observability.log_event(
+        "startup_complete",
+        seconds_since_import=round(time.monotonic() - _IMPORT_STARTED, 1),
+    )
+
+
+app.on_event("startup")(_log_startup_complete)
