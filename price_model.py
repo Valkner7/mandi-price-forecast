@@ -498,6 +498,149 @@ def forecast_recursive(
     return forecasts
 
 
+# --- Explainability (Tier 3 of the "What to Build Next" roadmap) -------------
+# Human-readable buckets for the model's raw features. A farmer can't act on
+# "roll_std_14 contributed +0.003" but can read "recent price swings".
+# Keys are stable identifiers (frontend/Gemini prompt use the labels).
+EXPLANATION_BUCKET_LABELS = {
+    "level": "Recent price levels",
+    "momentum": "Recent price momentum",
+    "volatility": "Recent price swings",
+    "arrivals": "Market arrivals (supply)",
+    "calendar": "Season and calendar",
+    "identity": "This crop and mandi",
+    "other": "Other factors",
+}
+
+# Below this absolute rupee contribution a bucket is called "neutral" rather
+# than up/down (avoids labeling a 0.2-paisa nudge as a "driver").
+EXPLANATION_NEUTRAL_RUPEES = 0.01
+
+
+def bucket_for_feature(name: str) -> str:
+    """Map one raw model feature name to an explanation bucket key. Unknown
+    names return "other" instead of raising so a newly added feature can
+    never break /predict in production; test_explanations.py asserts NO
+    current feature lands in "other", so the mapping can't silently rot."""
+    if name in ("crop", "mandi"):
+        return "identity"
+    if name.startswith("arrival_"):
+        return "arrivals"
+    if name in ("day_of_week", "day_of_month", "month", "days_since_start"):
+        return "calendar"
+    if name.startswith("roll_std_") or name == "cv_7":
+        return "volatility"
+    if name in ("momentum_7_30", "zscore_7", "days_since_price_change", "is_observed_today"):
+        return "momentum"
+    if (
+        name.startswith("lag_")
+        or name.startswith("roll_mean_")
+        or name.startswith("roll_min_")
+        or name.startswith("roll_max_")
+    ):
+        return "level"
+    return "other"
+
+
+def explain_serving_row(
+    model,
+    meta: dict,
+    price_series: pd.Series,
+    crop: str,
+    mandi: str,
+    arrival_series: pd.Series | None = None,
+    is_observed_today: bool = True,
+    top_n: int = 3,
+) -> dict:
+    """Exact Tree SHAP explanation of the model's DAY+1 prediction only.
+
+    Scope is deliberately day+1: the 7-day forecast is recursive (each later
+    step feeds on the model's own synthetic prices), so per-feature
+    attribution for day 7 would explain a chain of guesses, not real data.
+
+    Uses LightGBM's native pred_contrib=True (exact TreeSHAP; no `shap`
+    package needed). The model's target is a PERCENTAGE price change, so raw
+    contributions are fractions (e.g. 0.008). They are converted to rupees
+    here as contribution x today's price — never shown as raw fractions.
+
+    Builds the feature row with the SAME _build_serving_row call, in the
+    SAME way, as forecast_recursive()'s first step, so the explained row is
+    the row the forecast actually used.
+
+    Never raises for a bad explanation: returns {"available": False, ...}
+    if the additivity check fails or anything goes wrong.
+    """
+    try:
+        crop = crop.strip()
+        mandi = mandi.strip()
+        row = _build_serving_row(
+            price_history=np.array(list(price_series.values)),
+            dates=pd.DatetimeIndex(list(price_series.index)),
+            crop=crop,
+            mandi=mandi,
+            crop_categories=meta["crops_seen"],
+            mandi_categories=meta["mandis_seen"],
+            series_start_date=pd.Timestamp(meta["series_start_date"]),
+            arrival_history=(np.array(list(arrival_series.values)) if arrival_series is not None else None),
+            is_observed_today=is_observed_today,
+        )
+        contribs = np.asarray(model.predict(row, pred_contrib=True))[0]
+        feature_names = list(row.columns)
+        if len(contribs) != len(feature_names) + 1:
+            return {"available": False, "reason": "unexpected contribution shape"}
+
+        predicted_pct = float(model.predict(row)[0])
+        base_pct = float(contribs[-1])
+        # Additivity guard: baseline + all contributions must equal the
+        # model's real prediction. If not (e.g. a future non-identity
+        # objective), refuse to show a misleading breakdown.
+        if abs(float(contribs.sum()) - predicted_pct) > 1e-6:
+            return {"available": False, "reason": "explanation did not reconcile with prediction"}
+
+        today_price = float(price_series.iloc[-1])
+        bucket_pct: dict[str, float] = {}
+        for name, value in zip(feature_names, contribs[:-1]):
+            key = bucket_for_feature(name)
+            bucket_pct[key] = bucket_pct.get(key, 0.0) + float(value)
+
+        buckets = []
+        for key, pct in bucket_pct.items():
+            rupees = pct * today_price
+            if abs(rupees) < EXPLANATION_NEUTRAL_RUPEES:
+                direction = "neutral"
+            else:
+                direction = "up" if rupees > 0 else "down"
+            buckets.append({
+                "key": key,
+                "label": EXPLANATION_BUCKET_LABELS[key],
+                "contribution_rupees": round(rupees, 2) + 0.0,  # + 0.0 turns -0.0 into 0.0
+                "direction": direction,
+            })
+        buckets.sort(key=lambda b: abs(b["contribution_rupees"]), reverse=True)
+        top_drivers = [b for b in buckets if b["direction"] != "neutral"][:top_n]
+
+        return {
+            "available": True,
+            "method": "shap",
+            "scope": "next_day",
+            "explains": "tomorrow's predicted price change (day 1 of the 7-day forecast only)",
+            "today_price": round(today_price, 2),
+            "baseline_change_rupees": round(base_pct * today_price, 2),
+            "predicted_change_rupees": round(predicted_pct * today_price, 2),
+            "predicted_change_pct": round(predicted_pct * 100, 3),
+            "buckets": buckets,
+            "top_drivers": top_drivers,
+            "note": (
+                "These are statistical patterns in past prices the model leaned on, "
+                "not real-world causes (weather, festivals, demand or news are not "
+                "inputs). Baseline + the listed contributions add up to the predicted "
+                "change for tomorrow."
+            ),
+        }
+    except Exception as error:  # explanation must never break /predict
+        return {"available": False, "reason": f"explanation failed: {type(error).__name__}"}
+
+
 def forecast_recursive_batch(
     model,
     meta: dict,

@@ -377,7 +377,20 @@ Strict rules:
 6. If the question is unrelated to the supplied crop and mandi, politely say that you can only answer about this forecast.
 7. If a "Data recency note" is provided below, briefly mention that the price data isn't from today — do not imply the price is current if it isn't.
 8. A "Confidence note" is provided below — briefly and simply reflect that this is a directional estimate rather than a precise, guaranteed forecast. Don't use technical terms like "baseline" or "held-out" — just convey the honest limitation in plain language.
+9. If "Model drivers" are provided below, you may mention AT MOST the single biggest one, in plain non-technical words, framed as a pattern in recent prices (for example "recent price momentum is pulling it down slightly"). Never present a driver as a real-world cause, and never add causes (weather, festivals, demand, news, policy) that are not listed. Drivers explain only tomorrow's small predicted move, not the whole forecast. If none are provided, do not mention drivers at all.
 """
+
+    # Tier 3: grounded "top drivers" from the explanation (LightGBM SHAP or
+    # ETS level/trend). Only included when a real explanation exists.
+    _expl = forecast_data.get("explanation") or {}
+    _drivers = _expl.get("top_drivers") if _expl.get("available") else None
+    if _drivers:
+        drivers_line = "; ".join(
+            f"{d['label']} ({d['direction']} by about ₹{abs(d['contribution_rupees']):.2f} per quintal)"
+            for d in _drivers
+        )
+    else:
+        drivers_line = ""
 
     forecast_summary = f"""
 Crop: {forecast_data["crop"]}
@@ -389,6 +402,7 @@ Forecast for the next {forecast_data["forecast_horizon_days"]} days:
 {forecast_data["forecast"]}
 {"Data recency note: " + forecast_data["data_note"] if forecast_data.get("data_note") else ""}
 Confidence note: {forecast_data.get("confidence", {}).get("note", FORECAST_CONFIDENCE_NOTE["en"])}
+{"Model drivers for tomorrow's predicted price move (statistical patterns in past prices, not real-world causes), biggest first: " + drivers_line if drivers_line else ""}
 """
 
     def call_gemini():
@@ -670,6 +684,70 @@ def fit_ets(series: pd.Series):
     return best_model, best_name
 
 
+def _explain_ets_fallback(model, model_name: str, series: pd.Series) -> dict:
+    """Tier 3: honest explanation for the ETS fallback path. ETS has no
+    SHAP-style feature attributions — it just extrapolates a smoothed price
+    level and (for two of the three variants) a trend — so this reports
+    exactly that instead of pretending the LightGBM breakdown applies.
+
+    Exact decomposition of day+1's change vs. the last real price y_T:
+        forecast_1 = level_T + phi * trend_T
+        change     = (level_T - y_T) + phi * trend_T
+    where phi is the damping factor (1.0 when undamped, absent for
+    ETS_level). If the two parts don't reconcile with model.forecast(1),
+    returns available=False rather than showing numbers that don't add up.
+    Same response schema as the LightGBM explanation so one frontend
+    panel can render both."""
+    try:
+        latest = float(series.iloc[-1])
+        level_t = float(model.level.iloc[-1])
+        if model_name == "ETS_level":
+            trend_part = 0.0
+        else:
+            trend_t = float(model.trend.iloc[-1])
+            phi = model.params.get("damping_trend", float("nan"))
+            phi = float(phi) if (model_name == "ETS_add_damped" and np.isfinite(phi)) else 1.0
+            trend_part = phi * trend_t
+        level_part = level_t - latest
+
+        predicted_change = float(model.forecast(1).iloc[0]) - latest
+        if abs((level_part + trend_part) - predicted_change) > 0.01:
+            return {"available": False, "reason": "ETS explanation did not reconcile with forecast"}
+
+        def _dir(rupees: float) -> str:
+            if abs(rupees) < pm.EXPLANATION_NEUTRAL_RUPEES:
+                return "neutral"
+            return "up" if rupees > 0 else "down"
+
+        buckets = [
+            {"key": "ets_level", "label": "Smoothed recent price level",
+             "contribution_rupees": round(level_part, 2) + 0.0, "direction": _dir(level_part)},
+            {"key": "ets_trend", "label": "Recent price trend",
+             "contribution_rupees": round(trend_part, 2) + 0.0, "direction": _dir(trend_part)},
+        ]
+        buckets.sort(key=lambda b: abs(b["contribution_rupees"]), reverse=True)
+        return {
+            "available": True,
+            "method": "ets",
+            "scope": "next_day",
+            "explains": "tomorrow's predicted price change (day 1 of the 7-day forecast only)",
+            "today_price": round(latest, 2),
+            "baseline_change_rupees": 0.0,
+            "predicted_change_rupees": round(predicted_change, 2) + 0.0,
+            "predicted_change_pct": round(predicted_change / latest * 100, 3) if latest else None,
+            "buckets": buckets,
+            "top_drivers": [b for b in buckets if b["direction"] != "neutral"],
+            "note": (
+                "The simpler fallback model is in use, so this shows only how much of "
+                "tomorrow's predicted change comes from smoothing the recent price "
+                "level versus extending the recent trend. It is not a per-factor "
+                "breakdown."
+            ),
+        }
+    except Exception as error:  # explanation must never break /predict
+        return {"available": False, "reason": f"ETS explanation failed: {type(error).__name__}"}
+
+
 # --- Price-spike / anomaly detection (Tier 2 #5) ---------------------------
 # Ties directly to the project's own problem statement about middlemen who
 # "may not act in the farmer's interest": an unusually large day-over-day
@@ -747,6 +825,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
     lgbm_model, lgbm_meta = _load_forecast_model()
     forecast_values = None
     model_name = None
+    arrival_series = None
 
     if lgbm_model is not None:
         try:
@@ -771,6 +850,18 @@ def _build_prediction(crop: str, mandi: str) -> dict:
                if lgbm_model is None
                else "(the global model couldn't produce a prediction for this crop/mandi).")
         )
+
+    # Tier 3: per-prediction "why" for tomorrow's move (day 1 only — see
+    # price_model.explain_serving_row's docstring). Never raises; returns
+    # {"available": False, ...} instead, so /predict can't break on it.
+    if model_name == "LightGBM_global":
+        explanation = pm.explain_serving_row(
+            lgbm_model, lgbm_meta, series, crop, mandi,
+            arrival_series=arrival_series,
+            is_observed_today=series.attrs.get("is_observed_today", True),
+        )
+    else:
+        explanation = _explain_ets_fallback(model, model_name, series)
 
     latest_price = float(series.iloc[-1])
     delta = float(forecast_values[-1] - latest_price)
@@ -822,6 +913,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
             "per_pair": _per_pair_accuracy(lgbm_meta, crop, mandi),
             "directional_accuracy": _directional_accuracy_summary(lgbm_meta),
         },
+        "explanation": explanation,
         "anomaly_flag": {
             "latest_price_is_anomaly": latest_is_anomaly,
             "anomalies_last_30_days": len(recent_anomalies),

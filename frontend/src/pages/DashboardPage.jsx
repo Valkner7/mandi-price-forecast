@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import StatusBanner from '../components/StatusBanner';
 import PageHeader from '../components/PageHeader';
 import Hero from '../components/Hero';
+import ExplanationPanel from '../components/ExplanationPanel';
 import PriceChart from '../components/PriceChart';
 import MoversPanel from '../components/MoversPanel';
 import AlertsPanel from '../components/AlertsPanel';
@@ -227,6 +228,8 @@ export default function DashboardPage() {
             <div className="empty-state">{chartError}</div>
           )}
         </div>
+
+        {predict && <ExplanationPanel explanation={predict.explanation} />}
 
         <div className="two-col">
           <div className="panel">
