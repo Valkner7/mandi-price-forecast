@@ -335,3 +335,25 @@ def _log_startup_complete() -> None:
 
 
 app.on_event("startup")(_log_startup_complete)
+
+
+# ---------------------------------------------------------------------------
+# TEMPORARY diagnostic: shows which client-IP headers reach the app on Render,
+# so the rate limiter can key on the right one. Returns 404 unless the env
+# var ENABLE_IP_DEBUG=1. Remove once the limiter key is settled.
+# ---------------------------------------------------------------------------
+from fastapi import Request as _DebugRequest
+
+
+@app.get("/debug-client-ip", include_in_schema=False)
+def debug_client_ip(request: _DebugRequest):
+    if os.getenv("ENABLE_IP_DEBUG", "").lower() not in ("1", "true", "yes"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    h = request.headers
+    return {
+        "direct_client_host": request.client.host if request.client else None,
+        "x_forwarded_for": h.get("x-forwarded-for"),
+        "true_client_ip": h.get("true-client-ip"),
+        "cf_connecting_ip": h.get("cf-connecting-ip"),
+        "x_real_ip": h.get("x-real-ip"),
+    }
