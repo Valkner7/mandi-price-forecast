@@ -18,7 +18,7 @@ services:
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.14.3
       # Text/voice advisory generation (README section 2)
       - key: GEMINI_API_KEY
         sync: false

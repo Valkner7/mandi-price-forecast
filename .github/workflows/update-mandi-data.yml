@@ -36,14 +36,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install dependencies
         # numpy is listed explicitly even though pandas currently pulls it
         # in transitively — train_forecast_model.py and price_model.py both
         # import it directly, so it shouldn't depend on pandas' dependency
         # graph staying the same.
-        run: pip install pandas numpy requests lightgbm joblib scikit-learn
+        run: pip install -c constraints.txt pandas numpy requests lightgbm joblib scikit-learn
 
       - name: Fetch latest Punjab mandi prices
         env:

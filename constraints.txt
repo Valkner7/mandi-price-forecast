@@ -1,0 +1,11 @@
+# Exact versions the live Render service runs (read from /status on 2026-09-28,
+# Python 3.14.3). Used by requirements.txt (Render) and by the daily retrain
+# workflow, so the model is trained and served with the same libraries.
+# numpy 2.5.x needs Python >= 3.12, so CI must not use 3.11.
+# To upgrade: change a version here, run the tests, and check /status after deploy.
+lightgbm==4.7.0
+scikit-learn==1.9.1
+numpy==2.5.3
+pandas==3.0.6
+statsmodels==0.15.0
+fastapi==0.141.1
