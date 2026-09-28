@@ -52,3 +52,13 @@ jobs:
           # Optional -- see the note above.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python test_scenarios.py
+
+      # Offline invariant checks, needing no API key or network. `if: always()`
+      # so each reports on its own even when an earlier step failed.
+      - name: Run explanation invariant tests (Tier 3)
+        if: always()
+        run: python test_explanations.py
+
+      - name: Run observability tests (Tier 4)
+        if: always()
+        run: python test_observability.py

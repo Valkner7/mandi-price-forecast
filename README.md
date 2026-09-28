@@ -101,6 +101,7 @@ Retrains the global LightGBM model and backtests it against a naive "no change" 
 | `/voice-test` | GET | Browser demo page (mic + typed text, all 3 languages) |
 | `/sms` | POST | Twilio SMS webhook — texts a crop+mandi (EN/HI/PA), gets a price + advisory back via SMS |
 | `/whatsapp` | POST | Twilio WhatsApp webhook — same as `/sms` but over WhatsApp (works via Twilio's free Sandbox, no DLT registration needed) |
+| `/status?strict=false` | GET | Is the app serving the trained model? Live model self-test, which model served recent forecasts, data freshness, usage-guard counts. HTTP 200 always; with `strict=true`, HTTP 503 when degraded (see "Monitoring") |
 | `/check-alerts?secret=...` | GET/POST | Checks all active price alerts and sends any that triggered — called on a schedule by `.github/workflows/check-alerts.yml`, not meant to be hit by a person directly |
 
 Example: `http://127.0.0.1:8000/predict?crop=Potato&mandi=Rayya`
@@ -137,6 +138,18 @@ Storage is a single gitignored `subscriptions.json` file — fine for a demo, wo
 1. Get a Twilio account. For WhatsApp, use Twilio's free **WhatsApp Sandbox** (no DLT registration needed, works in minutes) — SMS to Indian numbers requires DLT registration, a real regulatory hurdle.
 2. In the Twilio console, set the number's "A message comes in" webhook to `POST https://<your-public-host>/whatsapp` (or `/sms`) — use `ngrok http 8000` for a public URL while testing locally.
 3. Message it something like `Potato Rayya` — works in English, Hindi, or Punjabi.
+
+## Monitoring (`/status` and the logs)
+
+Added after the LightGBM model was found not serving in production on 2026-09-28: scikit-learn had been removed from `requirements.txt` on 2026-09-14 (`f365637`), so every prediction fell back to ETS, and the only trace was one free-text log line.
+
+**`GET /status`** returns `"status": "ok"` or `"degraded"` plus a list of `reasons`: `model_not_loaded`, `model_selftest_failed` (the model loads but cannot predict, checked live on every call), `mostly_ets_fallback` (under half of the last 10+ forecasts came from LightGBM), `data_stale` (price CSV older than 7 days), `subscriptions_db_init_failed` (Turso was unreachable at startup, so alerts are down until a restart), `gemini_daily_limit_reached`, `gtts_daily_limit_reached`. It also reports package versions (a missing `scikit-learn` shows as `null`), which model served each forecast, and the last error. Counters are in memory: they reset on every restart or deploy, and each instance has its own.
+
+**To get alerted:** point a free uptime monitor (UptimeRobot, cron-job.org) at `https://<your-app>/status?strict=true`. It returns HTTP 503 whenever something is degraded, so the monitor's normal "site is down" alert fires. Plain `/status` always returns 200 and is for humans. Note that regular pings keep a free-tier Render instance awake, which changes its sleep behavior; check Render's current free-tier limits first.
+
+**Logs** are one JSON object per line on stdout: `{"ts", "level", "event", ...}`. In Render's log search, filter for `"level": "error"` to see failures, or for `model_fallback` / `lightgbm_predict_error` to see the model not serving. Every request is logged as a `request` event with method, path (no query string), status and duration. Set `LOG_LEVEL=warning` to hide the per-request lines. WhatsApp numbers are logged masked (last 4 digits only).
+
+`test_observability.py` (run in CI) checks all of the above, including that a model which loads but cannot predict is flagged.
 
 ## Automated data updates
 `.github/workflows/update-mandi-data.yml` runs `fetch_daily_mandi_data.py` daily (18:00 UTC, after Agmarknet typically posts the day's prices) to pull fresh data and refresh `clean_mandi_prices.csv`, then retrains the global forecasting model on the updated data (`train_forecast_model.py`) before committing — if training or its self-check fails, the workflow stops before committing, so a bad model artifact never gets deployed. Can also be triggered manually from the Actions tab before a demo. `update_mandi_prices.py` is separate and manual — run it yourself after downloading a raw export by hand (see above).

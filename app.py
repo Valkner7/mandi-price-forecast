@@ -15,6 +15,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 import db
+import observability
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DASHBOARD_DIR = BASE_DIR / "static" / "dashboard"
@@ -135,9 +136,20 @@ async def log_request_timing(request, call_next):
     """Step 19: log latency for every real request, not just the manual
     scenario script — useful to point at live during a demo Q&A."""
     start = time.perf_counter()
-    response = await call_next(request)
-    duration_ms = (time.perf_counter() - start) * 1000
-    print(f"[{request.method}] {request.url.path} -> {response.status_code} ({duration_ms:.0f}ms)")
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        observability.log_event(
+            "request_failed", level="error", method=request.method,
+            path=request.url.path, error=observability.short(exc),
+            duration_ms=round((time.perf_counter() - start) * 1000),
+        )
+        raise
+    observability.log_event(
+        "request", level="error" if response.status_code >= 500 else "info",
+        method=request.method, path=request.url.path, status=response.status_code,
+        duration_ms=round((time.perf_counter() - start) * 1000),
+    )
     return response
 
 
@@ -216,6 +228,13 @@ from routers.predict import (  # noqa: E402
 )
 app.include_router(predict_router)
 
+# Tier 4: GET /status plus a startup self-test of the trained model. Imported
+# and registered here, BEFORE the trends warm-up hook below, so a model that
+# can't predict is logged first thing at startup, not after the slower work.
+from routers.status import router as status_router, run_model_selftest_startup  # noqa: E402
+app.include_router(status_router)
+app.on_event("startup")(run_model_selftest_startup)
+
 _TRENDS_WARMUP_TIMEOUT_SECONDS = 45
 
 
@@ -245,17 +264,13 @@ def _warm_trends_cache_startup() -> None:
     try:
         future.result(timeout=_TRENDS_WARMUP_TIMEOUT_SECONDS)
     except concurrent.futures.TimeoutError:
-        print(
-            f"[STARTUP] WARNING: /trends cache warmup did not finish within "
-            f"{_TRENDS_WARMUP_TIMEOUT_SECONDS}s -- continuing startup "
-            f"without it; /trends will compute on-demand instead of served "
-            f"from cache until it's naturally populated by a real request."
+        observability.log_event(
+            "startup_warning", level="warning", component="trends_warmup",
+            problem="timeout", timeout_seconds=_TRENDS_WARMUP_TIMEOUT_SECONDS,
+            effect="/trends computes on demand until a real request fills the cache",
         )
     except Exception as exc:
-        print(
-            f"[STARTUP] WARNING: /trends cache warmup failed -- continuing "
-            f"startup without it: {exc}"
-        )
+        observability.record_error("trends_warmup_failed", exc, phase="startup")
     finally:
         # wait=False: same reasoning as db.py's init_db() -- never block
         # here regardless of outcome, so a hung warmup thread is abandoned
@@ -299,10 +314,7 @@ def _init_subscriptions_db_startup() -> None:
     try:
         db.init_db()
     except Exception as exc:
-        print(
-            f"[STARTUP] WARNING: subscriptions database (Turso) init failed "
-            f"-- alerts feature will be degraded until this is fixed: {exc}"
-        )
+        observability.record_error("subscriptions_db_init_failed", exc, effect="alerts degraded")
 
 
 # Creates the subscriptions table in Turso if it doesn't exist yet (see

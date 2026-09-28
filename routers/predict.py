@@ -44,6 +44,7 @@ from google import genai
 from gtts import gTTS
 
 import price_model as pm
+import observability
 import usage_guard
 from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 from voice_extraction import extract_crop_and_mandi
@@ -356,7 +357,7 @@ def generate_advisory(
     # already over budget skips straight to the existing plain-template
     # fallback instead of attempting (and paying for) the call at all.
     if not usage_guard.gemini_call_allowed():
-        print(f"GEMINI DAILY LIMIT REACHED ({usage_guard.GEMINI_DAILY_LIMIT} calls) — using fallback advisory instead of calling Gemini.")
+        observability.log_event("gemini_daily_limit_reached", level="warning", limit=usage_guard.GEMINI_DAILY_LIMIT, fallback="advisory")
         return build_fallback_advisory(forecast_data, language_code), True
 
     language = LANGUAGES[language_code]
@@ -442,11 +443,11 @@ Confidence note: {forecast_data.get("confidence", {}).get("note", FORECAST_CONFI
         return response.text.strip(), False
     except concurrent.futures.TimeoutError:
         executor.shutdown(wait=False)
-        print(f"GEMINI TIMEOUT: no response within {effective_timeout}s")
+        observability.log_event("gemini_timeout", level="warning", call="advisory", timeout_seconds=effective_timeout)
         return build_fallback_advisory(forecast_data, language_code), True
     except Exception as error:
         executor.shutdown(wait=False)
-        print("GEMINI ERROR:", error)
+        observability.record_error("gemini_error", error, call="advisory")
         return build_fallback_advisory(forecast_data, language_code), True
 # In-memory cache for the dataset CSV, keyed off the file's mtime. Every
 # /predict call used to re-read and re-parse the full CSV from disk (12.7k+
@@ -489,7 +490,7 @@ def _load_forecast_model():
         try:
             model, meta = pm.load_artifact(FORECAST_MODEL_PATH, FORECAST_MODEL_META_PATH)
         except Exception as error:
-            print("FORECAST MODEL LOAD ERROR:", error)
+            observability.record_error("model_load_error", error)
             return None, None
         _forecast_model_cache["model"] = model
         _forecast_model_cache["meta"] = meta
@@ -837,19 +838,26 @@ def _build_prediction(crop: str, mandi: str) -> dict:
             )
             model_name = "LightGBM_global"
         except Exception as error:
-            print("LIGHTGBM PREDICT ERROR, falling back to ETS:", error)
+            observability.record_error("lightgbm_predict_error", error, crop=crop, mandi=mandi)
             forecast_values = None
 
     if forecast_values is None:
         model, model_name = fit_ets(series)
         forecast = model.forecast(horizon)
         forecast_values = [float(x) for x in forecast.values]
+        observability.record_prediction(
+            model_name,
+            fallback_reason="no_model_loaded" if lgbm_model is None else "predict_error",
+        )
         model_note = (
             "Using the per-series ETS fallback model for this forecast "
             + ("(no trained global model artifact found)."
                if lgbm_model is None
                else "(the global model couldn't produce a prediction for this crop/mandi).")
         )
+
+    if model_name == "LightGBM_global":
+        observability.record_prediction(model_name)
 
     # Tier 3: per-prediction "why" for tomorrow's move (day 1 only — see
     # price_model.explain_serving_row's docstring). Never raises; returns
@@ -1072,7 +1080,7 @@ def _warm_trends_cache():
     try:
         trends(crops=",".join(_RELIABLE_TREND_CROPS))
     except Exception as exc:
-        print(f"[TRENDS] cache warm-up failed: {exc}")
+        observability.record_error("trends_warmup_failed", exc)
 
 
 @router.get("/trends")
@@ -1130,7 +1138,7 @@ def trends(
                 is_observed_map=is_observed_map,
             )
         except Exception as error:
-            print("LIGHTGBM BATCH PREDICT ERROR, falling back to per-pair ETS:", error)
+            observability.record_error("lightgbm_batch_predict_error", error)
             batch_forecasts = {}
 
     results_by_crop = {}
@@ -1352,7 +1360,7 @@ def generate_compare_advisory(
     # usage_guard.py for the reasoning. Both Gemini call sites share the
     # same daily counter, since they draw from the same billed quota.
     if not usage_guard.gemini_call_allowed():
-        print(f"GEMINI DAILY LIMIT REACHED ({usage_guard.GEMINI_DAILY_LIMIT} calls) — using fallback summary instead of calling Gemini.")
+        observability.log_event("gemini_daily_limit_reached", level="warning", limit=usage_guard.GEMINI_DAILY_LIMIT, fallback="comparison_summary")
         return comparison_data["summary"], True
 
     language = LANGUAGES[language_code]
@@ -1412,11 +1420,11 @@ Price spread: ₹{comparison_data["price_spread"]} ({comparison_data["price_spre
         return response.text.strip(), False
     except concurrent.futures.TimeoutError:
         executor.shutdown(wait=False)
-        print(f"GEMINI TIMEOUT: no response within {ADVISORY_TIMEOUT_SECONDS}s")
+        observability.log_event("gemini_timeout", level="warning", call="comparison", timeout_seconds=ADVISORY_TIMEOUT_SECONDS)
         return comparison_data["summary"], True
     except Exception as error:
         executor.shutdown(wait=False)
-        print("GEMINI ERROR:", error)
+        observability.record_error("gemini_error", error, call="comparison")
         return comparison_data["summary"], True
 
 
@@ -1603,7 +1611,7 @@ def voice_advisory(
     # below already does (a clear error), rather than silently returning
     # text where the caller expects an audio stream.
     if not usage_guard.gtts_call_allowed():
-        print(f"GTTS DAILY LIMIT REACHED ({usage_guard.GTTS_DAILY_LIMIT} calls) — refusing this voice request.")
+        observability.log_event("gtts_daily_limit_reached", level="warning", limit=usage_guard.GTTS_DAILY_LIMIT)
         raise HTTPException(
             status_code=503,
             detail="Voice responses have hit today's usage limit. Try again tomorrow, or use the text-based /advisory endpoint instead.",
@@ -1627,7 +1635,7 @@ def voice_advisory(
             # Not enough budget left for a meaningful retry — stop rather
             # than spend what little remains on a near-certain repeat
             # failure and blow the 10s ceiling anyway.
-            print("TTS RETRY SKIPPED: insufficient remaining budget")
+            observability.log_event("tts_retry_skipped", level="warning", reason="insufficient_budget")
             break
         tts_timeout = max(1.5, remaining)
         try:
@@ -1643,7 +1651,7 @@ def voice_advisory(
             break
         except Exception as exc:
             last_tts_error = exc
-            print(f"TTS ATTEMPT {attempt}/{TTS_MAX_ATTEMPTS} FAILED: {exc}")
+            observability.record_error("tts_attempt_failed", exc, attempt=attempt, max_attempts=TTS_MAX_ATTEMPTS)
             if attempt < TTS_MAX_ATTEMPTS:
                 remaining_after = VOICE_ADVISORY_BUDGET_SECONDS - (time.monotonic() - budget_start)
                 # Short, budget-aware pause — never sleeps away time that a

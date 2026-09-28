@@ -35,6 +35,7 @@ from fastapi import APIRouter, HTTPException, Query
 from twilio.rest import Client as TwilioRestClient
 
 import db
+import observability
 from app import (
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
@@ -144,14 +145,14 @@ def send_whatsapp_message(to: str, body: str) -> bool:
     but obviously outbound sends need real credentials to actually notify
     anyone."""
     if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_WHATSAPP_FROM):
-        print(f"[ALERTS] Twilio outbound credentials not set; would have sent to {to}: {body}")
+        observability.log_event("alert_send_skipped", level="warning", reason="twilio_credentials_not_set", to=observability.mask_phone(to), body_chars=len(body))
         return False
     try:
         client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         client.messages.create(from_=TWILIO_WHATSAPP_FROM, to=to, body=body[:1000])
         return True
     except Exception as exc:
-        print(f"[ALERTS] Failed to send WhatsApp message to {to}: {exc}")
+        observability.record_error("alert_send_failed", exc, to=observability.mask_phone(to))
         return False
 
 
@@ -249,7 +250,7 @@ def check_all_alerts() -> dict:
         try:
             forecast_data = _build_prediction(crop=crop, mandi=mandi)
         except HTTPException as exc:
-            print(f"[ALERTS] Skipping {crop}/{mandi}: {exc.detail}")
+            observability.log_event("alert_skipped", level="warning", crop=crop, mandi=mandi, detail=observability.short(exc.detail))
             continue
 
         current_price = forecast_data["latest_price"]
@@ -304,9 +305,9 @@ def _maybe_start_internal_alert_scheduler():
         while True:
             try:
                 result = check_all_alerts()
-                print(f"[ALERTS] internal scheduler check: {result}")
+                observability.log_event("alert_scheduler_check", result=result)
             except Exception as exc:
-                print(f"[ALERTS] internal scheduler error: {exc}")
+                observability.record_error("alert_scheduler_error", exc)
             time.sleep(ALERT_CHECK_INTERVAL_SECONDS)
 
     threading.Thread(target=_loop, daemon=True).start()
