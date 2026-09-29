@@ -4,9 +4,9 @@
 file into a new session so work resumes without re-discovering the codebase, the
 roadmap status, or how the user likes to work.
 
-**Last updated:** 29 September 2026. Supersedes the earlier version of this file,
-which described a state that has since moved on (Tier 1 to Tier 4 of the roadmap
-are now implemented).
+**Last updated:** 29 September 2026 (evening). Supersedes the earlier version of
+this file, which described a state that has since moved on (Tier 1 to Tier 4 of
+the roadmap are now implemented).
 
 **Read Section 0 first. It matters as much as the technical state.**
 
@@ -44,22 +44,28 @@ are now implemented).
   or logs and reporting back. The sandbox clone is disposable; always re-clone
   `https://github.com/Valkner7/mandi-price-forecast.git` and trust GitHub as
   ground truth, not the sandbox's git history.
-- The sandbox also lacks the project's dependencies and runs Python 3.12 while
-  the repo pins Python 3.14 versions, so the test scripts cannot be run there.
-  GitHub Actions is the place they run.
+- The sandbox runs Python 3.12 while the repo pins Python 3.14 versions, but it
+  can pip install the pinned libraries (numpy 2.5.3 works on 3.12) and run
+  `train_forecast_model.py` on a scratch copy of the repo; that was used to
+  reproduce a full retrain. `test_scenarios.py` has not been tried there, so CI is
+  still where the tests run. The sandbox can read GitHub Actions run pages and
+  status badges over github.com (the unauthenticated API rate limit is usually
+  exhausted), but not run logs, which need a login. It cannot reach data.gov.in.
 
 ## 1. Repo and deployment state
 
 - Repo: `https://github.com/Valkner7/mandi-price-forecast.git`
-- Live app: `https://mandi-price-forecast-1.onrender.com` (it responds; the
-  running commit has not been confirmed).
-- Last commit pushed from this effort: `bb63fe5` (README fix describing Turso
-  storage). It sits on top of `ee6d365` (temporary `/debug-client-ip`).
+- Live app: `https://mandi-price-forecast-1.onrender.com`. Render is running
+  `41791dd` (Live, deployed 29 Sep at 1:22 PM IST). It has no `ENABLE_IP_DEBUG`
+  applied as of the last check.
+- Latest commit on `main`: `fdf26a1` (removed the dead Turso migration script). It
+  sits on `41791dd` (README env vars), `bb63fe5` and `ee6d365` (temporary
+  `/debug-client-ip`).
 - Structure: FastAPI, `app.py` (slim entrypoint) plus `routers/predict.py`,
   `alerts.py`, `voice.py`, `status.py`. Turso storage in `db.py`, cost guard in
   `usage_guard.py`, logging in `observability.py`.
-- **Not confirmed:** whether the latest Render deploy went live, and whether CI
-  is green on the latest push. Ask the user first.
+- CI (checked 29 Sep from the GitHub run pages): `test-scenarios` is green for
+  `41791dd` and `fdf26a1`. `update-mandi-data` is failing, see Section 3 item 3.
 
 ## 2. Roadmap status (checked in code, not in production)
 
@@ -77,27 +83,59 @@ are now implemented).
 | Tier 4 deferred items | Not started, deliberately: model versioning/rollback, drift monitoring, Postgres migration, API auth beyond `slowapi`. |
 
 The migration of old subscriptions is **not needed**: no local `subscriptions.json`
-exists, and anything on Render's disk was wiped by earlier redeploys. Do not run
-`migrate_subscriptions_to_turso.py`. It is dead code and can be deleted.
+exists, and anything on Render's disk was wiped by earlier redeploys.
+`migrate_subscriptions_to_turso.py` and its helper `insert_subscription_full()`
+were deleted in `fdf26a1`.
 
 ## 3. What is left, in order
 
-1. **Confirm the latest Render deploy is Live** (Deploys tab).
+1. **Deploy `fdf26a1`.** Render is running `41791dd` (deployed manually on
+   29 Sep at 1:22 PM IST; the deploy page showed Live). `fdf26a1` (dead-code
+   removal) is pushed and CI-green but not deployed. Use Manual Deploy, Deploy
+   latest commit. Send the WhatsApp alert from item 2 first, so this deploy
+   doubles as the redeploy in that test.
 2. **Real Turso test:** on WhatsApp send `alert me potato rayya 850`, then
    `my alerts`; redeploy; send `my alerts` again. Still listed means Tier 1 #1 is
    proven.
-3. **Check CI** on the Actions tab is green for the latest commit.
-4. **Rate-limiter client IP.** `app.py` uses `Limiter(key_func=get_remote_address)`
-   (the direct connection IP). Behind Render's proxy that may be the proxy's
-   address, meaning all users share one bucket (a hypothesis, not confirmed).
-   `/debug-client-ip` exists to test this but returned "Not Found" when tried, so
-   it was not active. Steps: set `ENABLE_IP_DEBUG=1` in Render's Environment tab,
-   wait for the redeploy to go Live, open the endpoint from two networks (note each
-   network's public IP), and run
-   `curl.exe -s -H "X-Forwarded-For: 1.2.3.4" https://mandi-price-forecast-1.onrender.com/debug-client-ip`
-   to see whether a client-supplied value can be spoofed. Then change the limiter
-   key, remove the endpoint, and delete the env var, all in one change. Render's
-   behaviour here is not reliably documented, so trust the live test.
+3. **`update-mandi-data` workflow is failing.** Runs 58 to 65 (25 to 28 Sep) all
+   failed. The last bot commit was 24 Sep 23:49 UTC, so `clean_mandi_prices.csv`
+   ends at 2026-09-24 and the model has not retrained since. Earlier history is
+   patchy too (runs 41 to 53 failed, 54 to 57 passed), which matches the gaps in
+   the data (5 to 9 Sep, 10 to 23 Sep). Nothing alerted on it; it went unnoticed.
+   Ruled out so far: the Sep 25 commits `0cfd59d` and `984f330` touched
+   `train_forecast_model.py`, and `984f330` also edited the fetch script, but the
+   fetch diff is comment-only plus one unused constant, `pyflakes` finds no
+   undefined names, and a forced retrain in the sandbox with the exact
+   `constraints.txt` versions completes (self-check passed, artifact written).
+   Leading hypothesis, NOT confirmed: the data.gov.in fetch step fails
+   (`fetch_daily_mandi_data.py` exits 1 only when every API call fails), plausibly
+   the shared demo key. Run logs need a GitHub login, so Claude cannot read them.
+   Needed from the user: open the latest failed run's `update-data` job, name the
+   red step and paste its last ~15 log lines, and say whether a `DATA_GOV_API_KEY`
+   repo secret exists (the workflow already uses it; a free key can be registered
+   at data.gov.in). No code change until the failing step is known.
+4. **Rate-limiter client IP (hypothesis revised).** `app.py` uses
+   `Limiter(key_func=get_remote_address)`. Earlier assumption: uvicorn trusts
+   `X-Forwarded-For` only from 127.0.0.1 by default, so on Render every user would
+   share the proxy's IP. New evidence, Render log at 1:24:33 PM:
+   `34.83.207.104:0 - "GET / HTTP/1.1"`. In uvicorn a client port of 0 appears
+   when the address was taken from an `X-Forwarded-For` entry, so the client
+   address is probably already rewritten from the header. The `render.yaml` start
+   command (`uvicorn app:app --host 0.0.0.0 --port $PORT`) has no proxy flags, so
+   something else enables this (a `FORWARDED_ALLOW_IPS` variable or a loopback
+   proxy; unchecked). Still unknown: which entry is used. Leftmost is
+   client-supplied and spoofable (limit bypass); rightmost is already safe.
+   `/debug-client-ip` returned "Not Found" on 29 Sep because the running deploy
+   had no `ENABLE_IP_DEBUG`. Steps: in Render's Environment tab confirm
+   `ENABLE_IP_DEBUG=1` (exact) and look for `FORWARDED_ALLOW_IPS`; deploy; open the
+   endpoint from two networks (the user's home IP was 152.56.69.129) and run
+   `curl.exe -s -H "X-Forwarded-For: 1.2.3.4" https://mandi-price-forecast-1.onrender.com/debug-client-ip`.
+   Compare `x_forwarded_for` with `direct_client_host` (which shows the rewritten
+   value). Rightmost picked: only delete the endpoint and the env var. Leftmost
+   picked: key the limiter on the rightmost entry (or configure trusted proxies),
+   remove the endpoint and delete the env var, all in one change. The uvicorn
+   analysis used version 0.54.0 in the sandbox; Render installs its own (uvicorn
+   is not pinned in `constraints.txt`), so trust the live test.
 5. **Hindi/Punjabi corrections:** when reviewers reply, update
    `_FALLBACK_TREND_WORDS`, `_FALLBACK_TEMPLATES`, `_FALLBACK_DATA_NOTE` and
    `FORECAST_CONFIDENCE_NOTE` in `routers/predict.py`, keeping placeholders such
