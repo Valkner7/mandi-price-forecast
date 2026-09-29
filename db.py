@@ -177,37 +177,6 @@ def insert_subscription(sub: dict) -> None:
     conn.commit()
 
 
-def insert_subscription_full(sub: dict) -> None:
-    """Like insert_subscription(), but also writes notified_at/
-    notified_price/active as given rather than assuming a brand-new
-    active alert. Used only by migrate_subscriptions_to_turso.py to carry
-    over already-fired/cancelled alerts from the old subscriptions.json
-    exactly as they were, instead of resetting their history."""
-    conn = _get_connection()
-    conn.execute(
-        """
-        INSERT INTO subscriptions
-            (id, phone, crop, mandi, target_price, direction,
-             starting_price, created_at, active, notified_at, notified_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            sub["id"],
-            sub["phone"],
-            sub["crop"],
-            sub["mandi"],
-            sub["target_price"],
-            sub.get("direction", "cross"),
-            sub.get("starting_price"),
-            sub["created_at"],
-            1 if sub.get("active", True) else 0,
-            sub.get("notified_at"),
-            sub.get("notified_price"),
-        ),
-    )
-    conn.commit()
-
-
 def deactivate_for_phone(phone: str) -> int:
     """Cancels every active alert for one phone number. Returns how many
     were actually cancelled, same as the old stop_alerts_for()'s count."""
