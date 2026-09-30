@@ -26,6 +26,12 @@ on:
 permissions:
   contents: write
 
+# Two scheduled runs a night plus manual runs must not overlap: a second run
+# starting while the first is mid-push would race on the same files.
+concurrency:
+  group: update-mandi-data
+  cancel-in-progress: false
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
@@ -55,38 +61,51 @@ jobs:
           DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
         run: python fetch_daily_mandi_data.py
 
-      - name: Retrain the forecasting model on the updated data
-        # Runs after the data fetch, before the commit, so a freshly
-        # trained artifact goes into the same commit as the data that
-        # produced it. train_forecast_model.py exits non-zero on a training
-        # or self-check failure (see its docstring / price_model.py), which
-        # fails this step and stops the workflow before the commit step
-        # below runs — a bad artifact never gets committed or deployed.
-        run: python train_forecast_model.py
-
-      - name: Commit and push if data or model changed
+      - name: Commit and push the fetched data
+        # Committed BEFORE retraining on purpose. The source only serves a
+        # current-day snapshot, so a day that is fetched but not committed
+        # is lost for good. If the retrain below fails, this day's rows are
+        # already safe in the repo.
         run: |
           git config user.name "mandi-price-bot"
           git config user.email "actions@github.com"
-          # Only clean_mandi_prices.csv is a tracked change we want to keep;
-          # the timestamped backup files are useful locally for one run but
+          # The timestamped backup files are useful locally for one run but
           # would otherwise pile up in the repo forever.
           rm -f clean_mandi_prices_backup_*.csv
-          git add clean_mandi_prices.csv models/lgbm_price_model.joblib models/lgbm_price_model_meta.json
+          git add clean_mandi_prices.csv
           # quarantined_rows.csv accumulates any rows fetch_daily_mandi_data.py
-          # rejects as implausible (see data_quality.py) — added here too, or
-          # it'd be written during the run and then discarded along with the
-          # rest of the runner's filesystem, silently losing the audit trail.
-          # Guarded with -f since it won't exist at all until the first row
-          # is ever flagged, and `git add` on a missing path would otherwise
-          # fail this step (the workflow runs with bash's -e).
+          # rejects as implausible (see data_quality.py). Guarded with -f since
+          # it won't exist until the first row is ever flagged, and `git add`
+          # on a missing path would fail this step (bash -e).
           if [ -f quarantined_rows.csv ]; then
             git add quarantined_rows.csv
           fi
           if git diff --cached --quiet; then
-            echo "No changes to commit — dataset and model already up to date."
+            echo "No data changes to commit."
           else
-            git commit -m "Auto-update mandi prices + retrain forecast model ($(date -u +%Y-%m-%d))"
+            git commit -m "Auto-update mandi prices ($(date -u +%Y-%m-%d))"
+            git pull --rebase
+            git push
+          fi
+
+      - name: Retrain the forecasting model on the updated data
+        # train_forecast_model.py exits non-zero on a training or self-check
+        # failure (see its docstring / price_model.py), which fails this step
+        # and stops the workflow before the model commit below runs, so a bad
+        # artifact never gets committed or deployed. The data commit above
+        # has already happened by then, which is intended.
+        run: python train_forecast_model.py
+
+      - name: Commit and push the retrained model
+        run: |
+          git config user.name "mandi-price-bot"
+          git config user.email "actions@github.com"
+          git add models/lgbm_price_model.joblib models/lgbm_price_model_meta.json
+          if git diff --cached --quiet; then
+            echo "No model changes to commit."
+          else
+            git commit -m "Retrain forecast model ($(date -u +%Y-%m-%d))"
+            git pull --rebase
             git push
           fi
 
