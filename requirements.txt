@@ -5,9 +5,7 @@ python-dotenv
 pandas
 requests
 numpy
-matplotlib
 statsmodels
-jupyter
 google-genai
 gtts==2.5.4
 # click is intentionally pinned within gtts own declared range (click<8.2).
