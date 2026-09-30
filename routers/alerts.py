@@ -254,13 +254,21 @@ def check_all_alerts() -> dict:
             continue
 
         current_price = forecast_data["latest_price"]
+        # Only mention the data date when it's stale (same rule as /predict's
+        # data_note), so normal alerts stay short but a frozen dataset can't
+        # pass as a current price.
+        as_of = (
+            f"(Latest data: {forecast_data['latest_date']}.) "
+            if forecast_data.get("data_note") and forecast_data.get("latest_date")
+            else ""
+        )
         for sub in group:
             if not _alert_is_triggered(sub, current_price):
                 continue
             message = (
                 f"Price alert: {sub['crop']} at {sub['mandi']} is now "
                 f"₹{current_price}/quintal (your target was ₹{sub['target_price']}). "
-                f"{FORECAST_CONFIDENCE_NOTE['en']}"
+                f"{as_of}{FORECAST_CONFIDENCE_NOTE['en']}"
             )
             if send_whatsapp_message(sub["phone"], message):
                 notified += 1

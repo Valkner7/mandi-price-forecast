@@ -121,6 +121,13 @@ _FALLBACK_TEMPLATES = {
     ),
 }
 
+# A crop-mandi's newest record must be more than this many days old before
+# forecasts/advisories carry a "data is not from today" note. 7 matches when
+# /status turns "degraded" (routers/status.py MAX_DATA_AGE_DAYS). Note that
+# some mandis report sporadically, so a pair can exceed this even when the
+# daily data job is healthy -- raise this if that note appears too often.
+DATA_NOTE_STALE_DAYS = 7
+
 _FALLBACK_DATA_NOTE = {
     "en": " Note: this price data is not from today.",
     "hi": " ध्यान दें: यह मूल्य डेटा आज का नहीं है।",
@@ -938,7 +945,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
             "activity), not a determination of cause. See /anomalies for full history.",
         },
     }
-    if days_stale > 90:
+    if days_stale > DATA_NOTE_STALE_DAYS:
         result["data_note"] = (
             f"Most recent available record is from {result['latest_date']} "
             f"({days_stale} days ago). Forecast is projected forward from that date, "
@@ -1286,7 +1293,7 @@ def compare_mandis(
     # another and present the gap as if it were current. We now surface the
     # date spread explicitly and add a top-level warning whenever mandis
     # being compared aren't reporting from the same date, plus roll up any
-    # per-mandi staleness notes (>90 days old) that /predict already flags.
+    # per-mandi staleness notes (see DATA_NOTE_STALE_DAYS) that /predict already flags.
     dates = [pd.Timestamp(r["latest_date"]) for r in ranked]
     date_spread_days = int((max(dates) - min(dates)).days)
     dates_aligned = date_spread_days == 0
