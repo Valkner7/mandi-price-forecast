@@ -28,6 +28,13 @@ jobs:
             "https://mandi-price-forecast-1.onrender.com/check-alerts" || echo "000")
           echo "check-alerts responded with HTTP $STATUS"
           cat /tmp/response.json 2>/dev/null || true
-          if [ "$STATUS" != "200" ]; then
-            echo "::warning::check-alerts did not get a 200 (got $STATUS) — service may be cold-starting, down, or ALERTS_CRON_SECRET may not match between GitHub and Render."
+          if [ "$STATUS" = "403" ] || [ "$STATUS" = "401" ]; then
+            # A wrong secret is a persistent misconfiguration that silently
+            # disables every price alert, so fail the run (red, and GitHub's
+            # failure notifications apply) instead of a warning that still
+            # showed green. Cold starts, timeouts and 5xx stay warnings below.
+            echo "::error::check-alerts was rejected (HTTP $STATUS): ALERTS_CRON_SECRET in GitHub does not match Render's."
+            exit 1
+          elif [ "$STATUS" != "200" ]; then
+            echo "::warning::check-alerts did not get a 200 (got $STATUS) — service may be cold-starting or down."
           fi
