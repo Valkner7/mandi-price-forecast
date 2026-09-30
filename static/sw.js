@@ -22,43 +22,37 @@ self.addEventListener("fetch", (event) => {
 
     const url = new URL(request.url);
 
-    if (url.pathname === "/voice-test") {
+    if (url.pathname === "/voice-test" || url.pathname === "/predict") {
         event.respondWith(networkFirstThenCache(request));
-        return;
-    }
-
-    if (url.pathname === "/predict") {
-        event.respondWith(staleWhileRevalidate(request));
         return;
     }
 });
 
+// Network first for both the app shell and /predict: forecasts change daily,
+// so showing a cached one before the fresh one (the old stale-while-revalidate
+// behaviour) could show yesterday's numbers on every repeat visit. The cache
+// is only a fallback when the network fails or the server returns an error,
+// and only successful (2xx) responses are ever written to it, so a 502/503
+// during a deploy can't overwrite a good cached copy.
 async function networkFirstThenCache(request) {
     const cache = await caches.open(CACHE_NAME);
     try {
         const response = await fetch(request);
-        cache.put(request, response.clone());
-        return response;
+        if (response.ok) {
+            cache.put(request, response.clone());
+            return response;
+        }
+        const cached = await cache.match(request);
+        return cached || response;
     } catch (err) {
         const cached = await cache.match(request);
         if (cached) return cached;
+        if (new URL(request.url).pathname === "/predict") {
+            return new Response(
+                JSON.stringify({ error: "offline_no_cache" }),
+                { status: 503, headers: { "Content-Type": "application/json" } }
+            );
+        }
         throw err;
     }
-}
-
-async function staleWhileRevalidate(request) {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
-    const networkFetch = fetch(request)
-        .then((response) => {
-            if (response.ok) cache.put(request, response.clone());
-            return response;
-        })
-        .catch(() => null);
-
-    const fresh = cached ? null : await networkFetch;
-    return cached || fresh || new Response(
-        JSON.stringify({ error: "offline_no_cache" }),
-        { status: 503, headers: { "Content-Type": "application/json" } }
-    );
 }
