@@ -270,13 +270,13 @@ def _directional_accuracy_summary(meta: dict | None) -> dict:
     )
     if stable_recall is not None:
         note += (
-            f" Note: mandi prices are 'stable' day-to-day far more often "
-            f"than they rise or fall, so a model that just guessed "
-            f"'stable' every time would already score well on overall "
-            f"accuracy alone -- the per-class breakdown below (precision/"
-            f"recall for rising and falling specifically) is what actually "
-            f"shows whether it's catching real moves, not just riding the "
-            f"class imbalance."
+            " Note: mandi prices are 'stable' day-to-day far more often "
+            "than they rise or fall, so a model that just guessed "
+            "'stable' every time would already score well on overall "
+            "accuracy alone -- the per-class breakdown below (precision/"
+            "recall for rising and falling specifically) is what actually "
+            "shows whether it's catching real moves, not just riding the "
+            "class imbalance."
         )
 
     return {

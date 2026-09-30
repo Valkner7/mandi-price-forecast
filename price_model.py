@@ -5,7 +5,7 @@ Used identically by train_forecast_model.py (offline trainer) and app.py
 (live serving) so the two can't drift apart ("train/serve skew"). If you
 change a feature here, both training and serving pick it up automatically.
 
-Architecture recap (see PROJECT_STATUS.md / handoff notes for the full
+Architecture recap (see the handoff notes for the full
 reasoning): one global LightGBM model, trained offline across every
 crop-mandi combination at once (crop/mandi as categorical features),
 predicting *percentage* price change one day ahead. Serving loads the
@@ -659,7 +659,7 @@ def forecast_recursive_batch(
     where per-call data-conversion overhead dominates actual inference
     time (profiled: ~6s inference + ~4.4s in _data_from_pandas row
     conversion, on top of ~7.6s in full-dataframe series loading done
-    239x — see PROJECT_STATUS.md / repo review for the original profile).
+    239x — see the repo review for the original profile).
 
     This function keeps the same recursive, day-by-day forecast logic
     (each day's forecast still depends on the previous day's, exactly like

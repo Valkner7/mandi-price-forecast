@@ -24,7 +24,7 @@ Why each piece here was superseded, specifically:
      crop/mandi needs its own model trained from scratch with its own
      cold-start minimum, and it doesn't learn from cross-series patterns.
      That's exactly the scalability problem the global LightGBM model was
-     built to solve (see PROJECT_STATUS.md and the forecasting-upgrade
+     built to solve (see HANDOFF_REPORT.md and the forecasting-upgrade
      handoff notes for the full reasoning and the latency/accuracy
      benchmarks that drove the decision). TensorFlow has accordingly been
      dropped from requirements.txt; the `from tensorflow import keras`

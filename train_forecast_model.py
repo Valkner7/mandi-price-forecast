@@ -77,7 +77,7 @@ def _time_based_split(features: pd.DataFrame):
     the model see e.g. day 500 of a series in training and day 499 in
     validation, leaking future information backwards. Mirrors the honesty
     methodology the project's existing ETS evaluation notebook already
-    uses (see PROJECT_STATUS.md)."""
+    uses (see HANDOFF_REPORT.md)."""
     features = features.dropna(subset=["target_pct_change"])
 
     # Drop rows whose target is a forward-filled repeat of today's price

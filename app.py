@@ -221,7 +221,7 @@ def trends_dashboard():
 # routers.predict import ...` below binds those names onto app's own
 # module object) lets those two already-committed router files keep
 # working completely unmodified.
-from routers.predict import (  # noqa: E402
+from routers.predict import (  # noqa: E402, F401  (re-exports; see comment above)
     router as predict_router,
     _build_prediction,
     generate_advisory,
