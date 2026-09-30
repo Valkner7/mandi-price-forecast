@@ -35,6 +35,10 @@ concurrency:
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    # The fetch alone can take ~9 minutes when api.data.gov.in is unreachable
+    # (5 attempts x 90 s timeout plus backoff); this only stops a truly hung
+    # job from running for GitHub's 6-hour default.
+    timeout-minutes: 30
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -50,6 +54,23 @@ jobs:
         # import it directly, so it shouldn't depend on pandas' dependency
         # graph staying the same.
         run: pip install -c constraints.txt pandas numpy requests lightgbm joblib scikit-learn
+
+      - name: Check data.gov.in reachability (diagnostic only)
+        # Never fails the job. It exists so a failed fetch explains itself in
+        # the log: on 30 Sep 2026 the fetch died with "connection refused" /
+        # "connect timeout" from BOTH GitHub's runner and a home PC in India,
+        # and nothing in the log said whether DNS, TCP or the site itself was
+        # at fault. Prints the runner's public IP, the DNS answer, and the
+        # HTTP/connect result for the API host and the main portal.
+        continue-on-error: true
+        run: |
+          echo "Runner public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
+          getent hosts api.data.gov.in || echo "DNS lookup for api.data.gov.in failed"
+          for host in api.data.gov.in data.gov.in; do
+            curl -sS -o /dev/null -I --max-time 20 \
+              -w "$host -> HTTP %{http_code}, connect %{time_connect}s, total %{time_total}s\n" \
+              "https://$host/" || echo "$host is unreachable from this runner"
+          done
 
       - name: Fetch latest Punjab mandi prices
         env:
