@@ -31,6 +31,29 @@ services:
         sync: false
       - key: TWILIO_WHATSAPP_FROM
         sync: false
+      # Persistent storage for WhatsApp alert subscriptions (Turso). Without
+      # these the app still serves, but subscriptions are not persisted.
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      # Optional tuning. Values shown are the code defaults (usage_guard.py,
+      # routers/predict.py, observability.py, app.py) -- change only if needed.
+      - key: GEMINI_DAILY_CALL_LIMIT
+        value: "300"
+      - key: GTTS_DAILY_CALL_LIMIT
+        value: "1000"
+      - key: ADVISORY_TIMEOUT_SECONDS
+        value: "8"
+      - key: VOICE_ADVISORY_BUDGET_SECONDS
+        value: "10"
+      - key: ALERT_CHECK_INTERVAL_SECONDS
+        value: "600"
+      - key: LOG_LEVEL
+        value: info
+      # GOOGLE_API_KEY is also accepted as a fallback for GEMINI_API_KEY (the
+      # code reads GEMINI_API_KEY first). Not listed here so a blueprint
+      # doesn't prompt for two keys; add it in the dashboard if you use it.
       # Protects /check-alerts from being triggered by anyone who finds the URL
       - key: ALERTS_CRON_SECRET
         sync: false
