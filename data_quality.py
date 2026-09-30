@@ -82,4 +82,20 @@ def append_to_quarantine(quarantined: pd.DataFrame, clean_path) -> None:
         return
     path = quarantine_path_for(clean_path)
     write_header = not path.exists()
+    if not write_header:
+        # Skip rows already in the file: the fetch runs twice a night and
+        # re-fetches the same day's snapshot, which used to append the same
+        # rejected rows again (and made a spurious commit each time). Any
+        # problem reading the old file falls back to a plain append.
+        try:
+            cols = list(quarantined.columns)
+            existing = pd.read_csv(path)
+            if list(existing.columns) == cols:
+                seen = set(map(tuple, existing.astype(str).to_numpy()))
+                fresh = [tuple(r) not in seen for r in quarantined.astype(str).to_numpy()]
+                quarantined = quarantined[fresh]
+                if quarantined.empty:
+                    return
+        except Exception:
+            pass
     quarantined.to_csv(path, mode="a", header=write_header, index=False)
