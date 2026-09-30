@@ -263,12 +263,24 @@ def check_all_alerts() -> dict:
                 f"{FORECAST_CONFIDENCE_NOTE['en']}"
             )
             if send_whatsapp_message(sub["phone"], message):
-                db.mark_fired(
-                    sub["id"],
-                    notified_at=datetime.now(timezone.utc).isoformat(),
-                    notified_price=current_price,
-                )
                 notified += 1
+                try:
+                    db.mark_fired(
+                        sub["id"],
+                        notified_at=datetime.now(timezone.utc).isoformat(),
+                        notified_price=current_price,
+                    )
+                except Exception as exc:
+                    # The message already went out. If the DB write fails
+                    # (e.g. a Turso outage) don't abort the whole sweep and
+                    # lose track of the remaining alerts; this one alert may
+                    # be re-sent on the next sweep, which is the lesser harm.
+                    observability.log_event(
+                        "alert_mark_fired_failed",
+                        level="error",
+                        sub_id=sub["id"],
+                        detail=observability.short(exc),
+                    )
 
     return {"checked": len(active), "notified": notified}
 
