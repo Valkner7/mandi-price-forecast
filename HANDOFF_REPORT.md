@@ -20,9 +20,12 @@ roadmap status, or how the user likes to work.
    four stale `PROJECT_STATUS.md` references fixed.
 5. `f932695` quarantine file no longer gets the same rows appended twice.
 6. `12407dc` a `db.mark_fired` failure no longer aborts the alert sweep.
-7. PENDING (this commit batch): data-age note now appears after 7 days instead of 90
+7. `09c8a4e`, `194a8f7`, `bd143ac`: data-age note now appears after 7 days instead of 90
    (`DATA_NOTE_STALE_DAYS`); stale alerts state the data date; service worker is
    network-first for `/predict` and never caches error responses.
+8. PENDING (next commit): `update-mandi-data` gained a 30-minute job timeout and a
+   diagnostic step that logs DNS, runner IP and reachability of data.gov.in;
+   `check-alerts` now FAILS (red) on HTTP 401/403 instead of only warning.
 
 Correction to v3 finding 5: the `app.py:224` imports are deliberate re-exports
 (`routers/alerts.py`, `routers/voice.py` and `test_scenarios.py` import them from
@@ -95,10 +98,10 @@ import. Only the f-string was real cleanup.
 
 | Item | State | How it was learned |
 |---|---|---|
-| Repo | `https://github.com/Valkner7/mandi-price-forecast.git`, branch `main`, HEAD `12407dc` plus the pending batch above | git |
+| Repo | `https://github.com/Valkner7/mandi-price-forecast.git`, branch `main`, HEAD `bd143ac` plus item 8 above once committed (later commits may exist) | git |
 | CI `test-scenarios` | Green on `6c12f45`, `fdf26a1`, `41791dd` (report-only) | GitHub run pages |
 | CI `check-alerts`, `keep-alive` | Green (latest runs) | GitHub run pages |
-| CI `update-mandi-data` | **FAILING.** Runs 58 to 65 (25 to 28 Sep) all failed. Latest run seen: 36505298119 (28 Sep, on `ee6d365`). Run #67 was a re-run on the OLD workflow (`6c12f45`) started 30 Sep; its result was not yet known when this was written | GitHub run pages; logs need a login |
+| CI `update-mandi-data` | **FAILING.** Runs 58 to 65 (25 to 28 Sep) all failed. Latest run seen: 36505298119 (28 Sep, on `ee6d365`). Run #67 (30 Sep, re-run of the OLD workflow) failed IN THE FETCH STEP after 5m49s: connection refused / connect timeout to `api.data.gov.in` (see Section 4 item 1) | GitHub run pages; logs need a login |
 | Render | Responds. The running process started 29 Sep 18:53:22 UTC. `41791dd` was confirmed Live at 1:22 PM IST; whether a later commit is deployed is **unconfirmed** | screenshots, `/status` |
 | `/status` at 18:58 UTC | `ok`; model artifact loaded; self-test ok; Python 3.14.3; packages equal `constraints.txt`; Gemini 0/300 and gTTS 0/1000 calls; no errors | user's `curl.exe` |
 | Data | `clean_mandi_prices.csv`, 53,660 rows, latest date 2026-09-24 | `/status` |
@@ -245,7 +248,22 @@ statistical ones come from the reviewer's run and were NOT re-run here.
 
 Run from `D:\mandi-price-forecast` unless a step says otherwise.
 
-**1. Fix `update-mandi-data` (urgent).** Runs 58 to 65 failed. The last bot commit was
+**1. `update-mandi-data` (urgent). ROOT CAUSE FOUND 30 Sep, NOT YET FIXED.** The
+`Fetch latest Punjab mandi prices` step fails at the network layer: connection refused
+and `connect timeout=90` to `api.data.gov.in` (DNS resolves, to 164.100.61.198), so no
+HTTP response ever comes back and the API key is irrelevant (the Actions secret exists;
+the log shows `api-key=***`). The same failure reproduced from the owner's home Wi-Fi in
+India (`Test-NetConnection` TCP 443 failed, `curl` exit 28). A phone-hotspot test was
+requested but its result was not confirmed. So the API or something in front of it is
+unreachable from at least two networks; whether it is an outage, IP filtering or the
+ISP is unconfirmed. Nothing on our side fixes it. Every day it stays down is a permanent
+data gap (the source is a current-day snapshot). The workflow now logs a reachability
+diagnostic on each run. Options if it persists: another Agmarknet source (verify first;
+it affects the model), or a scheduled fetch from a machine that can reach the API. The
+owner's own data.gov.in key appeared in a screenshot; rotate it. The old text below
+predates this finding.
+
+**(older text)** Runs 58 to 65 failed. The last bot commit was
 24 Sep 23:49 UTC, so the data ends on the 24th and the model has not retrained since.
 Every failed day is a permanent gap, and `/status` goes degraded on 2 Oct. Earlier
 history is patchy too (runs 41 to 53 failed, 54 to 57 passed), which matches the
