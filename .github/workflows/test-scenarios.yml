@@ -62,3 +62,7 @@ jobs:
       - name: Run observability tests (Tier 4)
         if: always()
         run: python test_observability.py
+
+      - name: Run data-age tests
+        if: always()
+        run: python test_data_age.py

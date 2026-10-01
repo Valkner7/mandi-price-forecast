@@ -173,6 +173,7 @@ code {
 }
 
 .status-banner.error { border-color: var(--brick-soft); color: var(--brick); }
+.status-banner.warn { border-color: var(--mustard); background: var(--mustard-tint); color: var(--text); }
 
 .empty-state {
   padding: 28px 0;

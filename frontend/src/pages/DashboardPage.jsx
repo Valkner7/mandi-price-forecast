@@ -20,9 +20,9 @@ export default function DashboardPage() {
   const [mandi, setMandi] = useState(null);
 
   // ---- global status banner ----
-  const [status, setStatusState] = useState({ message: '', isError: false });
-  function setStatus(message, isError) {
-    setStatusState({ message: message || '', isError: !!isError });
+  const [status, setStatusState] = useState({ message: '', isError: false, isWarn: false });
+  function setStatus(message, isError, isWarn) {
+    setStatusState({ message: message || '', isError: !!isError, isWarn: !!isWarn });
   }
 
   // ---- selected crop/mandi: hero + chart ----
@@ -108,13 +108,15 @@ export default function DashboardPage() {
         if (cancelled) return;
         setPredict(p);
         setHistory(h);
-        setStatus(p.data_note || '', false);
+        // Feed-wide age warning first, then this crop-mandi's own note, then the
+        // anomaly heads-up. Joined (not overwritten) so none hides another.
+        const notes = [p.data_age_warning, p.data_note];
         if (p.anomaly_flag?.latest_price_is_anomaly) {
-          setStatus(
-            `Heads up: the latest recorded price at ${p.mandi} was an unusually large day-over-day move — worth a second look before acting on it.`,
-            false
+          notes.push(
+            `Heads up: the latest recorded price at ${p.mandi} was an unusually large day-over-day move — worth a second look before acting on it.`
           );
         }
+        setStatus(notes.filter(Boolean).join(' '), false, !!(p.data_age_warning || p.data_note));
       } catch (err) {
         if (cancelled) return;
         setPredict(null);
@@ -203,7 +205,7 @@ export default function DashboardPage() {
           disabled={selectionLoading}
         />
 
-        <StatusBanner message={status.message} isError={status.isError} />
+        <StatusBanner message={status.message} isError={status.isError} isWarn={status.isWarn} />
 
         {predict && <Hero predict={predict} />}
 

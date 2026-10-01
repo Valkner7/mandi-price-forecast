@@ -128,6 +128,12 @@ _FALLBACK_TEMPLATES = {
 # daily data job is healthy -- raise this if that note appears too often.
 DATA_NOTE_STALE_DAYS = 7
 
+# Feed-level freshness, separate from the per-pair note above. This looks at the
+# newest row in the WHOLE dataset, so one sporadic mandi cannot trigger it: if
+# nothing at all has arrived for this many days the daily job has missed a day
+# (the source only serves a current-day snapshot, so a missed day is lost).
+DATASET_STALE_WARN_DAYS = 2
+
 _FALLBACK_DATA_NOTE = {
     "en": " Note: this price data is not from today.",
     "hi": " ध्यान दें: यह मूल्य डेटा आज का नहीं है।",
@@ -811,6 +817,22 @@ def predict(
     )
 
 
+def _dataset_freshness(today: "pd.Timestamp | None" = None) -> dict:
+    """How old the newest row in the whole dataset is. `today` is injectable
+    for tests; it defaults to the server clock, like the per-pair check."""
+    latest = _load_full_dataframe()["date"].max().normalize()
+    today = (today if today is not None else pd.Timestamp.now()).normalize()
+    age = max(0, (today - latest).days)
+    out = {"dataset_latest_date": latest.date().isoformat(), "data_age_days": age}
+    if age >= DATASET_STALE_WARN_DAYS:
+        out["data_age_warning"] = (
+            f"Price data has not updated since {out['dataset_latest_date']} "
+            f"({age} days ago). Forecasts are projected from that date, so the "
+            f"first forecast days may already have passed."
+        )
+    return out
+
+
 def _build_prediction(crop: str, mandi: str) -> dict:
     """Core prediction logic, returning a plain dict.
 
@@ -951,6 +973,7 @@ def _build_prediction(crop: str, mandi: str) -> dict:
             f"({days_stale} days ago). Forecast is projected forward from that date, "
             f"not from today."
         )
+    result.update(_dataset_freshness())
     if model_note:
         result["model_note"] = model_note
     return result
