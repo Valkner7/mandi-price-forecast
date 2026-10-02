@@ -14,7 +14,7 @@ on:
 
 jobs:
   check-alerts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Hit /check-alerts endpoint
         env:
