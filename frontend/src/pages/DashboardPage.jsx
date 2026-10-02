@@ -110,7 +110,10 @@ export default function DashboardPage() {
         setHistory(h);
         // Feed-wide age warning first, then this crop-mandi's own note, then the
         // anomaly heads-up. Joined (not overwritten) so none hides another.
-        const notes = [p.data_age_warning, p.data_note];
+        // The per-mandi note is dropped when it would only repeat the feed
+        // warning, i.e. this mandi's newest record IS the dataset's newest.
+        const repeatsFeedWarning = Boolean(p.data_age_warning) && p.latest_date === p.dataset_latest_date;
+        const notes = [p.data_age_warning, repeatsFeedWarning ? null : p.data_note];
         if (p.anomaly_flag?.latest_price_is_anomaly) {
           notes.push(
             `Heads up: the latest recorded price at ${p.mandi} was an unusually large day-over-day move — worth a second look before acting on it.`
