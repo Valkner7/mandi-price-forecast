@@ -45,6 +45,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # support to GET routes, so health-check/uptime monitors that send HEAD
 # requests (e.g. Render's own readiness probe) were getting a 405 here
 # even though the service was healthy and GET worked fine.
+# "/nearby" is a client-side React Router page. Without this alias it only
+# worked when reached by clicking the sidebar link; reloading it or opening
+# a shared link hit the server directly and got a 404 JSON error.
+@app.api_route("/nearby", methods=["GET", "HEAD"])
 @app.api_route("/", methods=["GET", "HEAD"])
 async def read_index():
     index_path = BASE_DIR / "static" / "dashboard" / "index.html"

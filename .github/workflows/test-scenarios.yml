@@ -66,3 +66,7 @@ jobs:
       - name: Run data-age tests
         if: always()
         run: python test_data_age.py
+
+      - name: Run page-route tests
+        if: always()
+        run: python test_spa_routes.py
