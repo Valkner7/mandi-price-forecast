@@ -1,4 +1,4 @@
-﻿name: Check price alerts
+name: Check price alerts
 
 # Farmers set price alerts over WhatsApp, but nothing was actually
 # triggering /check-alerts on the deployed Render service — alerts were

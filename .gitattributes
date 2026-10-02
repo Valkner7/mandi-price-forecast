@@ -1,0 +1,12 @@
+# Keep line endings stable across Windows and Linux so rebuilds and patches
+# don't show whole-file changes. Text files are stored with LF in the repo
+# and checked out with LF everywhere.
+* text=auto eol=lf
+
+# Never touch binary files.
+*.joblib binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary

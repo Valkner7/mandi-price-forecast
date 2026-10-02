@@ -1,4 +1,4 @@
-﻿export function inr(n) {
+export function inr(n) {
   if (n > 0 && n < 1) {
     return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   }
