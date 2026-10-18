@@ -98,7 +98,7 @@ import. Only the f-string was real cleanup.
 
 | Item | State | How it was learned |
 |---|---|---|
-| Repo | `https://github.com/Valkner7/mandi-price-forecast.git`, branch `main`, HEAD `bd143ac` plus item 8 above once committed (later commits may exist) | git |
+| Repo | `https://github.com/Valkner7/mandi-price-forecast.git`, branch `main`, see `git log` (item 8 shipped in `accea9e` and `7942715`; later commits: N21-N23 fetch fail-fast and action bumps, N28 question length cap, M10 shared-secret guard) | git |
 | CI `test-scenarios` | Green on `6c12f45`, `fdf26a1`, `41791dd` (report-only) | GitHub run pages |
 | CI `check-alerts`, `keep-alive` | Green (latest runs) | GitHub run pages |
 | CI `update-mandi-data` | **FAILING.** Runs 58 to 65 (25 to 28 Sep) all failed. Latest run seen: 36505298119 (28 Sep, on `ee6d365`). Run #67 (30 Sep, re-run of the OLD workflow) failed IN THE FETCH STEP after 5m49s: connection refused / connect timeout to `api.data.gov.in` (see Section 4 item 1) | GitHub run pages; logs need a login |

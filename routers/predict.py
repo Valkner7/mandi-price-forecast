@@ -1463,7 +1463,7 @@ Price spread: ₹{comparison_data["price_spread"]} ({comparison_data["price_spre
 def compare_advisory(
     crop: str = Query(..., description="Crop name, e.g. Potato"),
     mandis: str = Query(..., description="Comma-separated mandi names, e.g. 'Rayya,Rajpura'"),
-    question: str = Query(..., description="Farmer question in the selected language"),
+    question: str = Query(..., max_length=500, description="Farmer question in the selected language"),
     language: str = Query("en", description="en = English, hi = Hindi, pa = Punjabi"),
 ):
     comparison_data = compare_mandis(crop=crop, mandis=mandis)
@@ -1502,7 +1502,7 @@ def compare_advisory(
 def advisory(
     crop: str = Query(..., description="Example: Potato"),
     mandi: str = Query(..., description="Example: Rayya"),
-    question: str = Query(..., description="Farmer question in the selected language"),
+    question: str = Query(..., max_length=500, description="Farmer question in the selected language"),
     language: str = Query(
         "en",
         description="en = English, hi = Hindi, pa = Punjabi",
@@ -1557,7 +1557,7 @@ def _ascii_safe_header_value(value: str, fallback: str = "unknown") -> str:
 @limiter.limit("10/minute")
 def voice_advisory(
     request: Request,
-    question: str = Query(..., description="Farmer's spoken or typed question"),
+    question: str = Query(..., max_length=500, description="Farmer's spoken or typed question"),
     language: str = Query(
         "en",
         description="en = English, hi = Hindi, pa = Punjabi",

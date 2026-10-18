@@ -55,7 +55,8 @@ WHAT THIS DOES NOT DO
 
 USAGE
     python fetch_daily_mandi_data.py
-    python fetch_daily_mandi_data.py --days-back 3   # backfill a short gap
+    python fetch_daily_mandi_data.py --days-back 3   # NOT a backfill today: the source
+                                                     # ignores date filters (see --help)
 """
 
 import io
@@ -86,7 +87,10 @@ STATE_FILTER = "Punjab"
 PAGE_SIZE = 500          # API returns at most this many records per call
 MAX_PAGES = 200          # safety cap; pages can be far smaller than PAGE_SIZE
                          # when the API caps page size (see fetch_day)
-REQUEST_TIMEOUT_SECONDS = 90  # the shared public demo key can be slow under load
+REQUEST_TIMEOUT_SECONDS = 90  # read timeout: the shared public demo key can be slow under load
+CONNECT_TIMEOUT_SECONDS = 10  # fail fast when the host is unreachable (N22)
+MAX_UNREACHABLE_ATTEMPTS = 2  # connect errors/timeouts mean the host is down; do not
+                              # spend 5 x 90 s retrying it (about 9 min before this change)
 MAX_RETRIES = 5          # retry transient timeouts/connection/rate-limit errors
 RETRY_BACKOFF_SECONDS = 5
 # Every request failure (timeout, connection error, or any non-2xx HTTP
@@ -155,7 +159,7 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
             response = requests.get(
                 params=params,
                 url=API_URL,
-                timeout=REQUEST_TIMEOUT_SECONDS,
+                timeout=(CONNECT_TIMEOUT_SECONDS, REQUEST_TIMEOUT_SECONDS),
                 headers=REQUEST_HEADERS,
             )
             if not response.ok:
@@ -175,6 +179,11 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
             return response.text
         except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as error:
             last_error = error
+            # Connection refused / connect timeout: the host is not
+            # answering at all, so more retries just burn minutes (N22).
+            unreachable = isinstance(error, (requests.ConnectionError, requests.ConnectTimeout))
+            if unreachable and attempt >= MAX_UNREACHABLE_ATTEMPTS:
+                break
             if attempt < MAX_RETRIES:
                 wait = RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
                 print(f"  Attempt {attempt}/{MAX_RETRIES} failed ({error}); "

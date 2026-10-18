@@ -36,15 +36,15 @@ jobs:
   update-data:
     runs-on: ubuntu-24.04
     # The fetch alone can take ~9 minutes when api.data.gov.in is unreachable
-    # (5 attempts x 90 s timeout plus backoff); this only stops a truly hung
+    # (now capped by the 10 s connect timeout and the reachability skip); this only stops a truly hung
     # job from running for GitHub's 6-hour default.
     timeout-minutes: 30
     steps:
       - name: Check out repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
@@ -55,17 +55,23 @@ jobs:
         # graph staying the same.
         run: pip install -c constraints.txt pandas numpy requests lightgbm joblib scikit-learn
 
-      - name: Check data.gov.in reachability (diagnostic only)
-        # Never fails the job. It exists so a failed fetch explains itself in
+      - name: Check data.gov.in reachability
+        # Never fails by itself; it sets reachable=true/false so the fetch can be
+        # skipped when the host is down (N22). It also makes a failed fetch explain itself in
         # the log: on 30 Sep 2026 the fetch died with "connection refused" /
         # "connect timeout" from BOTH GitHub's runner and a home PC in India,
         # and nothing in the log said whether DNS, TCP or the site itself was
         # at fault. Prints the runner's public IP, the DNS answer, and the
         # HTTP/connect result for the API host and the main portal.
+        id: reach
         continue-on-error: true
         run: |
+          echo "reachable=false" >> "$GITHUB_OUTPUT"
           echo "Runner public IP: $(curl -s --max-time 10 https://api.ipify.org || echo unknown)"
           getent hosts api.data.gov.in || echo "DNS lookup for api.data.gov.in failed"
+          if curl -sS -o /dev/null -I --max-time 20 https://api.data.gov.in/; then
+            echo "reachable=true" >> "$GITHUB_OUTPUT"
+          fi
           for host in api.data.gov.in data.gov.in; do
             curl -sS -o /dev/null -I --max-time 20 \
               -w "$host -> HTTP %{http_code}, connect %{time_connect}s, total %{time_total}s\n" \
@@ -73,6 +79,7 @@ jobs:
           done
 
       - name: Fetch latest Punjab mandi prices
+        if: steps.reach.outputs.reachable == 'true'
         env:
           # Set this in your repo's Settings -> Secrets and variables ->
           # Actions -> New repository secret. Falls back to the shared
@@ -81,6 +88,14 @@ jobs:
           # own free key.
           DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
         run: python fetch_daily_mandi_data.py
+
+      - name: Fail the run when the API is unreachable
+        # Skipping the fetch must still turn the run red, otherwise a dead
+        # feed goes unnoticed again (four days of failures, 25-28 Sep).
+        if: steps.reach.outputs.reachable != 'true'
+        run: |
+          echo "::error::api.data.gov.in unreachable from this runner; fetch skipped. Today's prices are NOT captured (the source serves the current day only)."
+          exit 1
 
       - name: Commit and push the fetched data
         # Committed BEFORE retraining on purpose. The source only serves a
