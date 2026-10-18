@@ -37,7 +37,7 @@ from io import BytesIO
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from google import genai
@@ -46,6 +46,7 @@ from gtts import gTTS
 import price_model as pm
 import observability
 import usage_guard
+from api_secret import require_api_secret
 from mandi_coords import PUNJAB_MANDI_COORDINATES, calculate_haversine_distance
 from voice_extraction import extract_crop_and_mandi
 
@@ -1458,7 +1459,7 @@ Price spread: ₹{comparison_data["price_spread"]} ({comparison_data["price_spre
         return comparison_data["summary"], True
 
 
-@router.get("/compare-advisory")
+@router.get("/compare-advisory", dependencies=[Depends(require_api_secret)])
 def compare_advisory(
     crop: str = Query(..., description="Crop name, e.g. Potato"),
     mandis: str = Query(..., description="Comma-separated mandi names, e.g. 'Rayya,Rajpura'"),
@@ -1497,7 +1498,7 @@ def compare_advisory(
     }
 
 
-@router.get("/advisory")
+@router.get("/advisory", dependencies=[Depends(require_api_secret)])
 def advisory(
     crop: str = Query(..., description="Example: Potato"),
     mandi: str = Query(..., description="Example: Rayya"),
@@ -1552,7 +1553,7 @@ def _ascii_safe_header_value(value: str, fallback: str = "unknown") -> str:
     return cleaned or fallback
 
 
-@router.post("/voice-advisory")
+@router.post("/voice-advisory", dependencies=[Depends(require_api_secret)])
 @limiter.limit("10/minute")
 def voice_advisory(
     request: Request,

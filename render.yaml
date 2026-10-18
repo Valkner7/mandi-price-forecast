@@ -57,6 +57,10 @@ services:
       # Protects /check-alerts from being triggered by anyone who finds the URL
       - key: ALERTS_CRON_SECRET
         sync: false
+      # Protects /advisory, /compare-advisory and /voice-advisory (X-Api-Secret header).
+      # Unset = open, as before.
+      - key: API_SHARED_SECRET
+        sync: false
       # Leave unset/false on Render — alert checking is driven by the
       # .github/workflows/check-alerts.yml cron instead, since a free-tier
       # dyno's background thread sleeps with the rest of the process

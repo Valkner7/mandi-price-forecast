@@ -62,6 +62,11 @@ export TURSO_AUTH_TOKEN=...
 # Protects /check-alerts from being triggered by anyone who finds the URL
 export ALERTS_CRON_SECRET=some-long-random-string
 
+# Protects /advisory, /compare-advisory and /voice-advisory (they spend Gemini/TTS quota).
+# Callers send the same value in an X-Api-Secret header. Unset = endpoints stay open.
+# Browser pages that call them directly (templates/voice_test.html) get 403 once it is set.
+export API_SHARED_SECRET=another-long-random-string
+
 # Optional, local rehearsal only — does NOT work reliably once deployed on
 # Render's free tier (see "Price alerts" below for why)
 export ENABLE_INTERNAL_ALERT_SCHEDULER=true

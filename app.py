@@ -324,6 +324,10 @@ app.on_event("startup")(_init_subscriptions_db_startup)
 # the app instance here instead of via a decorator in routers/alerts.py.
 app.on_event("startup")(_maybe_start_internal_alert_scheduler)
 
+# M10: warn in the log if the Gemini/voice endpoints have no shared secret.
+from api_secret import warn_if_unset as _warn_api_secret_unset  # noqa: E402
+app.on_event("startup")(_warn_api_secret_unset)
+
 
 def _log_startup_complete() -> None:
     """Registered LAST, so every hook above has returned by the time this

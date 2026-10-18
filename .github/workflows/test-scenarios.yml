@@ -70,3 +70,7 @@ jobs:
       - name: Run page-route tests
         if: always()
         run: python test_spa_routes.py
+
+      - name: Run shared-secret tests
+        if: always()
+        run: python test_api_secret.py
