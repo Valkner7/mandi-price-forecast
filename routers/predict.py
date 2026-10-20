@@ -60,7 +60,12 @@ router = APIRouter()
 
 # Override with `export GEMINI_MODEL=...` if this model name ever 404s —
 # verify the current valid model name in Google AI Studio before your demo.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# Google retires Flash models every few months (gemini-2.5-flash was shut down
+# on 16 Oct 2026 and gemini-3.7-flash is deprecated), so check
+# https://ai.google.dev/gemini-api/docs/deprecations now and then.
+# Keep render.yaml's GEMINI_MODEL equal to this default (test_gemini_model.py).
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
 
 # If Gemini is slow or overloaded (e.g. 503 UNAVAILABLE under high demand),
 # don't leave the farmer staring at a spinner for 30-60s while the SDK

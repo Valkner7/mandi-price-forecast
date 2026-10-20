@@ -58,7 +58,9 @@ print()
 print("=" * 70)
 print("STEP 3 — Raw Gemini call, NO timeout wrapper, generous 90s limit")
 print("=" * 70)
-model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# Standalone on purpose (no app imports). Keep equal to routers/predict.py's
+# DEFAULT_GEMINI_MODEL; test_gemini_model.py checks that.
+model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 print(f"Using model: {model_name}")
 print("Sending a trivial one-word prompt and timing it for real...")
 
