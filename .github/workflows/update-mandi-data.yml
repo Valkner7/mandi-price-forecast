@@ -130,7 +130,21 @@ jobs:
         # and stops the workflow before the model commit below runs, so a bad
         # artifact never gets committed or deployed. The data commit above
         # has already happened by then, which is intended.
-        run: python train_forecast_model.py
+        #
+        # Exit code 3 is different: training worked, but the new model did not
+        # beat the "price stays the same" baseline, so the trainer refused to
+        # save it and the existing model files are untouched. That is not a
+        # crash, so it only raises a warning here and the run carries on (the
+        # model commit finds nothing to commit and the redeploy still ships
+        # the new data with the old model).
+        run: |
+          rc=0
+          python train_forecast_model.py || rc=$?
+          if [ "$rc" -eq 3 ]; then
+            echo "::warning::The retrained model did not beat the 'price stays the same' baseline, so the existing model was kept. Today's data is committed. Look for gaps in clean_mandi_prices.csv."
+          elif [ "$rc" -ne 0 ]; then
+            exit "$rc"
+          fi
 
       - name: Commit and push the retrained model
         run: |

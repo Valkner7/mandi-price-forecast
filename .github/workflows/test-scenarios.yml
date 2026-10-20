@@ -78,3 +78,7 @@ jobs:
       - name: Run question-length tests
         if: always()
         run: python test_question_limit.py
+
+      - name: Run retraining quality-gate tests
+        if: always()
+        run: python test_training_gate.py

@@ -12,9 +12,14 @@ Produces:
     models/lgbm_price_model.joblib
     models/lgbm_price_model_meta.json
 
-Exit behavior: exits non-zero on training failure or a failed self-check,
-so a CI step that runs this before committing (see the GitHub Actions
-workflow) never lets a bad artifact reach production.
+Exit behavior:
+    0  trained and saved, or skipped on purpose (too few new rows).
+    1  training failed or the train/serve self-check failed.
+    3  the new model did NOT beat the "price stays the same" baseline on the
+       held-out backtest, so it was NOT saved and the existing model files
+       are untouched. Pass --force to save it anyway.
+A CI step that runs this before committing (see the GitHub Actions workflow)
+therefore never lets a bad artifact reach production.
 """
 
 from __future__ import annotations
@@ -52,6 +57,27 @@ VAL_DAYS = 30
 # below every normal day while still catching a genuinely near-empty
 # fetch. Revisit if the data source's reporting pattern changes.
 MIN_NEW_ROWS_TO_RETRAIN = 20
+# Exit code for "trained fine, but the model is not good enough to ship".
+# Distinct from 1 (a crash) so callers -- the GitHub workflow, the AnnaSetu
+# job scripts -- can tell "keep the old model" from "something broke".
+EXIT_MODEL_REJECTED = 3
+
+
+def _model_beats_baseline(backtest: dict) -> bool:
+    """Quality gate: True only when the model's backtest MAE is strictly lower
+    than naive persistence (tomorrow = today). A missing or NaN number counts
+    as NOT beating it, so a broken backtest can never wave a model through.
+
+    Why: on 20 Oct 2026 a retrain on a gappy data window scored MAE 185.7
+    against 180.9 for persistence, was saved anyway, and would have replaced
+    the committed model (142.9 vs 143.1).
+    """
+    model_mae = backtest.get("model_mae")
+    naive_mae = backtest.get("naive_mae")
+    try:
+        return bool(np.isfinite(model_mae) and np.isfinite(naive_mae) and model_mae < naive_mae)
+    except TypeError:
+        return False
 
 
 def _previous_total_rows() -> int | None:
@@ -389,6 +415,28 @@ def main() -> int:
     for k, v in backtest.items():
         if k != "per_pair":  # too long to print per-line; already in meta.json
             print(f"  {k}: {v}")
+
+    if not _model_beats_baseline(backtest):
+        summary = (
+            f"new model MAE {backtest['model_mae']} vs {backtest['naive_mae']} for "
+            f"\"price stays the same\" "
+            f"(beat it in {backtest['crop_mandi_wins_vs_naive']} of "
+            f"{backtest['crop_mandi_combinations_tested']} crop/mandi pairs)"
+        )
+        if "--force" in sys.argv[1:]:
+            print(f"WARNING: {summary}. Saving anyway because --force was given.")
+        elif not (MODEL_PATH.exists() and META_PATH.exists()):
+            # Never leave the service with no model at all.
+            print(f"WARNING: {summary}. Saving anyway: there is no existing "
+                  "model to keep, and serving nothing would be worse.")
+        else:
+            print(
+                f"REJECTED: {summary}. Not saving. The existing model "
+                f"({MODEL_PATH.name}) is unchanged. This usually means the "
+                "recent data has gaps (the backtest window needs consecutive "
+                "days). Fix the data feed, or re-run with --force to override."
+            )
+            return EXIT_MODEL_REJECTED
 
     print("Backtesting directional accuracy (Tier 2 #6) ...")
     directional = backtest_directional_accuracy(test, model)
