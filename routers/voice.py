@@ -29,6 +29,7 @@ from app import (
     _build_prediction,
     generate_advisory,
 )
+from routers.predict import build_fallback_advisory
 from routers.alerts import (
     _ALERT_STOP_PHRASES,
     _ALERT_LIST_PHRASES,
@@ -109,10 +110,9 @@ def build_reply_text(body: str, sender: str | None = None) -> str:
             language_code=language,
         )
     except HTTPException:
-        advisory_text = (
-            f"{crop} at {mandi}: Rs {forecast_data['latest_price']}/quintal, "
-            f"trend {forecast_data['trend']}."
-        )
+        # Translated template with the estimate caveat (same as the Gemini
+        # timeout/error path) instead of a bare English line.
+        advisory_text = build_fallback_advisory(forecast_data, language)
 
     return advisory_text
 

@@ -1524,10 +1524,10 @@ def advisory(
     except HTTPException as exc:
         if exc.status_code != 500:
             raise
-        advisory_text = (
-            f"{crop} at {mandi}: Rs {forecast_data['latest_price']}/quintal, "
-            f"trend {forecast_data['trend']}."
-        )
+        # Use the same translated, caveated template as the Gemini
+        # timeout/error path, so a missing key does not turn a Hindi or
+        # Punjabi request into a bare English line with no estimate caveat.
+        advisory_text = build_fallback_advisory(forecast_data, language)
         used_fallback = True
 
     return {
@@ -1619,10 +1619,10 @@ def voice_advisory(
         # it propagate so the client sees the real error.
         if exc.status_code != 500:
             raise
-        advisory_text = (
-            f"{crop} at {mandi}: Rs {forecast_data['latest_price']}/quintal, "
-            f"trend {forecast_data['trend']}."
-        )
+        # Use the same translated, caveated template as the Gemini
+        # timeout/error path, so a missing key does not turn a Hindi or
+        # Punjabi request into a bare English line with no estimate caveat.
+        advisory_text = build_fallback_advisory(forecast_data, language)
         used_fallback = True
     audio = BytesIO()
 
