@@ -296,18 +296,31 @@ def check_all_alerts() -> dict:
 @router.get("/check-alerts")
 @router.post("/check-alerts")
 def check_alerts_endpoint(
-    secret: str = Query(None, description="Must match ALERTS_CRON_SECRET if that env var is set. Prefer the X-Cron-Secret header: query strings end up in access logs."),
+    secret: str = Query(None, description="Must match ALERTS_CRON_SECRET (required: the endpoint is disabled while it is unset). Prefer the X-Cron-Secret header: query strings end up in access logs."),
     x_cron_secret: str = Header(None),
 ):
     """Point an external free scheduler (cron-job.org, UptimeRobot, a
     scheduled GitHub Action, etc.) at this endpoint every 5-10 minutes.
     This is the reliable path on Render's free tier: the request itself
     wakes a sleeping service, so this both checks alerts AND keeps the
-    demo responsive. Protect it with ALERTS_CRON_SECRET once deployed —
-    it sends real outbound messages and shouldn't be publicly triggerable.
+    demo responsive. Needs ALERTS_CRON_SECRET: while that is unset the
+    endpoint answers 503, because it sends real outbound messages and must
+    never be publicly triggerable.
     """
-    supplied = x_cron_secret or secret or ""
-    if ALERTS_CRON_SECRET and not hmac.compare_digest(supplied, ALERTS_CRON_SECRET):
+    expected = (ALERTS_CRON_SECRET or "").strip()
+    if not expected:
+        # Fail closed: this endpoint sends real outbound messages, so with no
+        # secret configured it is switched off rather than open to anyone.
+        observability.log_event("alerts_secret_rejected", level="warning",
+                                reason="secret_not_configured")
+        raise HTTPException(
+            status_code=503,
+            detail="ALERTS_CRON_SECRET is not set on this service, so /check-alerts is "
+                   "disabled. Set it and send the same value in an X-Cron-Secret header.",
+        )
+    supplied = (x_cron_secret or secret or "").strip()
+    # Compare bytes: hmac.compare_digest raises TypeError (a 500) on non-ASCII str.
+    if not hmac.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8")):
         raise HTTPException(status_code=403, detail="Missing or incorrect secret.")
     result = check_all_alerts()
     return {"status": "ok", **result}
@@ -326,7 +339,7 @@ def _maybe_start_internal_alert_scheduler():
         observability.log_event(
             "startup_warning", level="warning", component="alerts",
             problem="ALERTS_CRON_SECRET is not set",
-            effect="/check-alerts is open to anyone and can send real WhatsApp messages",
+            effect="/check-alerts is disabled (503) until it is set",
         )
     if not ENABLE_INTERNAL_ALERT_SCHEDULER:
         return

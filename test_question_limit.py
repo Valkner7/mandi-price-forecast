@@ -13,7 +13,9 @@ os.environ.pop("API_SHARED_SECRET", None)
 import app  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-c = TestClient(app.app)
+# With no API_SHARED_SECRET only callers on this machine are answered (api_secret.py),
+# so the test calls from loopback, like a local AnnaSetu does.
+c = TestClient(app.app, client=("127.0.0.1", 50000))
 base = {"crop": "Potato", "mandi": "Rayya", "mandis": "Rayya,Khanna", "language": "en"}
 failures = []
 for method, path in (("get", "/advisory"), ("get", "/compare-advisory"), ("post", "/voice-advisory")):
