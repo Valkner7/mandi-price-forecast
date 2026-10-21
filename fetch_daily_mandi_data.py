@@ -66,6 +66,7 @@ import argparse
 import re
 import sys
 import time
+import urllib.parse
 
 import numpy as np
 import pandas as pd
@@ -109,6 +110,31 @@ REQUEST_HEADERS = {
     "User-Agent": "mandi-price-forecast/1.0 (+https://github.com/Valkner7/mandi-price-forecast)",
     "Accept": "*/*",
 }
+
+
+def redact(text, *secrets) -> str:
+    """Return str(text) with the API key hidden as ***.
+
+    A failed request's error text contains the full URL, including
+    ?api-key=<the key>, and that text is printed and then copied into log
+    files by the job scripts (tools/daily-mandi-fetch.ps1,
+    tools/linux/mandi-daily-job.sh). Every place that turns an exception or
+    a response body into text goes through here first.
+
+    Hides the literal key, its URL-encoded spellings, and anything that
+    follows an `api-key=` / `api_key=` parameter, so it still works if the
+    key was encoded on the way or a different key was used. Empty secrets are
+    skipped: replacing "" would insert *** between every character.
+    """
+    text = str(text)
+    for secret in secrets:
+        if not secret:
+            continue
+        for variant in {secret,
+                        urllib.parse.quote(secret, safe=""),
+                        urllib.parse.quote_plus(secret)}:
+            text = text.replace(variant, "***")
+    return re.sub(r"(?i)(api[-_]?key=)[^&\s'\")]+", r"\1***", text)
 
 
 class FetchFailed(RuntimeError):
@@ -173,7 +199,7 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
                 # unchanged -- this only widens what gets reported in the
                 # raised error's message.
                 raise requests.HTTPError(
-                    f"HTTP {response.status_code}: {response.text[:200]}",
+                    f"HTTP {response.status_code}: {redact(response.text[:200], api_key)}",
                     response=response,
                 )
             return response.text
@@ -186,10 +212,12 @@ def fetch_page(api_key: str, offset: int, target_date: str) -> str:
                 break
             if attempt < MAX_RETRIES:
                 wait = RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
-                print(f"  Attempt {attempt}/{MAX_RETRIES} failed ({error}); "
+                print(f"  Attempt {attempt}/{MAX_RETRIES} failed ({redact(error, api_key)}); "
                       f"retrying in {wait}s...")
                 time.sleep(wait)
-    raise FetchFailed(str(last_error)) from last_error
+    # `from None`: the original exception holds the unredacted URL, and an
+    # uncaught traceback would print it as the "direct cause".
+    raise FetchFailed(redact(last_error, api_key)) from None
 
 
 def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
@@ -211,7 +239,7 @@ def fetch_day(api_key: str, target_date: str) -> pd.DataFrame:
             raise FetchFailed(
                 f"offset {offset}: {error}",
                 partial=map_to_schema(all_frames, target_date),
-            ) from error
+            ) from None
 
         # An empty/near-empty CSV (just a header row or nothing) means
         # we've exhausted the available pages for this date.
@@ -330,7 +358,7 @@ def main():
         try:
             day_df = fetch_day(api_key, target)
         except FetchFailed as error:
-            print(f"  API CALL FAILED for {target}: {error}")
+            print(f"  API CALL FAILED for {target}: {redact(error, api_key)}")
             failed_days.append(target)
             if not error.partial.empty:
                 print(f"  Keeping {len(error.partial)} row(s) retrieved before the failure.")
