@@ -48,7 +48,7 @@ pip install -r requirements.txt
 ```bash
 # Required for text/voice advisory generation
 export GEMINI_API_KEY=your-key-here          # or GOOGLE_API_KEY
-export GEMINI_MODEL=gemini-3.7-flash          # optional override if the default 404s
+export GEMINI_MODEL=gemini-3.8-flash          # optional override if the default 404s
 
 # Required for outbound WhatsApp price alerts (see "Price alerts" below)
 export TWILIO_ACCOUNT_SID=ACxxxxxxxx...
