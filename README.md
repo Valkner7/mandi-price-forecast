@@ -59,11 +59,16 @@ export TWILIO_WHATSAPP_FROM=whatsapp:+14155238886   # your Twilio sandbox number
 export TURSO_DATABASE_URL=libsql://your-database.turso.io
 export TURSO_AUTH_TOKEN=...
 
-# Protects /check-alerts from being triggered by anyone who finds the URL
+# Required for /check-alerts (it sends real WhatsApp messages). Callers send the same
+# value in an X-Cron-Secret header. Unset = the endpoint is switched off and answers 503.
 export ALERTS_CRON_SECRET=some-long-random-string
 
 # Protects /advisory, /compare-advisory and /voice-advisory (they spend Gemini/TTS quota).
-# Callers send the same value in an X-Api-Secret header. Unset = endpoints stay open.
+# Callers send the same value in an X-Api-Secret header.
+# Unset = only callers on the same machine (127.0.0.1 / ::1) are answered, so a local
+# AnnaSetu needs no setup; any other caller gets 503 until you set it. Set it whenever
+# another server (a hosted AnnaSetu, say) calls this one, or if a reverse proxy on the
+# same machine forwards outside traffic (the service would see the proxy as local).
 # Browser pages that call them directly (templates/voice_test.html) get 403 once it is set.
 export API_SHARED_SECRET=another-long-random-string
 
@@ -117,7 +122,7 @@ Retrains the global LightGBM model and backtests it against a naive "no change" 
 | `/sms` | POST | Twilio SMS webhook — texts a crop+mandi (EN/HI/PA), gets a price + advisory back via SMS |
 | `/whatsapp` | POST | Twilio WhatsApp webhook — same as `/sms` but over WhatsApp (works via Twilio's free Sandbox, no DLT registration needed) |
 | `/status?strict=false` | GET | Is the app serving the trained model? Live model self-test, which model served recent forecasts, data freshness, usage-guard counts. HTTP 200 always; with `strict=true`, HTTP 503 when degraded (see "Monitoring") |
-| `/check-alerts?secret=...` | GET/POST | Checks all active price alerts and sends any that triggered — called on a schedule by `.github/workflows/check-alerts.yml`, not meant to be hit by a person directly |
+| `/check-alerts` | GET/POST | Checks all active price alerts and sends any that triggered — called on a schedule by `.github/workflows/check-alerts.yml`, not meant to be hit by a person directly. Needs `ALERTS_CRON_SECRET` (header `X-Cron-Secret`, or `?secret=`); answers 503 while it is unset |
 
 Example: `http://127.0.0.1:8000/predict?crop=Potato&mandi=Rayya`
 

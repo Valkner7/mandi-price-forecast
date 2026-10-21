@@ -117,8 +117,8 @@ TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM")
 # Shared secret so /check-alerts (which sends real WhatsApp messages and
 # will be hit by a public external cron service) can't be triggered by
 # anyone who finds the URL. Set this in your cron service's URL as
-# ?secret=... . If left unset, the endpoint is open — fine for local
-# testing, NOT fine once deployed.
+# ?secret=... (or the X-Cron-Secret header). If left unset, the endpoint is
+# disabled and answers 503; it never runs open.
 ALERTS_CRON_SECRET = os.getenv("ALERTS_CRON_SECRET")
 
 # Render's free tier puts the service to sleep after ~15 min idle and only

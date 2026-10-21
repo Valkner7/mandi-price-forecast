@@ -54,11 +54,12 @@ services:
       # GOOGLE_API_KEY is also accepted as a fallback for GEMINI_API_KEY (the
       # code reads GEMINI_API_KEY first). Not listed here so a blueprint
       # doesn't prompt for two keys; add it in the dashboard if you use it.
-      # Protects /check-alerts from being triggered by anyone who finds the URL
+      # Required for /check-alerts: while unset the endpoint answers 503.
       - key: ALERTS_CRON_SECRET
         sync: false
       # Protects /advisory, /compare-advisory and /voice-advisory (X-Api-Secret header).
-      # Unset = open, as before.
+      # Unset = only callers on the same machine are answered; a remote caller
+      # (for example AnnaSetu using this hosted copy) gets 503 until it is set.
       - key: API_SHARED_SECRET
         sync: false
       # Leave unset/false on Render — alert checking is driven by the

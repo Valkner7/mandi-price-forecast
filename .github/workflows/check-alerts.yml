@@ -35,6 +35,9 @@ jobs:
             # showed green. Cold starts, timeouts and 5xx stay warnings below.
             echo "::error::check-alerts was rejected (HTTP $STATUS): ALERTS_CRON_SECRET in GitHub does not match Render's."
             exit 1
+          elif [ "$STATUS" = "503" ] && grep -q "ALERTS_CRON_SECRET is not set" /tmp/response.json 2>/dev/null; then
+            echo "::error::check-alerts is switched off: ALERTS_CRON_SECRET is not set on Render. Set it there and in GitHub."
+            exit 1
           elif [ "$STATUS" != "200" ]; then
             echo "::warning::check-alerts did not get a 200 (got $STATUS) — service may be cold-starting or down."
           fi
