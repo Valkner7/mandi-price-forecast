@@ -16,7 +16,9 @@ for var in ("API_SHARED_SECRET", "GEMINI_API_KEY", "GOOGLE_API_KEY"):
 import app  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-c = TestClient(app.app)
+# Callers on this machine are answered even with no API_SHARED_SECRET (api_secret.py); the default
+# TestClient address ("testclient") is not local and would get 503 once fail-closed secrets are merged.
+c = TestClient(app.app, client=("127.0.0.1", 50000))
 failures = []
 
 
