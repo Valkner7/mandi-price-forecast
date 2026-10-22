@@ -72,6 +72,14 @@ export ALERTS_CRON_SECRET=some-long-random-string
 # Browser pages that call them directly (templates/voice_test.html) get 403 once it is set.
 export API_SHARED_SECRET=another-long-random-string
 
+# Optional: MANDI_SLIM=1 runs only what a price-forecast client needs (/predict, /history,
+# /meta, /compare, /api/nearby-mandis, /status, /advisory, /compare-advisory, /voice-advisory).
+# It switches OFF the WhatsApp/SMS bot (/whatsapp, /sms), /check-alerts and its Turso
+# database, the React dashboard and the demo pages (all answer 404), and twilio / libsql
+# are never imported, so install with requirements-slim.txt instead of requirements.txt.
+# Unset (the default, and what Render uses) = everything on. AnnaSetu's bundled copy runs slim.
+export MANDI_SLIM=1
+
 # Optional, local rehearsal only — does NOT work reliably once deployed on
 # Render's free tier (see "Price alerts" below for why)
 export ENABLE_INTERNAL_ALERT_SCHEDULER=true

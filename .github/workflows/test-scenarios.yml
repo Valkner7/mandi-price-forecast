@@ -86,3 +86,7 @@ jobs:
       - name: Run retraining quality-gate tests
         if: always()
         run: python test_training_gate.py
+
+      - name: Run slim-mode tests
+        if: always()
+        run: python test_slim_mode.py

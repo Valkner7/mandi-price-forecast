@@ -16,8 +16,18 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-import db
 import observability
+
+# MANDI_SLIM=1: run only what a price-forecast client needs (forecast, history, compare,
+# nearby, status, advisory, voice-advisory). Switches off the original project's
+# WhatsApp/SMS bot (/whatsapp, /sms), the price-alert sweep (/check-alerts) and its Turso
+# database, the React dashboard and the demo pages, so twilio and libsql are not even
+# imported. Unset = everything on, exactly as before (the hosted Render service).
+# AnnaSetu's start scripts set it for the bundled copy.
+SLIM = os.getenv("MANDI_SLIM", "").strip().lower() in ("1", "true", "yes")
+
+if not SLIM:
+    import db
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DASHBOARD_DIR = BASE_DIR / "static" / "dashboard"
@@ -48,39 +58,46 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # "/nearby" is a client-side React Router page. Without this alias it only
 # worked when reached by clicking the sidebar link; reloading it or opening
 # a shared link hit the server directly and got a 404 JSON error.
-@app.api_route("/nearby", methods=["GET", "HEAD"])
-@app.api_route("/", methods=["GET", "HEAD"])
-async def read_index():
-    index_path = BASE_DIR / "static" / "dashboard" / "index.html"
-    if not index_path.exists():
-        return JSONResponse(
-            {"error": "Dashboard build not found. Run `npm run build` in frontend/ and copy the output to static/dashboard."},
-            status_code=503,
-        )
-    return FileResponse(str(index_path))
+if SLIM:
+    # Health check for slim mode (HEAD too: some monitors use it). No dashboard here.
+    @app.api_route("/", methods=["GET", "HEAD"])
+    async def read_index():
+        return {"service": "mandi-setu", "mode": "slim", "status": "ok"}
+else:
+    @app.api_route("/nearby", methods=["GET", "HEAD"])
+    @app.api_route("/", methods=["GET", "HEAD"])
+    async def read_index():
+        index_path = BASE_DIR / "static" / "dashboard" / "index.html"
+        if not index_path.exists():
+            return JSONResponse(
+                {"error": "Dashboard build not found. Run `npm run build` in frontend/ and copy the output to static/dashboard."},
+                status_code=503,
+            )
+        return FileResponse(str(index_path))
 
 
-# The built dashboard's index.html references its JS/CSS bundle and icons
-# with root-relative paths (e.g. /assets/index-XXXX.js, /favicon.svg), since
-# that's what Vite emits by default. Serving index.html at "/" above without
-# also serving these exact paths at root left the page loading successfully
-# but blank, with every asset request 404ing (the /dashboard mount below
-# only covers /dashboard/assets/..., not /assets/...). This makes / actually
-# render, not just the /dashboard mount.
-@app.get("/favicon.svg")
-async def read_favicon():
-    favicon_path = BASE_DIR / "static" / "dashboard" / "favicon.svg"
-    if not favicon_path.exists():
-        raise HTTPException(status_code=404, detail="favicon.svg not found")
-    return FileResponse(str(favicon_path))
+    # The built dashboard's index.html references its JS/CSS bundle and icons
+    # with root-relative paths (e.g. /assets/index-XXXX.js, /favicon.svg), since
+    # that's what Vite emits by default. Serving index.html at "/" above without
+    # also serving these exact paths at root left the page loading successfully
+    # but blank, with every asset request 404ing (the /dashboard mount below
+    # only covers /dashboard/assets/..., not /assets/...). This makes / actually
+    # render, not just the /dashboard mount.
+    @app.get("/favicon.svg")
+    async def read_favicon():
+        favicon_path = BASE_DIR / "static" / "dashboard" / "favicon.svg"
+        if not favicon_path.exists():
+            raise HTTPException(status_code=404, detail="favicon.svg not found")
+        return FileResponse(str(favicon_path))
 
 
-@app.get("/icons.svg")
-async def read_icons():
-    icons_path = BASE_DIR / "static" / "dashboard" / "icons.svg"
-    if not icons_path.exists():
-        raise HTTPException(status_code=404, detail="icons.svg not found")
-    return FileResponse(str(icons_path))
+    @app.get("/icons.svg")
+    async def read_icons():
+        icons_path = BASE_DIR / "static" / "dashboard" / "icons.svg"
+        if not icons_path.exists():
+            raise HTTPException(status_code=404, detail="icons.svg not found")
+        return FileResponse(str(icons_path))
+
 
 # The dashboard (static/dashboard) is served from the same origin as the
 # API, so CORS is only needed if you ever point a separately-hosted
@@ -99,7 +116,7 @@ app.add_middleware(
 # /predict, /history and /trends on this same app. If static/dashboard
 # doesn't exist yet (e.g. a fresh clone before a build has been added),
 # skip the mount instead of failing to start.
-if STATIC_DASHBOARD_DIR.exists():
+if not SLIM and STATIC_DASHBOARD_DIR.exists():
     app.mount("/dashboard", StaticFiles(directory=str(STATIC_DASHBOARD_DIR), html=True), name="dashboard")
     _dashboard_assets_dir = STATIC_DASHBOARD_DIR / "assets"
     if _dashboard_assets_dir.exists():
@@ -159,51 +176,52 @@ async def log_request_timing(request, call_next):
     return response
 
 
-@app.get("/sw.js")
-def service_worker():
-    """Step 15: offline price cache. Frontend-only — no new backend logic,
-    just a service worker that caches GET /predict lookups (pure, cacheable,
-    already returns everything needed) and the /voice-test shell itself, so
-    a farmer who already checked a crop/mandi can see that price again with
-    no signal. Served with no-cache so browsers always pick up SW updates.
+if not SLIM:
+    @app.get("/sw.js")
+    def service_worker():
+        """Step 15: offline price cache. Frontend-only — no new backend logic,
+        just a service worker that caches GET /predict lookups (pure, cacheable,
+        already returns everything needed) and the /voice-test shell itself, so
+        a farmer who already checked a crop/mandi can see that price again with
+        no signal. Served with no-cache so browsers always pick up SW updates.
 
-    Source lives in static/sw.js (extracted from an inline string here so it
-    gets normal JS tooling/syntax highlighting); this route just serves it
-    with the headers a service worker needs (no-cache, correct MIME type)."""
-    sw_path = BASE_DIR / "static" / "sw.js"
-    if not sw_path.exists():
-        raise HTTPException(status_code=404, detail="sw.js not found")
-    return FileResponse(
-        str(sw_path),
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache"},
-    )
-
-
-@app.get("/voice-test", response_class=HTMLResponse)
-def voice_test():
-    """Farmer-facing one-question voice UI. HTML lives in
-    templates/voice_test.html (extracted from an inline string here so it
-    gets normal HTML/CSS/JS tooling); this route just reads and serves it.
-    No server-side templating/variables are involved — it's static markup,
-    so a plain file read is enough (no Jinja2 needed)."""
-    voice_test_path = BASE_DIR / "templates" / "voice_test.html"
-    if not voice_test_path.exists():
-        raise HTTPException(status_code=404, detail="voice_test.html not found")
-    return HTMLResponse(voice_test_path.read_text(encoding="utf-8"))
+        Source lives in static/sw.js (extracted from an inline string here so it
+        gets normal JS tooling/syntax highlighting); this route just serves it
+        with the headers a service worker needs (no-cache, correct MIME type)."""
+        sw_path = BASE_DIR / "static" / "sw.js"
+        if not sw_path.exists():
+            raise HTTPException(status_code=404, detail="sw.js not found")
+        return FileResponse(
+            str(sw_path),
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-cache"},
+        )
 
 
-@app.get("/trends-dashboard", response_class=HTMLResponse)
-def trends_dashboard():
-    """Rate-board style page for mandi boards/policymakers — a market-wide
-    view, distinct from /voice-test's one-farmer-one-question voice UI.
-    Fetches /trends client-side and renders it; no server-side templating
-    needed for a page this simple. HTML lives in templates/trends_dashboard.html
-    (extracted from an inline string here so it gets normal tooling)."""
-    trends_dashboard_path = BASE_DIR / "templates" / "trends_dashboard.html"
-    if not trends_dashboard_path.exists():
-        raise HTTPException(status_code=404, detail="trends_dashboard.html not found")
-    return HTMLResponse(trends_dashboard_path.read_text(encoding="utf-8"))
+    @app.get("/voice-test", response_class=HTMLResponse)
+    def voice_test():
+        """Farmer-facing one-question voice UI. HTML lives in
+        templates/voice_test.html (extracted from an inline string here so it
+        gets normal HTML/CSS/JS tooling); this route just reads and serves it.
+        No server-side templating/variables are involved — it's static markup,
+        so a plain file read is enough (no Jinja2 needed)."""
+        voice_test_path = BASE_DIR / "templates" / "voice_test.html"
+        if not voice_test_path.exists():
+            raise HTTPException(status_code=404, detail="voice_test.html not found")
+        return HTMLResponse(voice_test_path.read_text(encoding="utf-8"))
+
+
+    @app.get("/trends-dashboard", response_class=HTMLResponse)
+    def trends_dashboard():
+        """Rate-board style page for mandi boards/policymakers — a market-wide
+        view, distinct from /voice-test's one-farmer-one-question voice UI.
+        Fetches /trends client-side and renders it; no server-side templating
+        needed for a page this simple. HTML lives in templates/trends_dashboard.html
+        (extracted from an inline string here so it gets normal tooling)."""
+        trends_dashboard_path = BASE_DIR / "templates" / "trends_dashboard.html"
+        if not trends_dashboard_path.exists():
+            raise HTTPException(status_code=404, detail="trends_dashboard.html not found")
+        return HTMLResponse(trends_dashboard_path.read_text(encoding="utf-8"))
 
 
 # --- Router registration -----------------------------------------------
@@ -290,39 +308,41 @@ def _warm_trends_cache_startup() -> None:
 # alerts scheduler below.
 app.on_event("startup")(_warm_trends_cache_startup)
 
-from routers.voice import router as voice_router  # noqa: E402
-app.include_router(voice_router)
+if not SLIM:
+    from routers.voice import router as voice_router  # noqa: E402
+    app.include_router(voice_router)
 
-from routers.alerts import (  # noqa: E402
-    router as alerts_router,
-    _maybe_start_internal_alert_scheduler,
-)
-app.include_router(alerts_router)
-
-
-def _init_subscriptions_db_startup() -> None:
-    """Runs db.init_db() (creates the subscriptions table in Turso if it is
-    missing) in the background, so a Turso problem, fast or slow, can never
-    hold up the whole app's startup (predictions, dashboard, voice).
-    Failures are recorded by _run_in_background, not raised. Only the alerts
-    feature depends on this table: in the first seconds after boot, an
-    alerts request could fail on its own before the table check finishes,
-    which is a normal one-request 5xx, not a startup failure. See
-    db.init_db() for its own connection timeout."""
-    _run_in_background("subscriptions_db_init", db.init_db)
+    from routers.alerts import (  # noqa: E402
+        router as alerts_router,
+        _maybe_start_internal_alert_scheduler,
+    )
+    app.include_router(alerts_router)
 
 
-# Creates the subscriptions table in Turso if it doesn't exist yet (see
-# db.py), in the background (see _run_in_background). The table is therefore
-# NOT guaranteed to exist by the time the optional in-process alert scheduler
-# below (local rehearsal only) or the very first /check-alerts request runs;
-# either can fail once in the first seconds after boot, and the scheduler
-# just logs the error and tries again on its next cycle.
-app.on_event("startup")(_init_subscriptions_db_startup)
-# APIRouter has no .on_event of its own, so this startup hook (moved out of
-# app.py along with the rest of the alerts code) is registered directly on
-# the app instance here instead of via a decorator in routers/alerts.py.
-app.on_event("startup")(_maybe_start_internal_alert_scheduler)
+    def _init_subscriptions_db_startup() -> None:
+        """Runs db.init_db() (creates the subscriptions table in Turso if it is
+        missing) in the background, so a Turso problem, fast or slow, can never
+        hold up the whole app's startup (predictions, dashboard, voice).
+        Failures are recorded by _run_in_background, not raised. Only the alerts
+        feature depends on this table: in the first seconds after boot, an
+        alerts request could fail on its own before the table check finishes,
+        which is a normal one-request 5xx, not a startup failure. See
+        db.init_db() for its own connection timeout."""
+        _run_in_background("subscriptions_db_init", db.init_db)
+
+
+    # Creates the subscriptions table in Turso if it doesn't exist yet (see
+    # db.py), in the background (see _run_in_background). The table is therefore
+    # NOT guaranteed to exist by the time the optional in-process alert scheduler
+    # below (local rehearsal only) or the very first /check-alerts request runs;
+    # either can fail once in the first seconds after boot, and the scheduler
+    # just logs the error and tries again on its next cycle.
+    app.on_event("startup")(_init_subscriptions_db_startup)
+    # APIRouter has no .on_event of its own, so this startup hook (moved out of
+    # app.py along with the rest of the alerts code) is registered directly on
+    # the app instance here instead of via a decorator in routers/alerts.py.
+    app.on_event("startup")(_maybe_start_internal_alert_scheduler)
+
 
 # M10: warn in the log if the Gemini/voice endpoints have no shared secret.
 from api_secret import warn_if_unset as _warn_api_secret_unset  # noqa: E402
