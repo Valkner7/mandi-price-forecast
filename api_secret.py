@@ -4,7 +4,8 @@
 call counter. Set API_SHARED_SECRET and every caller must also send the same
 value in an X-Api-Secret header (AnnaSetu's server does this).
 
-Unset: the endpoints answer only callers on this machine (loopback), so a
+Unset: the endpoints answer only callers on this machine (loopback, and no
+X-Forwarded-For style header, which a spoofing client could add), so a
 local AnnaSetu install talking to 127.0.0.1 works with no setup. Any other
 caller gets 503 ("secret not configured") instead of being let in, so a service
 that is reachable from the network never runs open by accident. A startup
@@ -44,6 +45,19 @@ def _is_local(host) -> bool:
     return ip.is_loopback
 
 
+# Headers a proxy (or a client pretending to be one) adds to say "the real caller is
+# somebody else". uvicorn can rewrite the caller's address from X-Forwarded-For, and
+# if it trusts every proxy ("*") it takes the LEFTMOST entry, which the client writes.
+# So a remote caller could send "X-Forwarded-For: 127.0.0.1" and look local. A genuine
+# same-machine caller (AnnaSetu calling 127.0.0.1) sends none of these.
+_FORWARDING_HEADERS = ("x-forwarded-for", "forwarded", "x-real-ip",
+                       "cf-connecting-ip", "true-client-ip")
+
+
+def _is_forwarded(request: Request) -> bool:
+    return any(request.headers.get(h) is not None for h in _FORWARDING_HEADERS)
+
+
 def require_api_secret(request: Request, x_api_secret: str = Header(None)) -> None:
     """FastAPI dependency.
 
@@ -53,7 +67,8 @@ def require_api_secret(request: Request, x_api_secret: str = Header(None)) -> No
     expected = _expected()
     if not expected:
         client = request.client.host if request.client else None
-        if _is_local(client):
+        # Local means: loopback address AND no forwarding header (see above).
+        if _is_local(client) and not _is_forwarded(request):
             return
         observability.log_event("api_secret_rejected", level="warning",
                                 reason="secret_not_configured")
