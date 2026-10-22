@@ -62,6 +62,14 @@ for n in NAMES:
     check(f"{n}: remote caller sending a header is still 503", r.status_code == 503, r.status_code)
 r = hit("advisory", client=remote)
 check("503 body names the variable to set", "API_SHARED_SECRET" in r.text)
+# A forwarded request is never "local", even when the address was rewritten to loopback.
+for hdr, val in (("X-Forwarded-For", "127.0.0.1"), ("X-Forwarded-For", "8.8.8.8, 127.0.0.1"),
+                 ("Forwarded", "for=127.0.0.1"), ("X-Real-IP", "127.0.0.1"),
+                 ("CF-Connecting-IP", "127.0.0.1"), ("True-Client-IP", "127.0.0.1")):
+    r = hit("advisory", {hdr: val}, client=c)
+    check(f"loopback caller carrying {hdr} is not local -> 503", r.status_code == 503, r.status_code)
+r = hit("advisory", client=c)
+check("loopback caller with no forwarding header still passes (422)", r.status_code == 422, r.status_code)
 for host, label, want in (("::1", "IPv6 loopback", 422),
                           ("::ffff:127.0.0.1", "IPv4-mapped loopback", 422),
                           ("127.5.5.5", "any 127.x address", 422),

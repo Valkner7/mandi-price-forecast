@@ -65,8 +65,10 @@ export ALERTS_CRON_SECRET=some-long-random-string
 
 # Protects /advisory, /compare-advisory and /voice-advisory (they spend Gemini/TTS quota).
 # Callers send the same value in an X-Api-Secret header.
-# Unset = only callers on the same machine (127.0.0.1 / ::1) are answered, so a local
-# AnnaSetu needs no setup; any other caller gets 503 until you set it. Set it whenever
+# Unset = only callers on the same machine (127.0.0.1 / ::1) that send no X-Forwarded-For,
+# Forwarded, X-Real-IP, CF-Connecting-IP or True-Client-IP header are answered, so a local
+# AnnaSetu needs no setup; any other caller (including one that adds such a header,
+# whatever address it claims) gets 503 until you set it. Set it whenever
 # another server (a hosted AnnaSetu, say) calls this one, or if a reverse proxy on the
 # same machine forwards outside traffic (the service would see the proxy as local).
 # Browser pages that call them directly (templates/voice_test.html) get 403 once it is set.
