@@ -1,0 +1,32 @@
+# Libraries for MANDI_SLIM=1 (the copy bundled with AnnaSetu). Same as requirements.txt
+# minus the ones only the switched-off parts need: twilio (WhatsApp/SMS bot),
+# libsql (Turso alert subscriptions) and python-multipart (Twilio form webhooks).
+# test_slim_mode.py fails if this file drifts from requirements.txt.
+-c constraints.txt
+fastapi
+uvicorn[standard]
+python-dotenv
+pandas
+requests
+numpy
+statsmodels
+google-genai
+gtts==2.5.4
+# click is intentionally pinned within gtts own declared range (click<8.2).
+# CVE-2026-7246 (fixed in click>=8.3.3) affects only click.edit(), which
+# neither this app nor gtts library code (as opposed to its unused gtts-cli
+# tool) ever calls -- verified not exploitable in this deployment.
+# Do NOT bump this past 8.1.x without also upgrading/replacing gtts, or
+# pip resolver will refuse the install (ResolutionImpossible).
+click>=8.1.8,<8.2
+rapidfuzz
+lightgbm
+# REQUIRED at runtime even though no app code imports it: models/lgbm_price_model.joblib
+# is an LGBMRegressor (LightGBM's sklearn-API class), and its predict() calls into
+# scikit-learn. Without this the model loads fine but every predict() throws, and
+# /predict silently falls back to ETS. f365637 removed it as "unused" and caused
+# exactly that -- do not remove it again unless the model is re-saved as a native
+# lgb.Booster.
+scikit-learn
+joblib
+slowapi==0.1.10
